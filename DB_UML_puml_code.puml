@@ -1,0 +1,90 @@
+@startuml
+
+' Classes and Inheritance
+abstract class User {
+    ID: UUID {primary key}
+    email : text
+    password_hash: text
+}
+
+User <|-- Client
+User <|-- Lawyer
+User <|-- Admin
+
+class Client {
+    address : text
+}
+
+class Lawyer {
+    description: text
+    photo: text
+}
+
+class Admin {
+    ' No specific attributes visible in the diagram
+}
+
+' Core Business Classes
+class Process {
+    ID: UUID {primary key}
+    client_ID: foreign key
+    lawyer_ID: foreign key
+    description: text
+    created_at: date
+    closed_at: date
+    steps_count: int
+    current_step: int
+}
+
+class Documents {
+    ID: UUID {primary key}
+    process_ID: foreign key
+    file_path: text
+}
+
+class Notification {
+    ID: UUID {primary key}
+    process_ID: foreign key
+    client_ID: foreign key
+    content: text
+}
+
+class Chat {
+    ID: UUID {primary key}
+    client_ID: foreign key
+    lawyer_ID: foreign key
+}
+
+class Message {
+    ID: UUID {primary key}
+    chat_ID: foreign key
+    sender_id : foreign key
+    receiver_id : foreign key
+    content: text
+    sent_at: date
+}
+
+
+' Relationships and Associations
+
+' Corrected Notification Relationships
+Client "1" -- "0..*" Notification : receives
+Process "1" -- "0..*" Notification : sends
+
+' Process and Documents
+Process "1" -- "0..*" Documents : contains
+
+' Client, Lawyer, and Process (The core workflow)
+Client "1" -- "0..*" Process : manages
+Lawyer "1" -- "0..*" Process : handles
+
+' Chat and Messages (Composition for Chat)
+Chat "1" *-- "0..*" Message : contains
+
+' Client, Lawyer, and Chat (Composition - Black Diamond)
+' The '*' (Composition) symbol is used here to represent strong ownership,
+' meaning the Chat instance is dependent on both the Client and the Lawyer.
+Client "1" *-- "0..*" Chat : owns
+Lawyer "1" *-- "0..*" Chat : owns
+
+@enduml
