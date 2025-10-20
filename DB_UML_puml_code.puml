@@ -1,9 +1,12 @@
 @startuml
 
+' ===========================
 ' Classes and Inheritance
+' ===========================
+
 abstract class User {
     ID: UUID {primary key}
-    email : text
+    email: text
     password_hash: text
 }
 
@@ -12,7 +15,7 @@ User <|-- Lawyer
 User <|-- Admin
 
 class Client {
-    address : text
+    address: text
 }
 
 class Lawyer {
@@ -24,11 +27,14 @@ class Admin {
     ' No specific attributes visible in the diagram
 }
 
+' ===========================
 ' Core Business Classes
+' ===========================
+
 class Process {
     ID: UUID {primary key}
-    client_ID: foreign key
-    lawyer_ID: foreign key
+    client_ID: UUID {foreign key -> Client.ID}
+    lawyer_ID: UUID {foreign key -> Lawyer.ID}
     description: text
     created_at: date
     closed_at: date
@@ -38,53 +44,65 @@ class Process {
 
 class Documents {
     ID: UUID {primary key}
-    process_ID: foreign key
+    process_ID: UUID {foreign key -> Process.ID}
     file_path: text
+    is_read: boolean
 }
 
 class Notification {
     ID: UUID {primary key}
-    process_ID: foreign key
-    client_ID: foreign key
+    process_ID: UUID {foreign key -> Process.ID}
+    client_ID: UUID {foreign key -> Client.ID}
     content: text
 }
 
 class Chat {
     ID: UUID {primary key}
-    client_ID: foreign key
-    lawyer_ID: foreign key
+    client_ID: UUID {foreign key -> Client.ID}
+    lawyer_ID: UUID {foreign key -> Lawyer.ID}
 }
 
 class Message {
     ID: UUID {primary key}
-    chat_ID: foreign key
-    sender_id : foreign key
-    receiver_id : foreign key
+    chat_ID: UUID {foreign key -> Chat.ID}
+    sender_ID: UUID {foreign key -> User.ID}
+    receiver_ID: UUID {foreign key -> User.ID}
     content: text
     sent_at: date
 }
 
+class Appointment {
+    ID: UUID {primary key}
+    client_ID: UUID {foreign key -> Client.ID}
+    lawyer_ID: UUID {foreign key -> Lawyer.ID}
+    process_ID: UUID {foreign key -> Process.ID}
+    scheduled_at: datetime
+}
 
+' ===========================
 ' Relationships and Associations
+' ===========================
 
-' Corrected Notification Relationships
-Client "1" -- "0..*" Notification : receives
+' Notifications
+User "1" -- "0..*" Notification : receives
 Process "1" -- "0..*" Notification : sends
 
 ' Process and Documents
 Process "1" -- "0..*" Documents : contains
 
-' Client, Lawyer, and Process (The core workflow)
+' Core Workflow
 Client "1" -- "0..*" Process : manages
 Lawyer "1" -- "0..*" Process : handles
 
-' Chat and Messages (Composition for Chat)
+' Chat and Messages (Composition)
 Chat "1" *-- "0..*" Message : contains
 
-' Client, Lawyer, and Chat (Composition - Black Diamond)
-' The '*' (Composition) symbol is used here to represent strong ownership,
-' meaning the Chat instance is dependent on both the Client and the Lawyer.
-Client "1" *-- "0..*" Chat : owns
-Lawyer "1" *-- "0..*" Chat : owns
+' Client, Lawyer, and Chat
+Client "1" -- "0..*" Chat : owns
+Lawyer "1" -- "0..*" Chat : owns
+
+' Appointments
+Client "1" -- "0..*" Appointment : has
+Lawyer "1" -- "0..*" Appointment : has
 
 @enduml
