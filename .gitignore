@@ -1,0 +1,85 @@
+# Docker
+.env
+docker-compose.override.yml
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# Docker volumes (if using bind mounts locally)
+pgdata/
+qdrant_data/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~.nib
+
+# Editor backup files
+*.orig
+*.rej
+
+# Coverage reports
+coverage/
+*.cover
+.coverage
+.coverage.*
+
+# Test results
+test-results/
+TestResults/
+
+# Build artifacts (if built locally)
+dist/
+build/
+out/
+
+# Environment variables (if used locally)
+.env.local
+.env.*.local
+
+# JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# Archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
