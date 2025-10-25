@@ -1,0 +1,84 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+' ===========================
+' Domain Model
+' ===========================
+
+abstract class User {
+    +email: String
+    +password: String
+}
+
+User <|-- Client
+User <|-- Lawyer
+User <|-- Admin
+
+class Client {
+    +address: String
+}
+
+class Lawyer {
+    +description: String
+    +photo: String
+}
+
+class Admin {
+}
+
+class Process {
+    +description: String
+    +createdDate: Date
+    +closedDate: Date
+    +stepsCount: Integer
+    +currentStep: Integer
+}
+
+class Document {
+    +filePath: String
+    +isRead: Boolean
+}
+
+class Notification {
+    +content: String
+    +sentAt: DateTime
+}
+
+class Chat {
+}
+
+class Message {
+    +content: String
+    +sentAt: DateTime
+}
+
+class Appointment {
+    +scheduledAt: DateTime
+}
+
+' ===========================
+' Relationships
+' ===========================
+
+' Processes
+Client "1" -- "0..*" Process : initiates
+Lawyer "1" -- "0..*" Process : handles
+
+Process "1" *-- "0..*" Document : contains
+Process "1" -- "0..*" Notification : generates
+Process "0..1" -- "0..*" Appointment : schedules
+
+' Notifications now linked to User (not Client)
+User "1" -- "0..*" Notification : receives
+
+' Chat & Messaging
+Client "1" -- "0..*" Chat : participates
+Lawyer "1" -- "0..*" Chat : participates
+Chat "1" *-- "0..*" Message : contains
+User "1" -- "0..*" Message : sends
+
+' Appointments
+Client "1" -- "0..*" Appointment : schedules
+Lawyer "1" -- "0..*" Appointment : attends
+
+@enduml

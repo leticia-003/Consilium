@@ -1,0 +1,73 @@
+@startuml
+skinparam componentStyle uml2
+
+' ==========================================================
+' PRESENTATION LAYER
+' ==========================================================
+package "Presentation Layer (Angular Frontend)" as Frontend {
+  [Client Portal] as ClientUI
+  [Lawyer Portal] as LawyerUI
+  [Admin Portal] as AdminUI
+  [Homepage] as HomeUI
+}
+
+' ==========================================================
+' APPLICATION LAYER
+' ==========================================================
+package "Application Layer (C# Backend / API)" as Backend {
+
+    component "API Gateway" as API_GW
+
+    package "Core Domain Services" {
+        component "User Service" as USER_SVC
+        component "Process Service" as PROCESS_SVC
+        component "Document Service" as DOC_SVC
+    }
+
+    package "Cross-Cutting Services" {
+        component "Auth Service" as AUTH
+        component "Communication Service" as COMM_SVC
+    }
+}
+
+' ==========================================================
+' DATA & EXTERNAL LAYER
+' ==========================================================
+package "Data & External Layer" as DataExternal {
+    database "PostgreSQL (Relational DB)" as PG_DB
+    database "Qdrant (Vector/AI Search)" as QDRANT_DB
+    storage "File Storage (Postgres)" as FILE_STORE
+    cloud "AI Chatbot Service" as CHATBOT
+    cloud "Email/SMS Provider" as EMAIL_SVC
+}
+
+' ==========================================================
+' CONNECTIONS
+' ==========================================================
+
+' Frontend to Backend
+ClientUI --> API_GW : REST / JSON API
+LawyerUI --> API_GW : REST / JSON API
+AdminUI --> API_GW : REST / JSON API
+HomeUI --> API_GW : Public endpoints
+
+' API Gateway routes requests
+API_GW --> AUTH : Authentication / Tokens
+API_GW --> USER_SVC : Manage Clients/Lawyers
+API_GW --> PROCESS_SVC : Handle Processes
+API_GW --> DOC_SVC : Upload / Retrieve Docs
+API_GW --> COMM_SVC : Send Notifications
+API_GW --> CHATBOT : Chat / Legal Q&A
+
+' Core services interact with DB
+AUTH --> PG_DB : User credentials
+USER_SVC --> PG_DB : User profiles
+PROCESS_SVC --> PG_DB : Process data
+DOC_SVC --> FILE_STORE : File uploads
+COMM_SVC --> EMAIL_SVC : Email / SMS
+
+' AI and Search
+CHATBOT --> QDRANT_DB : Query legal knowledge
+PROCESS_SVC --> QDRANT_DB : Legal search integration
+
+@enduml

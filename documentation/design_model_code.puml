@@ -1,0 +1,172 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+' ===========================
+' Domain Entities
+' ===========================
+abstract class User {
+    +email: String
+    +password: String
+    +notify(notification: Notification)
+}
+
+User <|-- Client
+User <|-- Lawyer
+User <|-- Admin
+
+class Client {
+    +address: String
+}
+
+class Lawyer {
+    +description: String
+    +photo: String
+}
+
+class Admin {
+}
+
+class Process {
+    +description: String
+    +createdDate: Date
+    +closedDate: Date
+    +stepsCount: Integer
+    +currentStep: Integer
+    +addDocument(doc: Document)
+}
+
+class Document {
+    +filePath: String
+    +isRead: Boolean
+}
+
+class Notification {
+    +content: String
+    +sentAt: DateTime
+}
+
+class Chat {
+}
+
+class Message {
+    +content: String
+    +sentAt: DateTime
+}
+
+class Appointment {
+    +scheduledAt: DateTime
+}
+
+' ===========================
+' Design Patterns
+' ===========================
+
+' ---------- FACTORIES ----------
+class UserFactory {
+    +createUser(type: String, email: String, password: String): User
+}
+
+class ProcessFactory {
+    +createProcess(client: Client, lawyer: Lawyer, description: String): Process
+}
+
+class MessageFactory {
+    +createMessage(sender: User, receiver: User, content: String): Message
+}
+
+' ---------- BUILDERS ----------
+class MessageBuilder {
+    -message: Message
+    +setSender(sender: User): MessageBuilder
+    +setReceiver(receiver: User): MessageBuilder
+    +setContent(content: String): MessageBuilder
+    +setSentAt(date: DateTime): MessageBuilder
+    +build(): Message
+}
+
+class ProcessBuilder {
+    -process: Process
+    +setDescription(desc: String): ProcessBuilder
+    +setClient(client: Client): ProcessBuilder
+    +setLawyer(lawyer: Lawyer): ProcessBuilder
+    +setDates(created: Date, closed: Date): ProcessBuilder
+    +setSteps(count: Integer): ProcessBuilder
+    +build(): Process
+}
+
+' ---------- OBSERVER PATTERN ----------
+interface Observer {
+    +update(notification: Notification)
+}
+
+interface Subject {
+    +addObserver(observer: Observer)
+    +removeObserver(observer: Observer)
+    +notifyObservers(notification: Notification)
+}
+
+Process ..|> Subject
+User ..|> Observer
+
+' ---------- REPOSITORIES ----------
+interface UserRepository {
+    +save(user: User)
+    +findByEmail(email: String): User
+}
+
+interface ProcessRepository {
+    +save(process: Process)
+    +findById(id: UUID): Process
+}
+
+interface MessageRepository {
+    +save(message: Message)
+    +findByChat(chat: Chat): List<Message>
+}
+
+' ---------- SERVICES ----------
+class ProcessService {
+    +createProcess(client: Client, lawyer: Lawyer, desc: String): Process
+    +closeProcess(process: Process)
+}
+
+class ChatService {
+    +sendMessage(chat: Chat, message: Message)
+    +getMessages(chat: Chat): List<Message>
+}
+
+' ===========================
+' Relationships
+' ===========================
+' Factories create entities
+UserFactory --> User
+ProcessFactory --> Process
+MessageFactory --> Message
+
+' Builders build entities
+MessageBuilder --> Message
+ProcessBuilder --> Process
+
+' Services use Repositories
+ProcessService --> ProcessRepository
+ChatService --> MessageRepository
+ChatService --> MessageFactory
+
+' Observer pattern links
+Process --> Notification
+Process --> User : notifies
+User --> Notification : receives
+
+' Core workflow
+Client --> Process
+Lawyer --> Process
+Process --> Document
+Chat --> Message
+User --> Message : sends
+User --> Notification : receives
+Client --> Chat
+Lawyer --> Chat
+Client --> Appointment
+Lawyer --> Appointment
+
+@enduml
