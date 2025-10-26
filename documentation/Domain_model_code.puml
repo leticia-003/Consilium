@@ -5,56 +5,29 @@ skinparam classAttributeIconSize 0
 ' Domain Model
 ' ===========================
 
-abstract class User {
-    +email: String
-    +password: String
-}
+abstract class User {}
 
 User <|-- Client
 User <|-- Lawyer
 User <|-- Admin
 
-class Client {
-    +address: String
-}
+class Client {}
 
-class Lawyer {
-    +description: String
-    +photo: String
-}
+class Lawyer {}
 
-class Admin {
-}
+class Admin {}
 
-class Process {
-    +description: String
-    +createdDate: Date
-    +closedDate: Date
-    +stepsCount: Integer
-    +currentStep: Integer
-}
+class Process {}
 
-class Document {
-    +filePath: String
-    +isRead: Boolean
-}
+class Document {}
 
-class Notification {
-    +content: String
-    +sentAt: DateTime
-}
+class Notification {}
 
-class Chat {
-}
+class Chat {}
 
-class Message {
-    +content: String
-    +sentAt: DateTime
-}
+class Message {}
 
-class Appointment {
-    +scheduledAt: DateTime
-}
+class Appointment {}
 
 ' ===========================
 ' Relationships
