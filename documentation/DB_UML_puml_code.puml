@@ -1,87 +1,143 @@
 @startuml
+skinparam classAttributeIconSize 0
 
 ' ===========================
-' Classes and Inheritance
+' Abstract Base Class for Login
 ' ===========================
 
 abstract class User {
     ID: UUID {primary key}
-    email: text
-    password_hash: text
+    email: text UNIQUE NOT NULL
+    password_hash: text NOT NULL
+    Name: text NOT NULL
+    phone: varchar(15) CHECK (phone ~ '^[0-9+\\-\\s]{7,15}$')
 }
 
-User <|-- Client
-User <|-- Lawyer
-User <|-- Admin
+' ===========================
+' Core Entity Classes (One-to-One Extension Pattern)
+' ===========================
 
 class Client {
+    user_ID: UUID {primary key, foreign key -> User.ID}
+    NIF: char(9) UNIQUE CHECK (NIF ~ '^[0-9]{9}$')
     address: text
+    status: ENUM {Active, Inactive} DEFAULT 'Active'
+    ' Inherits ID, email, password_hash, Name, phone from User
 }
 
 class Lawyer {
-    description: text
-    photo: text
+    user_ID: UUID {primary key, foreign key -> User.ID} '<<Links back to User for login>>'
+    NIF: char(9) UNIQUE CHECK (NIF ~ '^[0-9]{9}$')
+    professional_register_number: text UNIQUE NOT NULL
+    status: ENUM {Active, Inactive} DEFAULT 'Active'
+    ' Inherits ID, email, password_hash, Name, phone from User
 }
 
 class Admin {
-    ' No specific attributes visible in the diagram
 }
-
-' ===========================
-' Core Business Classes
-' ===========================
 
 class Process {
     ID: UUID {primary key}
-    client_ID: UUID {foreign key -> Client.ID}
-    lawyer_ID: UUID {foreign key -> Lawyer.ID}
+    client_ID: UUID {foreign key -> Client.user_ID}
+    lawyer_ID: UUID {foreign key -> Lawyer.user_ID}
     description: text
-    created_at: date
+    created_at: date DEFAULT CURRENT_DATE
     closed_at: date
-    steps_count: int
-    current_step: int
+    steps_count: int CHECK (steps_count >= 0)
+    current_step: int CHECK (current_step >= 0)
+    Process_Type: ENUM {Civil, Criminal, Corporate, Family, Other}
+    Status: ENUM {Open, Closed, Pending} DEFAULT 'Open'
+    CHECK (closed_at IS NULL OR closed_at >= created_at)
 }
 
 class Documents {
     ID: UUID {primary key}
     process_ID: UUID {foreign key -> Process.ID}
-    file_path: text
-    is_read: boolean
+    file: BLOB NOT NULL '<<Stored directly in DB as requested>>'
+    is_read: boolean DEFAULT false
+    uploaded_at: timestamp DEFAULT CURRENT_TIMESTAMP
 }
 
 class Notification {
     ID: UUID {primary key}
     process_ID: UUID {foreign key -> Process.ID}
-    client_ID: UUID {foreign key -> Client.ID}
-    content: text
+    recipient_ID: UUID {foreign key -> User.ID} '<<Recipient can be Client, Lawyer, or Admin>>'
+    content: text NOT NULL
+    is_read: boolean DEFAULT false
+    created_at: timestamp DEFAULT CURRENT_TIMESTAMP
 }
 
 class Chat {
     ID: UUID {primary key}
-    client_ID: UUID {foreign key -> Client.ID}
-    lawyer_ID: UUID {foreign key -> Lawyer.ID}
+    client_ID: UUID {foreign key -> Client.user_ID}
+    lawyer_ID: UUID {foreign key -> Lawyer.user_ID}
+    UNIQUE (client_ID, lawyer_ID)
 }
 
 class Message {
     ID: UUID {primary key}
     chat_ID: UUID {foreign key -> Chat.ID}
-    sender_ID: UUID {foreign key -> User.ID}
-    receiver_ID: UUID {foreign key -> User.ID}
-    content: text
-    sent_at: date
+    sender_ID: UUID {foreign key -> User.ID} '<<Sender is a User (Client or Lawyer)>>'
+    content: text NOT NULL
+    sent_at: timestamp DEFAULT CURRENT_TIMESTAMP
 }
 
 class Appointment {
     ID: UUID {primary key}
-    client_ID: UUID {foreign key -> Client.ID}
-    lawyer_ID: UUID {foreign key -> Lawyer.ID}
+    client_ID: UUID {foreign key -> Client.user_ID}
+    lawyer_ID: UUID {foreign key -> Lawyer.user_ID}
     process_ID: UUID {foreign key -> Process.ID}
-    scheduled_at: datetime
+    scheduled_at: timestamp CHECK (scheduled_at > CURRENT_TIMESTAMP)
+    created_at: timestamp DEFAULT CURRENT_TIMESTAMP
+}
+
+class Appointment_Notes {
+    ID: UUID {primary key}
+    appointment_ID: UUID {foreign key -> Appointment.ID}
+    author_ID: UUID {foreign key -> User.ID}
+    note: text NOT NULL
+    created_at: timestamp DEFAULT CURRENT_TIMESTAMP
 }
 
 ' ===========================
-' Relationships and Associations
+' Logging Tables
 ' ===========================
+
+class Client_Log {
+    ID: UUID {primary key}
+    client_ID: UUID {foreign key -> Client.user_ID} '<<Specific FK to Client role ID>>'
+    operation: ENUM {CREATE, UPDATE, DELETE, INACTIVATE}
+    performed_by: UUID {foreign key -> Admin.user_ID}
+    timestamp: timestamp DEFAULT CURRENT_TIMESTAMP
+    details: text
+}
+
+class Admin_Log {
+    ID: UUID {primary key}
+    admin_ID: UUID {foreign key -> Admin.user_ID}
+    operation: ENUM {CREATE, UPDATE, DELETE}
+    performed_by: UUID {foreign key -> Admin.user_ID}
+    timestamp: timestamp DEFAULT CURRENT_TIMESTAMP
+    details: text
+}
+
+class Process_Log {
+    ID: UUID {primary key}
+    process_ID: UUID {foreign key -> Process.ID}
+    operation: ENUM {CREATE, UPDATE, CLOSE, REOPEN, DELETE}
+    performed_by: UUID {foreign key -> User.ID}
+    timestamp: timestamp DEFAULT CURRENT_TIMESTAMP
+    details: text
+}
+
+' ===========================
+' Relationships
+' ===========================
+
+' Inheritance Links (User to Roles) - Uses the corrected 1:1 relationship
+User "1" -- "0..1" Client : is a
+User "1" -- "0..1" Lawyer : is a
+User "1" -- "0..1" Admin : is a
 
 ' Notifications
 User "1" -- "0..*" Notification : receives
@@ -94,7 +150,7 @@ Process "1" -- "0..*" Documents : contains
 Client "1" -- "0..*" Process : manages
 Lawyer "1" -- "0..*" Process : handles
 
-' Chat and Messages (Composition)
+' Chat and Messages
 Chat "1" *-- "0..*" Message : contains
 
 ' Client, Lawyer, and Chat
@@ -104,5 +160,12 @@ Lawyer "1" -- "0..*" Chat : owns
 ' Appointments
 Client "1" -- "0..*" Appointment : has
 Lawyer "1" -- "0..*" Appointment : has
+Process "0..1" -- "0..*" Appointment : is related to
+Appointment "1" *-- "0..*" Appointment_Notes : notes
+
+' Logs
+Client "1" -- "0..*" Client_Log : activity
+Admin "1" -- "0..*" Admin_Log : activity
+Process "1" -- "0..*" Process_Log : changes
 
 @enduml
