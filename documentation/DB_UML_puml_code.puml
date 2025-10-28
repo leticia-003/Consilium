@@ -10,7 +10,7 @@ abstract class User {
     email: text UNIQUE NOT NULL
     password_hash: text NOT NULL
     Name: text NOT NULL
-    phone: varchar(15) CHECK (phone ~ '^[0-9+\\-\\s]{7,15}$')
+    phone: varchar(15) CHECK (phone ~ '^[0-9+\\-\\s]{7,15}$') UNIQUE
 }
 
 ' ===========================
@@ -18,28 +18,29 @@ abstract class User {
 ' ===========================
 
 class Client {
-    user_ID: UUID {primary key, foreign key -> User.ID}
+    ID : UUID {primary key, foreign key -> User.ID}
     NIF: char(9) UNIQUE CHECK (NIF ~ '^[0-9]{9}$')
     address: text
     status: ENUM {Active, Inactive} DEFAULT 'Active'
-    ' Inherits ID, email, password_hash, Name, phone from User
 }
 
 class Lawyer {
-    user_ID: UUID {primary key, foreign key -> User.ID} '<<Links back to User for login>>'
+    ID : UUID {primary key, foreign key -> User.ID}
     NIF: char(9) UNIQUE CHECK (NIF ~ '^[0-9]{9}$')
     professional_register_number: text UNIQUE NOT NULL
     status: ENUM {Active, Inactive} DEFAULT 'Active'
-    ' Inherits ID, email, password_hash, Name, phone from User
 }
 
 class Admin {
+    ID : UUID {primary key, foreign key -> User.ID}
+    start_date : timestamp
+    permission_level : ENUM {SuperAdmin, Admin, Auditor} DEFAULT 'Admin'
 }
 
 class Process {
     ID: UUID {primary key}
-    client_ID: UUID {foreign key -> Client.user_ID}
-    lawyer_ID: UUID {foreign key -> Lawyer.user_ID}
+    client_ID: UUID {foreign key -> Client.ID}
+    lawyer_ID: UUID {foreign key -> Lawyer.ID}
     description: text
     created_at: date DEFAULT CURRENT_DATE
     closed_at: date
@@ -48,20 +49,22 @@ class Process {
     Process_Type: ENUM {Civil, Criminal, Corporate, Family, Other}
     Status: ENUM {Open, Closed, Pending} DEFAULT 'Open'
     CHECK (closed_at IS NULL OR closed_at >= created_at)
+    CHECK (current_step <= steps_count)
 }
 
 class Documents {
     ID: UUID {primary key}
     process_ID: UUID {foreign key -> Process.ID}
-    file: BLOB NOT NULL '<<Stored directly in DB as requested>>'
-    is_read: boolean DEFAULT false
+    file: BLOB NOT NULL
+    file_name : text
     uploaded_at: timestamp DEFAULT CURRENT_TIMESTAMP
+    UNIQUE (process_ID, file_name)
 }
 
 class Notification {
     ID: UUID {primary key}
     process_ID: UUID {foreign key -> Process.ID}
-    recipient_ID: UUID {foreign key -> User.ID} '<<Recipient can be Client, Lawyer, or Admin>>'
+    recipient_ID: UUID {foreign key -> User.ID}
     content: text NOT NULL
     is_read: boolean DEFAULT false
     created_at: timestamp DEFAULT CURRENT_TIMESTAMP
@@ -69,26 +72,27 @@ class Notification {
 
 class Chat {
     ID: UUID {primary key}
-    client_ID: UUID {foreign key -> Client.user_ID}
-    lawyer_ID: UUID {foreign key -> Lawyer.user_ID}
+    client_ID: UUID {foreign key -> Client.ID}
+    lawyer_ID: UUID {foreign key -> Lawyer.ID}
     UNIQUE (client_ID, lawyer_ID)
 }
 
 class Message {
     ID: UUID {primary key}
     chat_ID: UUID {foreign key -> Chat.ID}
-    sender_ID: UUID {foreign key -> User.ID} '<<Sender is a User (Client or Lawyer)>>'
+    sender_ID: UUID {foreign key -> User.ID} 
     content: text NOT NULL
     sent_at: timestamp DEFAULT CURRENT_TIMESTAMP
 }
 
 class Appointment {
     ID: UUID {primary key}
-    client_ID: UUID {foreign key -> Client.user_ID}
-    lawyer_ID: UUID {foreign key -> Lawyer.user_ID}
+    client_ID: UUID {foreign key -> Client.ID}
+    lawyer_ID: UUID {foreign key -> Lawyer.ID}
     process_ID: UUID {foreign key -> Process.ID}
-    scheduled_at: timestamp CHECK (scheduled_at > CURRENT_TIMESTAMP)
-    created_at: timestamp DEFAULT CURRENT_TIMESTAMP
+    appointment_time: timestamp NOT NULL
+    UNIQUE (lawyer_ID, appointment_time)
+    UNIQUE (client_ID, appointment_time)
 }
 
 class Appointment_Notes {
@@ -100,25 +104,40 @@ class Appointment_Notes {
 }
 
 ' ===========================
-' Logging Tables
+' Logging Tables (With Old/New Values)
 ' ===========================
 
 class Client_Log {
     ID: UUID {primary key}
-    client_ID: UUID {foreign key -> Client.user_ID} '<<Specific FK to Client role ID>>'
+    client_ID: UUID {foreign key -> Client.ID}
     operation: ENUM {CREATE, UPDATE, DELETE, INACTIVATE}
-    performed_by: UUID {foreign key -> Admin.user_ID}
-    timestamp: timestamp DEFAULT CURRENT_TIMESTAMP
-    details: text
+    performed_by: UUID {foreign key -> User.ID} 
+    updated_at: timestamp DEFAULT CURRENT_TIMESTAMP
+    field_changed: text 'e.g., "status", "address"'
+    old_value: text
+    new_value: text
+}
+
+class Lawyer_Log {
+    ID: UUID {primary key}
+    lawyer_ID: UUID {foreign key -> Lawyer.ID}
+    operation: ENUM {CREATE, UPDATE, DELETE, INACTIVATE}
+    performed_by: UUID {foreign key -> User.ID} 
+    updated_at: timestamp DEFAULT CURRENT_TIMESTAMP
+    field_changed: text 
+    old_value: text
+    new_value: text
 }
 
 class Admin_Log {
     ID: UUID {primary key}
-    admin_ID: UUID {foreign key -> Admin.user_ID}
+    admin_ID: UUID {foreign key -> Admin.ID} 
     operation: ENUM {CREATE, UPDATE, DELETE}
-    performed_by: UUID {foreign key -> Admin.user_ID}
-    timestamp: timestamp DEFAULT CURRENT_TIMESTAMP
-    details: text
+    performed_by: UUID {foreign key -> User.ID} 
+    updated_at: timestamp DEFAULT CURRENT_TIMESTAMP
+    field_changed: text
+    old_value: text
+    new_value: text
 }
 
 class Process_Log {
@@ -126,15 +145,17 @@ class Process_Log {
     process_ID: UUID {foreign key -> Process.ID}
     operation: ENUM {CREATE, UPDATE, CLOSE, REOPEN, DELETE}
     performed_by: UUID {foreign key -> User.ID}
-    timestamp: timestamp DEFAULT CURRENT_TIMESTAMP
-    details: text
+    updated_at: timestamp DEFAULT CURRENT_TIMESTAMP
+    field_changed: text
+    old_value: text
+    new_value: text
 }
 
 ' ===========================
 ' Relationships
 ' ===========================
 
-' Inheritance Links (User to Roles) - Uses the corrected 1:1 relationship
+' Inheritance Links (User to Roles)
 User "1" -- "0..1" Client : is a
 User "1" -- "0..1" Lawyer : is a
 User "1" -- "0..1" Admin : is a
@@ -163,8 +184,9 @@ Lawyer "1" -- "0..*" Appointment : has
 Process "0..1" -- "0..*" Appointment : is related to
 Appointment "1" *-- "0..*" Appointment_Notes : notes
 
-' Logs
+' Logs (Corrected)
 Client "1" -- "0..*" Client_Log : activity
+Lawyer "1" -- "0..*" Lawyer_Log : activity
 Admin "1" -- "0..*" Admin_Log : activity
 Process "1" -- "0..*" Process_Log : changes
 
