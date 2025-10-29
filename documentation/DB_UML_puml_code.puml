@@ -39,15 +39,13 @@ class Process {
     ID: UUID {primary key}
     client_ID: UUID {foreign key -> Client.ID} NOT NULL
     lawyer_ID: UUID {foreign key -> Lawyer.ID} NOT NULL
+    process_number : text NOT NULL
+    title : text NOT NULL
     description: text
     created_at: timestamp DEFAULT CURRENT_TIMESTAMP
     closed_at: timestamp
-    steps_count: int CHECK (steps_count >= 0)
-    current_step: int CHECK (current_step >= 0)
-    process_Type: ENUM {CIVIL CRIMINAL CORPORATE FAMILY OTHER} NOT NULL
+    current_phase : ENUM {INITIAL_PETITION SUMMONS_AND_DEFENSE JUDICIAL_ORDER PRELIMINARY_HEARING TRIAL_PREPARATION TRIAL VEREDICT APPEAL ENFORCEMENT_OF_JUDGMENT} DEFAULT INITIAL_PETITION
     status: ENUM {OPEN CLOSED PENDING} DEFAULT 'OPEN'
-    CHECK (current_step <= steps_count)
-    CHECK (closed_at IS NULL OR closed_at >= created_at)
 }
 
 class Documents {
