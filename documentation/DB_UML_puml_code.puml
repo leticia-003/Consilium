@@ -10,7 +10,8 @@ abstract class User {
     email: text UNIQUE NOT NULL
     password_hash: text NOT NULL
     Name: text NOT NULL
-    phone: varchar(15) CHECK (phone ~ '^[0-9+\\-\\s]{7,15}$') UNIQUE
+    phone: int UNIQUE
+    status: ENUM {ACTIVE INACTIVE} DEFAULT 'ACTIVE'
 }
 
 ' ===========================
@@ -19,21 +20,19 @@ abstract class User {
 
 class Client {
     ID : UUID {primary key, foreign key -> User.ID}
-    NIF: char(9) UNIQUE CHECK (NIF ~ '^[0-9]{9}$')
+    NIF: int NOT NULL
     address: text
-    status: ENUM {Active, Inactive} DEFAULT 'Active'
 }
 
 class Lawyer {
     ID : UUID {primary key, foreign key -> User.ID}
-    NIF: char(9) UNIQUE CHECK (NIF ~ '^[0-9]{9}$')
+    NIF: int NOT NULL
     professional_register_number: text UNIQUE NOT NULL
-    status: ENUM {Active, Inactive} DEFAULT 'Active'
 }
 
 class Admin {
     ID : UUID {primary key, foreign key -> User.ID}
-    start_date : timestamp
+    start_date : timestamp NOT NULL
 }
 
 class Process {
@@ -41,14 +40,14 @@ class Process {
     client_ID: UUID {foreign key -> Client.ID} NOT NULL
     lawyer_ID: UUID {foreign key -> Lawyer.ID} NOT NULL
     description: text
-    created_at: date DEFAULT CURRENT_DATE
-    closed_at: date
+    created_at: timestamp DEFAULT CURRENT_TIMESTAMP
+    closed_at: timestamp
     steps_count: int CHECK (steps_count >= 0)
     current_step: int CHECK (current_step >= 0)
-    Process_Type: ENUM {Civil, Criminal, Corporate, Family, Other} NOT NULL
-    Status: ENUM {Open, Closed, Pending} DEFAULT 'Open'
-    CHECK (closed_at IS NULL OR closed_at >= created_at)
+    process_Type: ENUM {CIVIL CRIMINAL CORPORATE FAMILY OTHER} NOT NULL
+    status: ENUM {OPEN CLOSED PENDING} DEFAULT 'OPEN'
     CHECK (current_step <= steps_count)
+    CHECK (closed_at IS NULL OR closed_at >= created_at)
 }
 
 class Documents {
@@ -109,45 +108,41 @@ class Appointment_Notes {
 class Client_Log {
     ID: UUID {primary key}
     client_ID: UUID {foreign key -> Client.ID} NOT NULL
-    operation: ENUM {CREATE, UPDATE, DELETE, INACTIVATE}
+    operation: ENUM {CREATE UPDATE DELETE ACTIVATE INACTIVATE} NOT NULL
     performed_by: UUID {foreign key -> User.ID} NOT NULL
     updated_at: timestamp DEFAULT CURRENT_TIMESTAMP
-    field_changed: text 'e.g., "status", "address"'
-    old_value: text
-    new_value: text
+    old_value: JSON NOT NULL
+    new_value: JSON NOT NULL
 }
 
 class Lawyer_Log {
     ID: UUID {primary key}
     lawyer_ID: UUID {foreign key -> Lawyer.ID} NOT NULL
-    operation: ENUM {CREATE, UPDATE, DELETE, INACTIVATE}
+    operation: ENUM {CREATE UPDATE DELETE ACTIVATE INACTIVATE} NOT NULL
     performed_by: UUID {foreign key -> User.ID} NOT NULL
     updated_at: timestamp DEFAULT CURRENT_TIMESTAMP
-    field_changed: text 
-    old_value: text
-    new_value: text
+    old_value: JSON NOT NULL
+    new_value: JSON NOT NULL
 }
 
 class Admin_Log {
     ID: UUID {primary key}
     admin_ID: UUID {foreign key -> Admin.ID} NOT NULL
-    operation: ENUM {CREATE, UPDATE, DELETE}
+    operation: ENUM {CREATE UPDATE DELETE} NOT NULL
     performed_by: UUID {foreign key -> User.ID} NOT NULL
     updated_at: timestamp DEFAULT CURRENT_TIMESTAMP
-    field_changed: text
-    old_value: text
-    new_value: text
+    old_value: JSON NOT NULL
+    new_value: JSON NOT NULL
 }
 
 class Process_Log {
     ID: UUID {primary key}
     process_ID: UUID {foreign key -> Process.ID} NOT NULL
-    operation: ENUM {CREATE, UPDATE, CLOSE, REOPEN, DELETE}
+    operation: ENUM {CREATE UPDATE CLOSE REOPEN DELETE} NOT NULL
     performed_by: UUID {foreign key -> User.ID} NOT NULL
     updated_at: timestamp DEFAULT CURRENT_TIMESTAMP
-    field_changed: text
-    old_value: text
-    new_value: text
+    old_value: JSON NOT NULL
+    new_value: JSON NOT NULL
 }
 
 ' ===========================
@@ -183,7 +178,7 @@ Lawyer "1" -- "0..*" Appointment : has
 Process "0..1" -- "0..*" Appointment : is related to
 Appointment "1" *-- "0..*" Appointment_Notes : notes
 
-' Logs (Corrected)
+' Logs
 Client "1" -- "0..*" Client_Log : activity
 Lawyer "1" -- "0..*" Lawyer_Log : activity
 Admin "1" -- "0..*" Admin_Log : activity
