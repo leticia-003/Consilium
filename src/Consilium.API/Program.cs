@@ -11,12 +11,16 @@ using Npgsql;
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// --- Configure Npgsql to handle PostgreSQL enums ---
-NpgsqlConnection.GlobalTypeMapper.EnableUnmappedTypes();
+var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
+
+// ✅ Explicitly map enum WITHOUT name translator (C# enum names must match PostgreSQL exactly)
+dataSourceBuilder.MapEnum<UserStatus>("user_status");
+
+var dataSource = dataSourceBuilder.Build();
 
 // --- Add DB Connection ---
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(dataSource));
 
 // --- Configure JSON serialization for enums as strings ---
 builder.Services.ConfigureHttpJsonOptions(options =>

@@ -1,6 +1,7 @@
 using Consilium.Domain.Models;
-using Consilium.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Consilium.Domain.Enums;             // <-- This one for UserStatus
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata; // <-- ADD THIS LINE
 
 namespace Consilium.Infrastructure.Data
 {
@@ -10,13 +11,15 @@ namespace Consilium.Infrastructure.Data
         {
         }
 
-        // Tell EF Core about your tables
         public DbSet<User> Users { get; set; }
         public DbSet<Client> Clients { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Define the one-to-one relationship between User and Client
+            modelBuilder.Entity<User>()
+                .Property(u => u.Status)
+                .HasConversion<string>();
+
             modelBuilder.Entity<User>()
                 .HasOne<Client>()
                 .WithOne(c => c.User)
