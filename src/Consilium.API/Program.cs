@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using Consilium.Infrastructure.Data;
 using Consilium.Application.Interfaces;
 using Consilium.Infrastructure.Repositories;
@@ -14,6 +15,12 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString)); // Use value converter for enums in AppDbContext
+
+// --- Configure JSON serialization for enums as strings ---
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 // --- Register Your Services (Dependency Injection) ---
 builder.Services.AddScoped<IUserRepository, UserRepository>();
