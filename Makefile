@@ -56,7 +56,7 @@ run-dev: up-dev
 up-prod:
 	$(COMPOSE) -f $(PROD_FILE) up -d
 
-run-prod: build-prod logs-prod
+run-prod: build-prod up-prod
 	@echo "Prod environment running."
 	@echo "Frontend: http://localhost:4200"
 	@echo "Backend: http://localhost:8080"

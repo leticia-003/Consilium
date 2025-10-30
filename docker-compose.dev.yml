@@ -1,23 +1,24 @@
-version: '3.9'
 services:
   backend:
     image: mcr.microsoft.com/dotnet/sdk:9.0
-    working_dir: /app
+    # Set the working directory to the API project
+    working_dir: /src/Consilium.API
     ports:
       - "8080:8080"
     depends_on:
-      - db
       - qdrant
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__Default=Host=db;Database=mydb;Username=postgres;Password=postgres
       - Qdrant__Url=http://qdrant:6333
     volumes:
-      - ./src/backend:/app
-    command: dotnet watch run --urls=http://0.0.0.0:8080
+      # Mount the entire 'src' folder from your host to '/src' in the container
+      - ./src:/src
+    # Update the command to watch the correct project file
+    command: dotnet watch run --project "/src/Consilium.API/Consilium.API.csproj" --urls=http://0.0.0.0:8080
 
   frontend:
+    # (No changes needed for frontend service)
     image: node:20
     working_dir: /app
     ports:
@@ -27,19 +28,8 @@ services:
       - /app/node_modules
     command: sh -c "npm install && npm start -- --host 0.0.0.0"
 
-  db:
-    image: postgres:16
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: mydb
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
   qdrant:
+    # (No changes needed)
     image: qdrant/qdrant:latest
     restart: always
     ports:

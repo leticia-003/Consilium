@@ -85,5 +85,7 @@ out/
 *.zip
 *.sln
 
-src/**/appsettings*.json
+# Ignore all bin and obj directories anywhere in the repo
+bin/
+obj/
 
