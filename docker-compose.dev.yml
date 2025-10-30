@@ -1,24 +1,25 @@
 services:
   backend:
-    image: mcr.microsoft.com/dotnet/sdk:9.0
-    # Set the working directory to the API project
-    working_dir: /src/Consilium.API
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: build-backend-prod
     ports:
       - "8080:8080"
-    depends_on:
-      - qdrant
+      - "8443:8443"
+    # depends_on:
+    #   - qdrant
+    volumes:
+      - ./certs:/https:ro
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8080
-      - Qdrant__Url=http://qdrant:6333
-    volumes:
-      # Mount the entire 'src' folder from your host to '/src' in the container
-      - ./src:/src
-    # Update the command to watch the correct project file
-    command: dotnet watch run --project "/src/Consilium.API/Consilium.API.csproj" --urls=http://0.0.0.0:8080
+      - ASPNETCORE_URLS=https://+:8443;http://+:8080
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=aspnetcore
+      #- Qdrant__Url=http://qdrant:6333
+      - Logging__LogLevel__Default=Debug
 
   frontend:
-    # (No changes needed for frontend service)
     image: node:20
     working_dir: /app
     ports:
@@ -28,15 +29,13 @@ services:
       - /app/node_modules
     command: sh -c "npm install && npm start -- --host 0.0.0.0"
 
-  qdrant:
-    # (No changes needed)
-    image: qdrant/qdrant:latest
-    restart: always
-    ports:
-      - "6333:6333"
-    volumes:
-      - qdrant_data:/qdrant/storage
+  # qdrant:
+  #   image: qdrant/qdrant:latest
+  #   restart: always
+  #   ports:
+  #     - "6333:6333"
+  #   volumes:
+  #     - qdrant_data:/qdrant/storage
 
 volumes:
-  pgdata:
   qdrant_data:

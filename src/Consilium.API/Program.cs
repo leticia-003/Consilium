@@ -39,6 +39,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseHttpsRedirection();
 app.UseCors();
 
 // --- 3. Create Your API Endpoints ---

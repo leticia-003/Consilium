@@ -15,22 +15,19 @@ help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
-	@echo "  build-dev           Build dev Docker images"
-	@echo "  build-prod          Build prod Docker images"
 	@echo "  up-dev              Start dev environment (with hot reload)"
 	@echo "  up-prod             Start prod environment"
 	@echo "  run-dev             Build & run dev environment (with hot reload)"
 	@echo "  run-prod            Build & run prod environment"
 	@echo "  logs-dev            Show logs for dev environment"
 	@echo "  logs-prod           Show logs for prod environment"
-	@echo "  down-dev            Stop dev environment"
-	@echo "  down-prod           Stop prod environment"
 	@echo "  restart-dev         Rebuild & restart dev"
 	@echo "  restart-prod        Rebuild & restart prod"
 	@echo "  backend-watch       Backend hot reload (dev)"
 	@echo "  frontend-watch      Frontend hot reload (dev)"
 	@echo "  status              Check status of all services"
 	@echo "  status-dev          Check status of dev services"
+	@echo "  clean               Remove all containers"
 
 # ------------------------
 # Build
@@ -47,19 +44,22 @@ build-prod:
 up-dev:
 	$(COMPOSE) -f $(DEV_FILE) up -d
 
-run-dev: up-dev
-	@echo "Dev environment running with hot reload."
-	@echo "Backend: http://localhost:8080"
-	@echo "Frontend: http://localhost:4200"
-	@echo "Use 'make logs-dev' to see logs"
+run-dev: build-dev up-dev
+	@echo "✓ Dev environment running with hot reload & DEBUG logs"
+	@echo "  Backend (with Swagger):  http://localhost:8080"
+	@echo "  Backend Swagger Docs:    http://localhost:8080/swagger/index.html"
+	@echo "  Frontend (hot reload):   http://localhost:4200"
+	#	@echo "  Qdrant Vector DB:        http://localhost:6333"
+	@echo "  Use 'make logs-dev' to see DEBUG logs"
 
 up-prod:
 	$(COMPOSE) -f $(PROD_FILE) up -d
 
 run-prod: build-prod up-prod
-	@echo "Prod environment running."
-	@echo "Frontend: http://localhost:4200"
-	@echo "Backend: http://localhost:8080"
+	@echo "✓ Prod environment running (INFO logs, no Swagger)"
+	@echo "  Frontend: http://localhost:4200"
+	@echo "  Backend:  http://localhost:8080"
+	# @echo "  Qdrant:   http://localhost:6333"
 
 
 # ------------------------
@@ -96,13 +96,10 @@ backend-watch:
 frontend-watch:
 	$(COMPOSE) -f $(DEV_FILE) logs -f frontend
 
-clean-dev:
-	$(COMPOSE) -f $(DEV_FILE) down --rmi all
-	@echo "Pruned Docker objects"
-
-clean-prod:
-	$(COMPOSE) -f $(PROD_FILE) down --rmi all
-	@echo "Pruned Docker objects"
+clean:
+	$(COMPOSE) -f $(DEV_FILE) down
+	$(COMPOSE) -f $(PROD_FILE) down
+	@echo "✓ All containers removed"
 
 # ------------------------
 # Status check
