@@ -38,6 +38,14 @@ namespace Consilium.Infrastructure.Repositories
                 // Set the Client's ID to be the same as the User's ID
                 user.ID = Guid.NewGuid(); // Or let Postgres generate it if configured
                 client.ID = user.ID;
+                // Defensive: ensure Status is one of allowed values (DB has a CHECK constraint)
+                // Normalize incoming status to upper-case and fallback to ACTIVE if invalid.
+                var status = (user.Status ?? string.Empty).ToUpperInvariant();
+                if (status != "ACTIVE" && status != "INACTIVE")
+                {
+                    status = "ACTIVE";
+                }
+                user.Status = status;
 
                 // Add the User first
                 _context.Users.Add(user);
@@ -50,10 +58,13 @@ namespace Consilium.Infrastructure.Repositories
 
                 return client;
             }
-            catch
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                throw; // Re-throw the exception
+                // Log and rethrow with the original exception preserved so logs include DB details
+                // (Use Console.WriteLine to ensure the message appears in container logs)
+                Console.WriteLine($"Error saving User/Client to DB: {ex.GetType()}: {ex.Message}");
+                throw;
             }
         }
 

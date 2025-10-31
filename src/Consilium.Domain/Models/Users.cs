@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Consilium.Domain.Enums;
 
 namespace Consilium.Domain.Models
 {
@@ -24,6 +23,6 @@ namespace Consilium.Domain.Models
         public int? Phone { get; set; }
 
         [Column("status")]
-        public UserStatus Status { get; set; }
+        public string Status { get; set; } = "ACTIVE";
     }
 }

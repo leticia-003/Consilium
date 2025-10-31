@@ -5,24 +5,14 @@ using Consilium.Application.Interfaces;
 using Consilium.Infrastructure.Repositories;
 using Consilium.Infrastructure.Services;
 using Consilium.API.Endpoints;
-using Consilium.Domain.Enums;
-using Npgsql;
+
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
-
-// ✅ Explicitly map enum WITHOUT name translator (C# enum names must match PostgreSQL exactly)
-dataSourceBuilder.MapEnum<UserStatus>("user_status");
-
-var dataSource = dataSourceBuilder.Build();
-
-// --- Add DB Connection ---
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(dataSource));
+    options.UseNpgsql(connectionString));
 
-// --- Configure JSON serialization for enums as strings ---
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());

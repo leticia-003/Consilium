@@ -83,7 +83,6 @@ out/
 *.rar
 *.tar
 *.zip
-*.sln
 
 # Ignore all bin and obj directories anywhere in the repo
 bin/

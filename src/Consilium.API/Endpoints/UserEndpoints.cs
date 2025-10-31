@@ -1,5 +1,6 @@
 using Consilium.Application.Interfaces;
 using Consilium.API.Dtos;
+using Consilium.Domain.Enums;
 
 namespace Consilium.API.Endpoints;
 
@@ -28,7 +29,8 @@ public static class UserEndpoints
             Email: u.Email,
             Name: u.Name,
             Phone: u.Phone,
-            Status: u.Status
+            // Convert string from DB to enum for response
+            Status: Enum.TryParse<UserStatus>(u.Status, true, out var status) ? status : UserStatus.INACTIVE
         ));
         return Results.Ok(response);
     }
@@ -45,7 +47,8 @@ public static class UserEndpoints
             Email: user.Email,
             Name: user.Name,
             Phone: user.Phone,
-            Status: user.Status
+            // Convert string from DB to enum for response
+            Status: Enum.TryParse<UserStatus>(user.Status, true, out var status) ? status : UserStatus.INACTIVE
         );
 
         return Results.Ok(response);

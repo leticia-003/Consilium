@@ -4,9 +4,6 @@ SCRIPT 6: SEED TRASH DATA FOR TESTING
 ================================================================
 */
 
--- Disable triggers (like logging) for this session
-SET session_replication_role = 'replica';
-
 -- Use a DO block to declare variables and manage UUIDs
 DO $$
 DECLARE
@@ -126,6 +123,3 @@ BEGIN
     RAISE NOTICE 'Created 1 Appointment, 1 Note, and 1 Notification';
 
 END $$;
-
--- Re-enable triggers for normal operation
-SET session_replication_role = 'origin';

@@ -34,7 +34,8 @@ public static class ClientEndpoints
             Email: c.User?.Email ?? string.Empty,
             Name: c.User?.Name ?? string.Empty,
             Phone: c.User?.Phone,
-            Status: c.User?.Status ?? UserStatus.INACTIVE,
+            // Convert string from DB to enum for response
+            Status: Enum.TryParse<UserStatus>(c.User?.Status, true, out var status) ? status : UserStatus.INACTIVE,
             NIF: c.NIF,
             Address: c.Address
         ));
@@ -53,7 +54,8 @@ public static class ClientEndpoints
             Email: client.User?.Email ?? string.Empty,
             Name: client.User?.Name ?? string.Empty,
             Phone: client.User?.Phone,
-            Status: client.User?.Status ?? UserStatus.INACTIVE,
+            // Convert string from DB to enum for response
+            Status: Enum.TryParse<UserStatus>(client.User?.Status, true, out var status) ? status : UserStatus.INACTIVE,
             NIF: client.NIF,
             Address: client.Address
         );
@@ -79,14 +81,14 @@ public static class ClientEndpoints
         // Hash the password
         var hashedPassword = hasher.HashPassword(request.Password);
 
-        // Create user and client
+        // Create user and client - convert enum to string for DB
         var user = new User
         {
             Email = request.Email,
             PasswordHash = hashedPassword,
             Name = request.Name,
             Phone = request.Phone,
-            Status = UserStatus.ACTIVE
+            Status = "ACTIVE"  // Store as string in database
         };
 
         var client = new Client
@@ -98,13 +100,13 @@ public static class ClientEndpoints
         // Save to database
         var newClient = await repo.Create(user, client);
 
-        // Prepare response
+        // Prepare response - convert string back to enum
         var response = new ClientResponse(
             Id: newClient.ID,
             Email: newClient.User?.Email ?? string.Empty,
             Name: newClient.User?.Name ?? string.Empty,
             Phone: newClient.User?.Phone,
-            Status: newClient.User?.Status ?? UserStatus.INACTIVE,
+            Status: UserStatus.ACTIVE,
             NIF: newClient.NIF,
             Address: newClient.Address
         );

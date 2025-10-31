@@ -22,30 +22,22 @@ DROP TABLE IF EXISTS
 
 CASCADE;
 
--- Drop types
-DROP TYPE IF EXISTS user_status CASCADE;
-DROP TYPE IF EXISTS process_phase CASCADE;
-DROP TYPE IF EXISTS process_status CASCADE;
-DROP TYPE IF EXISTS log_operation_user CASCADE;
-DROP TYPE IF EXISTS log_operation_admin CASCADE;
-DROP TYPE IF EXISTS log_operation_process CASCADE;
+-- Drop types (no longer needed - using TEXT instead)
+-- DROP TYPE IF EXISTS user_status CASCADE;
+-- DROP TYPE IF EXISTS process_phase CASCADE;
+-- DROP TYPE IF EXISTS process_status CASCADE;
+-- DROP TYPE IF EXISTS log_operation_user CASCADE;
+-- DROP TYPE IF EXISTS log_operation_admin CASCADE;
+-- DROP TYPE IF EXISTS log_operation_process CASCADE;
 
 
 /*
 ================================================================
-SCRIPT 2: CREATE TYPES
+SCRIPT 2: NO ENUM TYPES - Using TEXT with CHECK constraints instead
 ================================================================
 */
-CREATE TYPE user_status AS ENUM ('ACTIVE', 'INACTIVE');
-CREATE TYPE process_phase AS ENUM (
-    'INITIAL_PETITION', 'SUMMONS_AND_DEFENSE', 'JUDICIAL_ORDER', 
-    'PRELIMINARY_HEARING', 'TRIAL_PREPARATION', 'TRIAL', 
-    'VEREDICT', 'APPEAL', 'ENFORCEMENT_OF_JUDGMENT'
-);
-CREATE TYPE process_status AS ENUM ('OPEN', 'CLOSED', 'PENDING');
-CREATE TYPE log_operation_user AS ENUM ('CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'INACTIVATE');
-CREATE TYPE log_operation_admin AS ENUM ('CREATE', 'UPDATE', 'DELETE');
-CREATE TYPE log_operation_process AS ENUM ('CREATE', 'UPDATE', 'CLOSE', 'REOPEN', 'DELETE');
+-- Enums converted to TEXT with CHECK constraints for data validation
+-- This approach works seamlessly with EF Core string conversions
 
 
 /*
@@ -63,7 +55,8 @@ CREATE TABLE "User" (
     "Name" TEXT NOT NULL,
     phone INT UNIQUE
         CHECK (phone >= 100000000 AND phone <= 999999999), -- 9-digit phone number
-    status user_status DEFAULT 'ACTIVE' NOT NULL
+    status TEXT DEFAULT 'ACTIVE' NOT NULL
+        CHECK (status IN ('ACTIVE', 'INACTIVE'))
 );
 
 -- 2. CLIENT
@@ -98,8 +91,12 @@ CREATE TABLE "Process" (
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     closed_at TIMESTAMP,
-    current_phase process_phase DEFAULT 'INITIAL_PETITION' NOT NULL,
-    status process_status DEFAULT 'OPEN' NOT NULL,
+    current_phase TEXT DEFAULT 'INITIAL_PETITION' NOT NULL
+        CHECK (current_phase IN ('INITIAL_PETITION', 'SUMMONS_AND_DEFENSE', 'JUDICIAL_ORDER', 
+                                  'PRELIMINARY_HEARING', 'TRIAL_PREPARATION', 'TRIAL', 
+                                  'VEREDICT', 'APPEAL', 'ENFORCEMENT_OF_JUDGMENT')),
+    status TEXT DEFAULT 'OPEN' NOT NULL
+        CHECK (status IN ('OPEN', 'CLOSED', 'PENDING')),
     CHECK (closed_at IS NULL OR closed_at >= created_at) -- Ensure logical dates
 );
 
@@ -164,7 +161,8 @@ CREATE TABLE "Appointment_Notes" (
 CREATE TABLE "Client_Log" (
     "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     client_ID UUID NOT NULL REFERENCES "Client"("ID") ON DELETE CASCADE,
-    operation log_operation_user NOT NULL,
+    operation TEXT NOT NULL
+        CHECK (operation IN ('CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'INACTIVATE')),
     performed_by UUID NOT NULL REFERENCES "User"("ID") ON DELETE RESTRICT,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     old_value JSONB, -- Can be NULL on CREATE
@@ -175,7 +173,8 @@ CREATE TABLE "Client_Log" (
 CREATE TABLE "Lawyer_Log" (
     "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lawyer_ID UUID NOT NULL REFERENCES "Lawyer"("ID") ON DELETE CASCADE,
-    operation log_operation_user NOT NULL,
+    operation TEXT NOT NULL
+        CHECK (operation IN ('CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'INACTIVATE')),
     performed_by UUID NOT NULL REFERENCES "User"("ID") ON DELETE RESTRICT,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     old_value JSONB,
@@ -186,7 +185,8 @@ CREATE TABLE "Lawyer_Log" (
 CREATE TABLE "Admin_Log" (
     "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     admin_ID UUID NOT NULL REFERENCES "Admin"("ID") ON DELETE CASCADE,
-    operation log_operation_admin NOT NULL,
+    operation TEXT NOT NULL
+        CHECK (operation IN ('CREATE', 'UPDATE', 'DELETE')),
     performed_by UUID NOT NULL REFERENCES "User"("ID") ON DELETE RESTRICT,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     old_value JSONB,
@@ -197,7 +197,8 @@ CREATE TABLE "Admin_Log" (
 CREATE TABLE "Process_Log" (
     "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     process_ID UUID NOT NULL REFERENCES "Process"("ID") ON DELETE CASCADE,
-    operation log_operation_process NOT NULL,
+    operation TEXT NOT NULL
+        CHECK (operation IN ('CREATE', 'UPDATE', 'CLOSE', 'REOPEN', 'DELETE')),
     performed_by UUID NOT NULL REFERENCES "User"("ID") ON DELETE RESTRICT,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     old_value JSONB,
