@@ -1,0 +1,28 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Consilium.Domain.Models
+{
+    [Table("User")]
+    public class User
+    {
+        [Key]
+        [Column("ID")]
+        public Guid ID { get; set; }
+
+        [Column("email")]
+        public string Email { get; set; } = string.Empty;
+
+        [Column("Name")]
+        public string Name { get; set; } = string.Empty;
+
+        [Column("password_hash")]
+        public string PasswordHash { get; set; } = string.Empty;
+
+        [Column("phone")]
+        public int? Phone { get; set; }
+
+        [Column("status")]
+        public string Status { get; set; } = "ACTIVE";
+    }
+}
