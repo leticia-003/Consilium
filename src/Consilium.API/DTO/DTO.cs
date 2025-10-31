@@ -18,6 +18,14 @@ public record CreateClientRequest(
     string? Address
 );
 
+/// <summary>
+/// Request DTO for user login
+/// </summary>
+public record LoginRequest(
+    string Email,
+    string Password
+);
+
 // ============================================
 // RESPONSE DTOs (for outgoing data)
 // ============================================
@@ -44,4 +52,15 @@ public record ClientResponse(
     UserStatus Status,
     int NIF,
     string? Address
+);
+
+/// <summary>
+/// Response DTO for successful login
+/// </summary>
+public record LoginResponse(
+    string Token,
+    Guid UserId,
+    string Email,
+    string Name,
+    UserStatus Status
 );

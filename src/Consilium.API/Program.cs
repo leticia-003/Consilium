@@ -5,6 +5,7 @@ using Consilium.Application.Interfaces;
 using Consilium.Infrastructure.Repositories;
 using Consilium.Infrastructure.Services;
 using Consilium.API.Endpoints;
+using Consilium.API.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +23,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+builder.Services.AddScoped<JwtTokenService>();
 
 // --- Add API Services ---
 builder.Services.AddEndpointsApiExplorer();
@@ -47,6 +49,7 @@ app.UseHttpsRedirection();
 app.UseCors();
 
 // --- Map API Endpoints ---
+app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapClientEndpoints();
 
