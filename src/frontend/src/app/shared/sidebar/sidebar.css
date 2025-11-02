@@ -27,8 +27,8 @@
 .sidebar-nav a .icon { width:var(--icon-size); text-align:center; font-size:var(--icon-size); }
 .sidebar-nav a .label { font-size:var(--label-font-size); }
 
-.sidebar-nav a:hover { background: var(--sidebar-hover-bg); }
-.sidebar-nav a.active { background: var(--active-bg); color:var(--accent); font-weight:600; }
+.sidebar-nav a:hover { background: var(--sidebar-hover-bg); color:var(--sidebar-bg); font-weight:600;}
+.sidebar-nav a.active { background: var(--active-bg); color:var(--sidebar-bg); font-weight:600; }
 
 @media (max-width: 900px) {
   .sidebar { width: var(--sidebar-collapsed-width); padding: var(--sidebar-padding-mobile); }

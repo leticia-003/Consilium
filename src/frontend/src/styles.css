@@ -2,18 +2,18 @@
 
 :root{
 	--sidebar-width: 260px;
-	--sidebar-bg: #ffffff;
+	--sidebar-bg: #101213;
 	--page-bg: #faf7f7;
 	--accent: #5C1F1F;
-	--active-bg: rgba(92,31,31,0.1);
+	--active-bg: rgba(163,14,37,1);
 
 	/* sidebar additional tokens */
 	--sidebar-collapsed-width: 72px;
 	--sidebar-padding: 24px 16px;
 	--sidebar-padding-mobile: 12px;
 	--sidebar-border: rgba(0,0,0,0.04);
-	--sidebar-hover-bg: rgba(92,31,31,0.05);
-    --sidebar-option-color: #737373;
+	--sidebar-hover-bg: rgba(163,14,37,0.85);
+    --sidebar-option-color: #faf7f7;
 
 	/* content / typographic tokens */
 	--card-bg: #ffffff;
@@ -31,6 +31,8 @@
 	--icon-size: 20px;
 	--link-padding: 10px 12px;
 	--label-font-size: 14px;
+
+    --title-color: black;
 }
 
 /* You can add global styles to this file, and also import other style files */
@@ -48,10 +50,11 @@
 	margin-right: 0.5rem;
 }
 .sidebar-nav a.active .icon {
-	color: var(--accent);
+	color: var(--sidebar-bg);
 }
+
 .sidebar-nav a:hover .icon {
-	color: rgba(92,31,31,0.85);
+	color: var(--sidebar-bg);
 }
 
 body{

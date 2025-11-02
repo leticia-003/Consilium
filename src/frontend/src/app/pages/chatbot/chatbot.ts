@@ -1,14 +1,16 @@
 import { Component } from '@angular/core';
+import { PageTitleComponent } from '../../shared/page-title/page-title';
 
 @Component({
   selector: 'app-chatbot',
   standalone: true,
   template: `
     <section class="page">
-      <h2>ChatBot</h2>
+      <app-page-title title="ChatBot"></app-page-title>
       <p>ChatBot page placeholder.</p>
     </section>
   `,
-  styleUrls: ['./chatbot.css']
+  styleUrls: ['./chatbot.css'],
+  imports: [PageTitleComponent]
 })
 export class ChatbotComponent {}

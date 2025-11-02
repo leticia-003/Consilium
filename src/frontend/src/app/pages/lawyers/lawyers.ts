@@ -1,14 +1,16 @@
 import { Component } from '@angular/core';
+import { PageTitleComponent } from '../../shared/page-title/page-title';
 
 @Component({
   selector: 'app-lawyers',
   standalone: true,
   template: `
     <section class="page">
-      <h2>Lawyers</h2>
+      <app-page-title title="Lawyers"></app-page-title>
       <p>Lawyers page placeholder.</p>
     </section>
   `,
-  styleUrls: ['./lawyers.css']
+  styleUrls: ['./lawyers.css'],
+  imports: [PageTitleComponent]
 })
 export class LawyersComponent {}

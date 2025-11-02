@@ -12,10 +12,10 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
           <img class="logo" src="assets/logo.svg" alt="Consilium logo" />
         </div>
 
-        <div class="user-card">
+        <!-- <div class="user-card">
           <img class="avatar" src="assets/avatars/default.jpg" alt="User avatar" />
           <div class="user-name">Emily Collins</div>
-        </div>
+        </div> -->
       </div>
 
       <nav class="sidebar-nav" aria-label="Main navigation">
