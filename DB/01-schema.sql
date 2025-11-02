@@ -1,342 +1,529 @@
-/*
-================================================================
-SCRIPT 1: DROP ALL (Makes the script idempotent)
-================================================================
-*/
--- Drop triggers and functions first
-DROP TRIGGER IF EXISTS trg_check_chat_participants ON "Chat";
-DROP FUNCTION IF EXISTS check_chat_participants();
-DROP TRIGGER IF EXISTS trg_enforce_process_status ON "Process";
-DROP FUNCTION IF EXISTS enforce_process_status();
-DROP TRIGGER IF EXISTS trg_validate_message_sender ON "Message";
-DROP FUNCTION IF EXISTS validate_message_sender();
-DROP TRIGGER IF EXISTS trg_validate_appointment_time ON "Appointment";
-DROP FUNCTION IF EXISTS validate_appointment_time();
+-- *******************************************
+-- 1. DROP ALL OBJECTS (RESPEITANDO DEPENDÊNCIAS)
+-- *******************************************
 
--- Drop tables (CASCADE drops dependent objects)
-DROP TABLE IF EXISTS 
-    "User", "Client", "Lawyer", "Admin", 
-    "Process", "Documents", "Notification", 
-    "Chat", "Message", "Appointment", "Appointment_Notes",
-    "Client_Log", "Lawyer_Log", "Admin_Log", "Process_Log"
+-- ===========================
+-- 1.1. DROP COMMS (MAIS ALTO NÍVEL)
+-- ===========================
+DROP TABLE IF EXISTS COMMS.MESSAGE CASCADE;
+DROP TABLE IF EXISTS COMMS.CHAT CASCADE;
 
-CASCADE;
+DROP SCHEMA IF EXISTS COMMS CASCADE;
 
--- Drop types (no longer needed - using TEXT instead)
--- DROP TYPE IF EXISTS user_status CASCADE;
--- DROP TYPE IF EXISTS process_phase CASCADE;
--- DROP TYPE IF EXISTS process_status CASCADE;
--- DROP TYPE IF EXISTS log_operation_user CASCADE;
--- DROP TYPE IF EXISTS log_operation_admin CASCADE;
--- DROP TYPE IF EXISTS log_operation_process CASCADE;
+-- ===========================
+-- 1.2. DROP LEGAL (WORKFLOW)
+-- ===========================
+DROP TABLE IF EXISTS LEGAL.DOCUMENT CASCADE;
+DROP TABLE IF EXISTS LEGAL.PROCESS_LOG CASCADE;
+DROP TABLE IF EXISTS LEGAL.PROCESS CASCADE;
+DROP TABLE IF EXISTS LEGAL.PROCESS_STATE CASCADE;
+DROP TABLE IF EXISTS LEGAL.PROCESS_STATUS CASCADE;
+DROP TABLE IF EXISTS LEGAL.PROCESS_TYPE_PHASE CASCADE;
+DROP TABLE IF EXISTS LEGAL.PROCESS_PHASE CASCADE;
+DROP TABLE IF EXISTS LEGAL.PROCESS_TYPE CASCADE;
 
+DROP SCHEMA IF EXISTS LEGAL CASCADE;
 
-/*
-================================================================
-SCRIPT 2: NO ENUM TYPES - Using TEXT with CHECK constraints instead
-================================================================
-*/
--- Enums converted to TEXT with CHECK constraints for data validation
--- This approach works seamlessly with EF Core string conversions
+-- ===========================
+-- 1.3. DROP CORE (IDENTIDADE E AUDITORIA)
+-- ===========================
+DROP TABLE IF EXISTS CORE.USER_LOG CASCADE;
+DROP TABLE IF EXISTS CORE.ACTION_LOG_TYPE CASCADE;
+DROP TABLE IF EXISTS CORE.PHONE CASCADE;
+DROP TABLE IF EXISTS CORE.ADMIN CASCADE;
+DROP TABLE IF EXISTS CORE.LAWYER CASCADE;
+DROP TABLE IF EXISTS CORE.CLIENT CASCADE;
+DROP TABLE IF EXISTS CORE.USER CASCADE;
 
+DROP SCHEMA IF EXISTS CORE CASCADE;
 
-/*
-================================================================
-SCRIPT 3: CREATE TABLES (With Data Type & Constraint Fixes)
-================================================================
-*/
+-- *******************************************
+-- 2. CRIAÇÃO DO SCHEMA CORE
+-- *******************************************
 
--- 1. USER
-CREATE TABLE "User" (
-    "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email TEXT UNIQUE NOT NULL
-        CHECK (email ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$'), -- Email validation
-    password_hash TEXT NOT NULL,
-    "Name" TEXT NOT NULL,
-    phone INT UNIQUE
-        CHECK (phone >= 100000000 AND phone <= 999999999), -- 9-digit phone number
-    status TEXT DEFAULT 'ACTIVE' NOT NULL
-        CHECK (status IN ('ACTIVE', 'INACTIVE'))
+-- Cria o schema principal para autenticação e perfis
+CREATE SCHEMA CORE;
+
+-- *******************************************
+-- 2.1 TABELA BASE PARA POLIMORFISMO (HERANÇA)
+-- *******************************************
+CREATE TABLE CORE.USER (
+    USER_ID UUID NOT NULL,
+
+    USER_NAME VARCHAR(254) NOT NULL,
+    USER_NIF CHAR(9) NOT NULL,
+    USER_EMAIL VARCHAR(254) NOT NULL,
+    USER_PASSWORD_HASH TEXT NOT NULL,
+
+    USER_IS_ACTIVE BOOLEAN NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT PK_USER PRIMARY KEY (USER_ID),
+
+    CONSTRAINT UK_USER_01_NIF UNIQUE(USER_NIF),
+    CONSTRAINT UK_USER_02_EMAIL UNIQUE (USER_EMAIL)
 );
 
--- 2. CLIENT
-CREATE TABLE "Client" (
-    "ID" UUID PRIMARY KEY REFERENCES "User"("ID") ON DELETE CASCADE,
-    NIF INT NOT NULL UNIQUE
-        CHECK (NIF >= 100000000 AND NIF <= 999999999), -- 9-digit NIF
-    address TEXT
+-- *******************************************
+-- 2.2 CLIENT: CLIENTE (1:1 com USER)
+-- *******************************************
+CREATE TABLE CORE.CLIENT (
+    CLIENT_ID UUID NOT NULL, -- PK E FK PARA USER
+
+    CLIENT_ADDRESS VARCHAR(500) NOT NULL,
+
+    CONSTRAINT PK_CLIENT PRIMARY KEY (CLIENT_ID),
+    -- RELAÇÃO DE HERANÇA (1:1).
+    CONSTRAINT FK_CLIENT_USER_01 FOREIGN KEY (CLIENT_ID)
+        REFERENCES CORE.USER (USER_ID)
+        ON DELETE RESTRICT
 );
 
--- 3. LAWYER
-CREATE TABLE "Lawyer" (
-    "ID" UUID PRIMARY KEY REFERENCES "User"("ID") ON DELETE CASCADE,
-    NIF INT NOT NULL UNIQUE
-        CHECK (NIF >= 100000000 AND NIF <= 999999999), -- 9-digit NIF
-    professional_register_number TEXT UNIQUE NOT NULL
+-- *******************************************
+-- 2.3 LAWYER: ADVOGADO (1:1 com USER)
+-- *******************************************
+CREATE TABLE CORE.LAWYER (
+    LAWYER_ID UUID NOT NULL, -- PK E FK PARA USER
+    LAWYER_PROFESSIONAL_REGISTER VARCHAR(20) NOT NULL,
+
+    CONSTRAINT PK_LAWYER PRIMARY KEY (LAWYER_ID),
+
+    CONSTRAINT UK_LAWYER_01_REGISTER UNIQUE (LAWYER_PROFESSIONAL_REGISTER),
+
+    -- RELAÇÃO DE HERANÇA (1:1).
+    CONSTRAINT FK_LAWYER_USER_01 FOREIGN KEY (LAWYER_ID)
+        REFERENCES CORE.USER (USER_ID)
+        ON DELETE RESTRICT
 );
 
--- 4. ADMIN
-CREATE TABLE "Admin" (
-    "ID" UUID PRIMARY KEY REFERENCES "User"("ID") ON DELETE CASCADE,
-    start_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+-- *******************************************
+-- 2.4 ADMIN: ADMINISTRADOR (1:1 com USER)
+-- *******************************************
+CREATE TABLE CORE.ADMIN (
+    ADMIN_ID UUID NOT NULL, -- PK E FK PARA USER
+    ADMIN_STARTED_AT TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT PK_ADMIN PRIMARY KEY (ADMIN_ID),
+
+    -- RELAÇÃO DE HERANÇA (1:1).
+    CONSTRAINT FK_ADMIN_USER_01 FOREIGN KEY (ADMIN_ID)
+        REFERENCES CORE.USER (USER_ID)
+        ON DELETE RESTRICT
 );
 
--- 5. PROCESS
-CREATE TABLE "Process" (
-    "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    client_ID UUID NOT NULL REFERENCES "Client"("ID") ON DELETE RESTRICT,
-    lawyer_ID UUID NOT NULL REFERENCES "Lawyer"("ID") ON DELETE RESTRICT,
-    process_number TEXT NOT NULL UNIQUE,
-    title TEXT NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    closed_at TIMESTAMP,
-    current_phase TEXT DEFAULT 'INITIAL_PETITION' NOT NULL
-        CHECK (current_phase IN ('INITIAL_PETITION', 'SUMMONS_AND_DEFENSE', 'JUDICIAL_ORDER', 
-                                  'PRELIMINARY_HEARING', 'TRIAL_PREPARATION', 'TRIAL', 
-                                  'VEREDICT', 'APPEAL', 'ENFORCEMENT_OF_JUDGMENT')),
-    status TEXT DEFAULT 'OPEN' NOT NULL
-        CHECK (status IN ('OPEN', 'CLOSED', 'PENDING')),
-    CHECK (closed_at IS NULL OR closed_at >= created_at) -- Ensure logical dates
+-- *******************************************
+-- 2.5 PHONE: TELEFONES (1:N com USER)
+-- *******************************************
+CREATE TABLE CORE.PHONE (
+    PHONE_ID UUID NOT NULL,
+
+    FK_USER_ID UUID NOT NULL,
+
+    PHONE_COUNTRY_CODE SMALLINT NOT NULL DEFAULT 351,
+    PHONE_NUMBER VARCHAR(20) NOT NULL,
+    PHONE_IS_MAIN BOOLEAN NOT NULL DEFAULT FALSE,
+
+    CONSTRAINT PK_PHONE PRIMARY KEY (PHONE_ID),
+
+    -- ALTERADO: Política de RESTRICT para CASCADE.
+    -- Se o User for apagado, os seus dados pessoais (telefone) devem ir com ele.
+    CONSTRAINT FK_PHONE_USER_01 FOREIGN KEY (FK_USER_ID)
+        REFERENCES CORE.USER (USER_ID)
+        ON DELETE CASCADE,
+
+    -- UK QUE GARANTE QUE O USUÁRIO NÃO CADASTRE O MESMO NÚMERO DUPLICADO
+    CONSTRAINT UK_PHONE_01_USER_NUMBER UNIQUE (FK_USER_ID, PHONE_COUNTRY_CODE, PHONE_NUMBER)
 );
 
--- 6. DOCUMENTS
-CREATE TABLE "Documents" (
-    "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    process_ID UUID NOT NULL REFERENCES "Process"("ID") ON DELETE CASCADE,
-    file BYTEA NOT NULL,
-    file_name TEXT NOT NULL,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    UNIQUE (process_ID, file_name)
+-- *******************************************
+-- 2.6 ACTION_LOG_TYPE: CATÁLOGO DE TIPOS DE AÇÃO
+-- *******************************************
+CREATE TABLE CORE.ACTION_LOG_TYPE (
+    ACTION_LOG_TYPE_ID UUID NOT NULL,
+    ACTION_LOG_TYPE_NAME VARCHAR(100) NOT NULL,
+
+    CONSTRAINT PK_ACTION_LOG_TYPE PRIMARY KEY (ACTION_LOG_TYPE_ID),
+
+    CONSTRAINT UK_ACTION_LOG_TYPE_01_NAME UNIQUE (ACTION_LOG_TYPE_NAME)
 );
 
--- 7. NOTIFICATION
-CREATE TABLE "Notification" (
-    "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    process_ID UUID REFERENCES "Process"("ID") ON DELETE SET NULL,
-    recipient_ID UUID NOT NULL REFERENCES "User"("ID") ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    is_read BOOLEAN DEFAULT FALSE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
+-- *******************************************
+-- 2.7 USER_LOG: TABELA DE AUDITORIA DE USUÁRIOS (LOG)
+-- *******************************************
+CREATE TABLE CORE.USER_LOG (
+    USER_LOG_ID UUID NOT NULL,
 
--- 8. CHAT
-CREATE TABLE "Chat" (
-    "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    client_ID UUID NOT NULL REFERENCES "Client"("ID") ON DELETE RESTRICT,
-    lawyer_ID UUID NOT NULL REFERENCES "Lawyer"("ID") ON DELETE RESTRICT,
-    UNIQUE (client_ID, lawyer_ID)
-);
-
--- 9. MESSAGE
-CREATE TABLE "Message" (
-    "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    chat_ID UUID NOT NULL REFERENCES "Chat"("ID") ON DELETE CASCADE,
-    sender_ID UUID NOT NULL REFERENCES "User"("ID") ON DELETE RESTRICT,
-    content TEXT NOT NULL,
-    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
-
--- 10. APPOINTMENT
-CREATE TABLE "Appointment" (
-    "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    client_ID UUID NOT NULL REFERENCES "Client"("ID") ON DELETE RESTRICT,
-    lawyer_ID UUID NOT NULL REFERENCES "Lawyer"("ID") ON DELETE RESTRICT,
-    process_ID UUID REFERENCES "Process"("ID") ON DELETE SET NULL,
-    appointment_time TIMESTAMP NOT NULL,
-    UNIQUE (lawyer_ID, appointment_time),
-    UNIQUE (client_ID, appointment_time)
-);
-
--- 11. APPOINTMENT_NOTES
-CREATE TABLE "Appointment_Notes" (
-    "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    appointment_ID UUID NOT NULL REFERENCES "Appointment"("ID") ON DELETE CASCADE,
-    author_ID UUID NOT NULL REFERENCES "User"("ID") ON DELETE RESTRICT,
-    note TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
-
--- 12. CLIENT_LOG
-CREATE TABLE "Client_Log" (
-    "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    client_ID UUID NOT NULL REFERENCES "Client"("ID") ON DELETE CASCADE,
-    operation TEXT NOT NULL
-        CHECK (operation IN ('CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'INACTIVATE')),
-    performed_by UUID NOT NULL REFERENCES "User"("ID") ON DELETE RESTRICT,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    old_value JSONB, -- Can be NULL on CREATE
-    new_value JSONB  -- Can be NULL on DELETE
-);
-
--- 13. LAWYER_LOG (and so on...)
-CREATE TABLE "Lawyer_Log" (
-    "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    lawyer_ID UUID NOT NULL REFERENCES "Lawyer"("ID") ON DELETE CASCADE,
-    operation TEXT NOT NULL
-        CHECK (operation IN ('CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'INACTIVATE')),
-    performed_by UUID NOT NULL REFERENCES "User"("ID") ON DELETE RESTRICT,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    old_value JSONB,
-    new_value JSONB
-);
-
--- 14. ADMIN_LOG
-CREATE TABLE "Admin_Log" (
-    "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    admin_ID UUID NOT NULL REFERENCES "Admin"("ID") ON DELETE CASCADE,
-    operation TEXT NOT NULL
-        CHECK (operation IN ('CREATE', 'UPDATE', 'DELETE')),
-    performed_by UUID NOT NULL REFERENCES "User"("ID") ON DELETE RESTRICT,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    old_value JSONB,
-    new_value JSONB
-);
-
--- 15. PROCESS_LOG
-CREATE TABLE "Process_Log" (
-    "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    process_ID UUID NOT NULL REFERENCES "Process"("ID") ON DELETE CASCADE,
-    operation TEXT NOT NULL
-        CHECK (operation IN ('CREATE', 'UPDATE', 'CLOSE', 'REOPEN', 'DELETE')),
-    performed_by UUID NOT NULL REFERENCES "User"("ID") ON DELETE RESTRICT,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    old_value JSONB,
-    new_value JSONB
-);
-
-
-/*
-================================================================
-SCRIPT 4: CREATE PERFORMANCE INDEXES (CRITICAL)
-================================================================
-*/
--- Postgres does NOT automatically index foreign keys. This is vital.
-
--- Process
-CREATE INDEX idx_process_client_id ON "Process"(client_ID);
-CREATE INDEX idx_process_lawyer_id ON "Process"(lawyer_ID);
-
--- Documents
-CREATE INDEX idx_documents_process_id ON "Documents"(process_ID);
-
--- Notification
-CREATE INDEX idx_notification_process_id ON "Notification"(process_ID);
-CREATE INDEX idx_notification_recipient_id ON "Notification"(recipient_ID);
-
--- Chat
-CREATE INDEX idx_chat_client_id ON "Chat"(client_ID);
-CREATE INDEX idx_chat_lawyer_id ON "Chat"(lawyer_ID);
-
--- Message
-CREATE INDEX idx_message_chat_id ON "Message"(chat_ID);
-CREATE INDEX idx_message_sender_id ON "Message"(sender_ID);
-
--- Appointment
-CREATE INDEX idx_appointment_client_id ON "Appointment"(client_ID);
-CREATE INDEX idx_appointment_lawyer_id ON "Appointment"(lawyer_ID);
-CREATE INDEX idx_appointment_process_id ON "Appointment"(process_ID);
-
--- Appointment_Notes
-CREATE INDEX idx_appointmentnotes_app_id ON "Appointment_Notes"(appointment_ID);
-CREATE INDEX idx_appointmentnotes_author_id ON "Appointment_Notes"(author_ID);
-
--- Log Tables
-CREATE INDEX idx_clientlog_client_id ON "Client_Log"(client_ID);
-CREATE INDEX idx_clientlog_performed_by ON "Client_Log"(performed_by);
-CREATE INDEX idx_lawyerlog_lawyer_id ON "Lawyer_Log"(lawyer_ID);
-CREATE INDEX idx_lawyerlog_performed_by ON "Lawyer_Log"(performed_by);
-CREATE INDEX idx_adminlog_admin_id ON "Admin_Log"(admin_ID);
-CREATE INDEX idx_adminlog_performed_by ON "Admin_Log"(performed_by);
-CREATE INDEX idx_processlog_process_id ON "Process_Log"(process_ID);
-CREATE INDEX idx_processlog_performed_by ON "Process_Log"(performed_by);
-
-
-/*
-================================================================
-SCRIPT 5: CREATE TRIGGERS & FUNCTIONS
-================================================================
-*/
-
--- TRIGGER 1: Ensure Chat participants are distinct
-CREATE OR REPLACE FUNCTION check_chat_participants() RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.client_ID = NEW.lawyer_ID THEN
-        RAISE EXCEPTION 'Chat participants must be distinct users.';
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_check_chat_participants
-BEFORE INSERT ON "Chat"
-FOR EACH ROW EXECUTE FUNCTION check_chat_participants();
-
----
-
--- TRIGGER 2: Keep Process status and closed_at date in sync (More Robust)
-CREATE OR REPLACE FUNCTION enforce_process_status() RETURNS TRIGGER AS $$
-BEGIN
-    -- Case 1: Status is changed to 'CLOSED'
-    IF TG_OP = 'UPDATE' AND NEW.status = 'CLOSED' AND OLD.status != 'CLOSED' THEN
-        NEW.closed_at = CURRENT_TIMESTAMP;
-    -- Case 2: Status is changed *from* 'CLOSED'
-    ELSIF TG_OP = 'UPDATE' AND NEW.status != 'CLOSED' AND OLD.status = 'CLOSED' THEN
-        NEW.closed_at = NULL;
-    -- Case 3: closed_at is manually set
-    ELSIF TG_OP = 'UPDATE' AND NEW.closed_at IS NOT NULL AND OLD.closed_at IS NULL THEN
-        NEW.status = 'CLOSED';
-    -- Case 4: closed_at is manually cleared
-    ELSIF TG_OP = 'UPDATE' AND NEW.closed_at IS NULL AND OLD.closed_at IS NOT NULL THEN
-        NEW.status = 'OPEN';
-    END IF;
+    -- ALTERADO: De NOT NULL para NULL, para permitir ON DELETE SET NULL
+    AFFECTED_USER_ID UUID NULL,
+    UPDATED_BY_ID UUID NULL,
     
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+    ACTION_LOG_TYPE_ID UUID NOT NULL,
 
-CREATE TRIGGER trg_enforce_process_status
-BEFORE UPDATE ON "Process"
-FOR EACH ROW EXECUTE FUNCTION enforce_process_status();
+    -- ALTERADO: Adicionado DEFAULT por consistência
+    USER_LOG_UPDATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
----
+    USER_LOG_OLD_VALUE JSONB NOT NULL,
+    USER_LOG_NEW_VALUE JSONB NOT NULL,
 
--- !!NEW!! TRIGGER 3: Validate Message sender
-CREATE OR REPLACE FUNCTION validate_message_sender() RETURNS TRIGGER AS $$
-DECLARE
-    chat_client_id UUID;
-    chat_lawyer_id UUID;
-BEGIN
-    -- Get the participants of the chat
-    SELECT client_ID, lawyer_ID INTO chat_client_id, chat_lawyer_id
-    FROM "Chat"
-    WHERE "ID" = NEW.chat_ID;
+    CONSTRAINT PK_USER_LOG PRIMARY KEY (USER_LOG_ID),
 
-    -- Check if the sender is one of the participants
-    IF NEW.sender_ID != chat_client_id AND NEW.sender_ID != chat_lawyer_id THEN
-        RAISE EXCEPTION 'Sender (ID: %) is not a participant in this chat (ID: %).', NEW.sender_ID, NEW.chat_ID;
-    END IF;
+    -- ALTERADO: Política de RESTRICT para SET NULL (anonimiza o log)
+    CONSTRAINT FK_USER_LOG_AFFECTED_USER_01 FOREIGN KEY (AFFECTED_USER_ID)
+        REFERENCES CORE.USER (USER_ID)
+        ON DELETE SET NULL,
+
+    -- ALTERADO: Política de RESTRICT para SET NULL (anonimiza o log)
+    CONSTRAINT FK_USER_LOG_UPDATED_BY_02 FOREIGN KEY (UPDATED_BY_ID)
+        REFERENCES CORE.USER (USER_ID)
+        ON DELETE SET NULL,
+
+    -- FK 3: TIPO DE AÇÃO
+    CONSTRAINT FK_USER_LOG_ACTION_LOG_TYPE_03 FOREIGN KEY (ACTION_LOG_TYPE_ID)
+        REFERENCES CORE.ACTION_LOG_TYPE (ACTION_LOG_TYPE_ID)
+        ON DELETE RESTRICT -- OK, não se deve apagar um tipo de log se estiver em uso.
+);
+
+-- *******************************************
+-- 3. CRIAÇÃO DO SCHEMA PROCESS
+-- *******************************************
+
+CREATE SCHEMA LEGAL;
+
+-- *******************************************
+-- 3.1 PROCESS_TYPE: CATÁLOGO DE TIPO DE PROCESSO (FINAL E COERENTE)
+-- *******************************************
+CREATE TABLE LEGAL.PROCESS_TYPE (
+    PROCESS_TYPE_ID UUID NOT NULL,
+    PROCESS_TYPE_NAME VARCHAR(50) NOT NULL,
+
+    PROCESS_TYPE_IS_ACTIVE BOOLEAN NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT PK_PROCESS_TYPE PRIMARY KEY (PROCESS_TYPE_ID),
+
+    CONSTRAINT UK_PROCESS_TYPE_01_NAME UNIQUE (PROCESS_TYPE_NAME)
+);
+
+-- *******************************************
+-- 3.2 PROCESS_PHASE: CATÁLOGO DE FASES DO PROCESSO (FINAL E COERENTE)
+-- *******************************************
+CREATE TABLE LEGAL.PROCESS_PHASE (
+    PROCESS_PHASE_ID UUID NOT NULL,
+
+    PROCESS_PHASE_NAME VARCHAR(50) NOT NULL,
+
+    PROCESS_PHASE_IS_ACTIVE BOOLEAN NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT PK_PROCESS_PHASE PRIMARY KEY (PROCESS_PHASE_ID),
+
+    CONSTRAINT UK_PROCESS_PHASE_01_NAME UNIQUE (PROCESS_PHASE_NAME)
+);
+
+-- *******************************************
+-- 3.3 PROCESS_TYPE_PHASE: LIGAÇÃO TIPO (N:N) COM FASE (FINAL)
+-- *******************************************
+CREATE TABLE LEGAL.PROCESS_TYPE_PHASE (
+    PROCESS_TYPE_PHASE_ID UUID NOT NULL,
+
+    PROCESS_TYPE_ID UUID NOT NULL,
+    PROCESS_PHASE_ID UUID NOT NULL,
+
+    PROCESS_TYPE_PHASE_ORDER_INDEX SMALLINT NOT NULL,
+    PROCESS_TYPE_PHASE_IS_OPTIONAL BOOLEAN NOT NULL DEFAULT FALSE,
+
+    PROCESS_TYPE_PHASE_IS_ACTIVE BOOLEAN NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT PK_PROCESS_TYPE_PHASE PRIMARY KEY (PROCESS_TYPE_PHASE_ID),
+
+    -- UK 1: Impede repetição do par Tipo/Fase
+    CONSTRAINT UK_PROCESS_TYPE_PHASE_01_LINK UNIQUE (PROCESS_TYPE_ID, PROCESS_PHASE_ID),
+
+    -- UK 2: Garante a unicidade da ORDEM dentro do Tipo
+    CONSTRAINT UK_PROCESS_TYPE_PHASE_02_ORDER UNIQUE (PROCESS_TYPE_ID, PROCESS_TYPE_PHASE_ORDER_INDEX),
+
+    -- FOREIGN KEY 1: Referência a PROCESS_TYPE
+    CONSTRAINT FK_PROCESS_TYPE_PHASE_TYPE_01 FOREIGN KEY (PROCESS_TYPE_ID)
+        REFERENCES LEGAL.PROCESS_TYPE (PROCESS_TYPE_ID)
+        ON DELETE RESTRICT,
+
+    -- FOREIGN KEY 2: Referência a PROCESS_PHASE
+    CONSTRAINT FK_PROCESS_TYPE_PHASE_PHASE_02 FOREIGN KEY (PROCESS_PHASE_ID)
+        REFERENCES LEGAL.PROCESS_PHASE (PROCESS_PHASE_ID)
+        ON DELETE RESTRICT
+);
+
+-- *******************************************
+-- 3.4 PROCESS_STATUS: CATÁLOGO DE STATUS DO PROCESSO (FINAL E COERENTE)
+-- *******************************************
+CREATE TABLE LEGAL.PROCESS_STATUS (
+    PROCESS_STATUS_ID UUID NOT NULL,
+
+    PROCESS_STATUS_NAME VARCHAR(50) NOT NULL,
+
+    PROCESS_STATUS_IS_ACTIVE BOOLEAN NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT PK_PROCESS_STATUS PRIMARY KEY (PROCESS_STATUS_ID),
+
+    CONSTRAINT UK_PROCESS_STATUS_01_NAME UNIQUE (PROCESS_STATUS_NAME)
+);
+
+-- *******************************************
+-- 3.5 PROCESS_STATE: PONTO ÚNICO DE VERDADE DO FLUXO
+-- *******************************************
+CREATE TABLE LEGAL.PROCESS_STATE (
+    PROCESS_STATE_ID UUID NOT NULL,
+
+    -- FK 1: Define a Fase e a Ordem do Processo
+    PROCESS_TYPE_PHASE_ID UUID NOT NULL,
+
+    -- FK 2: Define o Status permitido naquela Fase
+    PROCESS_STATUS_ID UUID NOT NULL,
+
+    -- Coluna para indicar o fim do workflow
+    PROCESS_STATE_IS_FINAL BOOLEAN NOT NULL DEFAULT FALSE,
+
+    PROCESS_STATE_IS_ACTIVE BOOLEAN NOT NULL DEFAULT TRUE,
+
+    -- PRIMARY KEY
+    CONSTRAINT PK_PROCESS_STATE PRIMARY KEY (PROCESS_STATE_ID),
+
+    -- UNIQUE KEY: Impede que a mesma combinação (Fase/Status) exista duas vezes
+    CONSTRAINT UK_PROCESS_STATE_01_COMBINATION UNIQUE (PROCESS_TYPE_PHASE_ID, PROCESS_STATUS_ID),
+
+    -- FOREIGN KEY 1: Referência à Ligação (Tipo/Fase/Ordem)
+    CONSTRAINT FK_PROCESS_STATE_TYPE_PHASE_01 FOREIGN KEY (PROCESS_TYPE_PHASE_ID)
+        REFERENCES LEGAL.PROCESS_TYPE_PHASE (PROCESS_TYPE_PHASE_ID)
+        ON DELETE RESTRICT,
+
+    -- FOREIGN KEY 2: Referência ao Catálogo de Status
+    CONSTRAINT FK_PROCESS_STATE_STATUS_02 FOREIGN KEY (PROCESS_STATUS_ID)
+        REFERENCES LEGAL.PROCESS_STATUS (PROCESS_STATUS_ID)
+        ON DELETE RESTRICT
+);
+
+-- *******************************************
+-- 3.6 PROCESS: TABELA MESTRE DE PROCESSOS (DEFINITIVA)
+-- *******************************************
+CREATE TABLE LEGAL.PROCESS (
+    PROCESS_ID UUID NOT NULL,
+
+    CLIENT_ID UUID NOT NULL,
+    LAWYER_ID UUID NOT NULL,
+
+    PROCESS_NUMBER VARCHAR(100) NOT NULL,
+
+    -- CHAVE DE FLUXO (N:1 com PROCESS_STATE)
+    PROCESS_STATE_ID UUID NOT NULL,
+
+    -- ALTERADO: De NOT NULL para NULL, para permitir ON DELETE SET NULL
+    PROCESS_CREATED_BY UUID NULL,
+
+    -- COLUNAS DE CICLO DE VIDA DO NEGÓCIO
+    PROCESS_CREATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PROCESS_CLOSED_AT TIMESTAMP NULL,
+
+    -- COLUNA DE DESCRIÇÃO
+    PROCESS_DSC TEXT NOT NULL,
+
+    -- PRIMARY KEY
+    CONSTRAINT PK_PROCESS PRIMARY KEY (PROCESS_ID),
+
+    -- UNIQUE KEY: O número de processo deve ser único no sistema
+    CONSTRAINT UK_PROCESS_01_NUMBER UNIQUE (PROCESS_NUMBER),
+
+    -- FOREIGN KEY 1: Relacionamento ao Estado ATUAL
+    CONSTRAINT FK_PROCESS_STATE_01 FOREIGN KEY (PROCESS_STATE_ID)
+        REFERENCES LEGAL.PROCESS_STATE (PROCESS_STATE_ID)
+        ON DELETE RESTRICT,
+
+    -- FOREIGN KEY 2: Cliente
+    CONSTRAINT FK_PROCESS_CLIENT_02 FOREIGN KEY (CLIENT_ID)
+        REFERENCES CORE.CLIENT (CLIENT_ID)
+        ON DELETE RESTRICT, -- OK: Não apagar cliente se tiver processo
+
+    -- FOREIGN KEY 3: Advogado
+    CONSTRAINT FK_PROCESS_LAWYER_03 FOREIGN KEY (LAWYER_ID)
+        REFERENCES CORE.LAWYER (LAWYER_ID)
+        ON DELETE RESTRICT, -- OK: Não apagar advogado se tiver processo
+
+    -- ALTERADO: Política de RESTRICT para SET NULL (anonimiza o criador)
+    CONSTRAINT FK_PROCESS_USER_04 FOREIGN KEY (PROCESS_CREATED_BY)
+        REFERENCES CORE.USER (USER_ID)
+        ON DELETE SET NULL
+);
+
+-- *******************************************
+-- 3.7 PROCESS_LOG: TABELA DE AUDITORIA DE WORKFLOW (CORRIGIDA)
+-- *******************************************
+CREATE TABLE LEGAL.PROCESS_LOG (
+    PROCESS_LOG_ID UUID NOT NULL,
+
+    -- PROCESSO AFETADO
+    PROCESS_ID UUID NOT NULL,
+
+    -- ALTERADO: De NOT NULL para NULL, para permitir ON DELETE SET NULL
+    PROCESS_LOG_UPDATED_BY UUID NULL,
+
+    ACTION_LOG_TYPE_ID UUID NOT NULL,
+
+    -- RASTREIO DE MUDANÇAS (JSONB, seguindo CORE.USER_LOG)
+    PROCESS_LOG_OLD_VALUE JSONB NULL,
+    PROCESS_LOG_NEW_VALUE JSONB NULL,
+
+    -- RASTREIO DE TEMPO
+    PROCESS_LOG_UPDATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    -- PRIMARY KEY
+    CONSTRAINT PK_PROCESS_LOG PRIMARY KEY (PROCESS_LOG_ID),
+
+    -- FK 1: O Processo que está sendo auditado
+    CONSTRAINT FK_PROCESS_LOG_PROCESS_01 FOREIGN KEY (PROCESS_ID)
+        REFERENCES LEGAL.PROCESS (PROCESS_ID)
+        ON DELETE CASCADE, -- OK: Se apagar o processo, apaga o log dele.
+
+    -- ALTERADO: Política de RESTRICT para SET NULL (anonimiza o autor)
+    CONSTRAINT FK_PROCESS_LOG_UPDATED_BY_02 FOREIGN KEY (PROCESS_LOG_UPDATED_BY)
+        REFERENCES CORE.USER (USER_ID)
+        ON DELETE SET NULL,
+
+    CONSTRAINT FK_PROCESS_LOG_ACTION_TYPE_03 FOREIGN KEY (ACTION_LOG_TYPE_ID)
+        REFERENCES CORE.ACTION_LOG_TYPE (ACTION_LOG_TYPE_ID)
+        ON DELETE RESTRICT -- OK
+);
+
+-- *******************************************
+-- 3.8 DOCUMENT: TABELA DE DOCUMENTOS ASSOCIADOS AO PROCESSO
+-- *******************************************
+CREATE TABLE LEGAL.DOCUMENT (
+    DOCUMENT_ID UUID NOT NULL,
+
+    -- FK para o Processo
+    PROCESS_ID UUID NOT NULL,
+
+    -- ALTERADO: De NOT NULL para NULL, para permitir ON DELETE SET NULL
+    DOCUMENT_CREATED_BY UUID NULL,
+
+    -- METADADOS DO DOCUMENTO
+    DOCUMENT_NAME VARCHAR(254) NOT NULL,
+    DOCUMENT_TYPE VARCHAR(50) NOT NULL,
+    DOCUMENT_FILE_PATH TEXT NOT NULL,
+
+    -- CICLO DE VIDA E ESTADO
+    DOCUMENT_CREATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    DOCUMENT_IS_ACTIVE BOOLEAN NOT NULL DEFAULT TRUE,
+
+    -- PRIMARY KEY
+    CONSTRAINT PK_DOCUMENT PRIMARY KEY (DOCUMENT_ID),
+
+    -- ALTERADO: Política de RESTRICT para CASCADE
+    -- Se o processo for apagado, os seus documentos devem ir com ele.
+    CONSTRAINT FK_DOCUMENT_PROCESS_01 FOREIGN KEY (PROCESS_ID)
+        REFERENCES LEGAL.PROCESS (PROCESS_ID)
+        ON DELETE CASCADE,
+
+    -- ALTERADO: Política de RESTRICT para SET NULL (anonimiza o criador)
+    CONSTRAINT FK_DOCUMENT_USER_02 FOREIGN KEY (DOCUMENT_CREATED_BY)
+        REFERENCES CORE.USER (USER_ID)
+        ON DELETE SET NULL
+);
+
+-- *******************************************
+-- 4. CRIAÇÃO DO SCHEMA COMMS
+-- *******************************************
+
+CREATE SCHEMA COMMS;
+
+-- *******************************************
+-- 4.1 CHAT: TABELA DE CONTÊINER DE CONVERSAS
+-- *******************************************
+CREATE TABLE COMMS.CHAT (
+    CHAT_ID UUID NOT NULL,
+
+    LAWYER_ID UUID NOT NULL,
+    CLIENT_ID UUID NOT NULL,
+    PROCESS_ID UUID NOT NULL,
+
+    CHAT_STARTED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHAT_FINISHED_AT TIMESTAMP,
+
+    -- PRIMARY KEY
+    CONSTRAINT PK_CHAT PRIMARY KEY (CHAT_ID),
+
+    -- UNIQUE KEY: Mantida como estava no original, conforme pedido.
+    CONSTRAINT UK_CHAT_01_SAME_TIME UNIQUE (LAWYER_ID, CLIENT_ID, PROCESS_ID, CHAT_STARTED_AT),
+
+    -- ALTERADO: Política de RESTRICT para CASCADE
+    CONSTRAINT FK_CHAT_LAWYER_01 FOREIGN KEY (LAWYER_ID)
+        REFERENCES CORE.LAWYER (LAWYER_ID)
+        ON DELETE CASCADE,
+
+    -- ALTERADO: Política de RESTRICT para CASCADE
+    CONSTRAINT FK_CHAT_CLIENT_02 FOREIGN KEY (CLIENT_ID)
+        REFERENCES CORE.CLIENT (CLIENT_ID)
+        ON DELETE CASCADE,
+
+    -- ALTERADO: Política de RESTRICT para CASCADE
+    CONSTRAINT FK_CHAT_USER_03 FOREIGN KEY (PROCESS_ID)
+        REFERENCES LEGAL.PROCESS (PROCESS_ID)
+        ON DELETE CASCADE
+);
+
+-- *******************************************
+-- 4.2 MESSAGE: TABELA DE MENSAGENS DO CHAT
+-- *******************************************
+CREATE TABLE COMMS.MESSAGE (
+    MESSAGE_ID UUID NOT NULL,
+
+    CHAT_ID UUID NOT NULL,
     
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+    -- ALTERADO: De NOT NULL para NULL, para permitir ON DELETE SET NULL
+    MESSAGE_SENDER UUID NULL,
 
-CREATE TRIGGER trg_validate_message_sender
-BEFORE INSERT ON "Message"
-FOR EACH ROW EXECUTE FUNCTION validate_message_sender();
+    MESSAGE_TEXT TEXT NOT NULL,
 
----
+    MESSAGE_SENT_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    MESSAGE_READ BOOLEAN NOT NULL DEFAULT FALSE,
 
--- !!NEW!! TRIGGER 4: Validate Appointment time (must be in the future)
-CREATE OR REPLACE FUNCTION validate_appointment_time() RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.appointment_time <= CURRENT_TIMESTAMP THEN
-        RAISE EXCEPTION 'Appointment time must be in the future.';
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+    CONSTRAINT PK_MESSAGE PRIMARY KEY (MESSAGE_ID),
 
-CREATE TRIGGER trg_validate_appointment_time
-BEFORE INSERT OR UPDATE ON "Appointment"
-FOR EACH ROW EXECUTE FUNCTION validate_appointment_time();
+    -- ALTERADO: Política de RESTRICT para CASCADE
+    -- Se o Chat for apagado, as mensagens vão com ele.
+    CONSTRAINT FK_MESSAGE_CHAT_01 FOREIGN KEY (CHAT_ID)
+        REFERENCES COMMS.CHAT (CHAT_ID)
+        ON DELETE CASCADE,
+
+    -- ALTERADO: Política de RESTRICT para SET NULL (anonimiza o autor)
+    CONSTRAINT FK_MESSAGE_USER_02 FOREIGN KEY (MESSAGE_SENDER)
+        REFERENCES CORE.USER (USER_ID)
+        ON DELETE SET NULL
+);
+
+-- *******************************************
+-- 5. ÍNDICES PARA PERFORMANCE
+-- *******************************************
+
+-- Índices para o SCHEMA CORE
+CREATE INDEX IF NOT EXISTS IDX_PHONE_FK_USER_ID ON CORE.PHONE(FK_USER_ID);
+CREATE INDEX IF NOT EXISTS IDX_USER_LOG_AFFECTED_USER_ID ON CORE.USER_LOG(AFFECTED_USER_ID);
+CREATE INDEX IF NOT EXISTS IDX_USER_LOG_UPDATED_BY_ID ON CORE.USER_LOG(UPDATED_BY_ID);
+CREATE INDEX IF NOT EXISTS IDX_USER_LOG_ACTION_LOG_TYPE_ID ON CORE.USER_LOG(ACTION_LOG_TYPE_ID);
+
+-- Índices para o SCHEMA LEGAL
+CREATE INDEX IF NOT EXISTS IDX_PROCESS_TYPE_PHASE_TYPE_ID ON LEGAL.PROCESS_TYPE_PHASE(PROCESS_TYPE_ID);
+CREATE INDEX IF NOT EXISTS IDX_PROCESS_TYPE_PHASE_PHASE_ID ON LEGAL.PROCESS_TYPE_PHASE(PROCESS_PHASE_ID);
+CREATE INDEX IF NOT EXISTS IDX_PROCESS_STATE_TYPE_PHASE_ID ON LEGAL.PROCESS_STATE(PROCESS_TYPE_PHASE_ID);
+CREATE INDEX IF NOT EXISTS IDX_PROCESS_STATE_STATUS_ID ON LEGAL.PROCESS_STATE(PROCESS_STATUS_ID);
+CREATE INDEX IF NOT EXISTS IDX_PROCESS_STATE_ID ON LEGAL.PROCESS(PROCESS_STATE_ID);
+CREATE INDEX IF NOT EXISTS IDX_PROCESS_CLIENT_ID ON LEGAL.PROCESS(CLIENT_ID);
+CREATE INDEX IF NOT EXISTS IDX_PROCESS_LAWYER_ID ON LEGAL.PROCESS(LAWYER_ID);
+CREATE INDEX IF NOT EXISTS IDX_PROCESS_CREATED_BY ON LEGAL.PROCESS(PROCESS_CREATED_BY);
+CREATE INDEX IF NOT EXISTS IDX_PROCESS_LOG_PROCESS_ID ON LEGAL.PROCESS_LOG(PROCESS_ID);
+CREATE INDEX IF NOT EXISTS IDX_PROCESS_LOG_UPDATED_BY ON LEGAL.PROCESS_LOG(PROCESS_LOG_UPDATED_BY);
+CREATE INDEX IF NOT EXISTS IDX_PROCESS_LOG_ACTION_TYPE_ID ON LEGAL.PROCESS_LOG(ACTION_LOG_TYPE_ID);
+CREATE INDEX IF NOT EXISTS IDX_DOCUMENT_PROCESS_ID ON LEGAL.DOCUMENT(PROCESS_ID);
+CREATE INDEX IF NOT EXISTS IDX_DOCUMENT_CREATED_BY ON LEGAL.DOCUMENT(DOCUMENT_CREATED_BY);
+
+-- Índices para o SCHEMA COMMS
+CREATE INDEX IF NOT EXISTS IDX_CHAT_LAWYER_ID ON COMMS.CHAT(LAWYER_ID);
+CREATE INDEX IF NOT EXISTS IDX_CHAT_CLIENT_ID ON COMMS.CHAT(CLIENT_ID);
+CREATE INDEX IF NOT EXISTS IDX_CHAT_PROCESS_ID ON COMMS.CHAT(PROCESS_ID);
+CREATE INDEX IF NOT EXISTS IDX_MESSAGE_CHAT_ID ON COMMS.MESSAGE(CHAT_ID);
+CREATE INDEX IF NOT EXISTS IDX_MESSAGE_SENDER ON COMMS.MESSAGE(MESSAGE_SENDER);
