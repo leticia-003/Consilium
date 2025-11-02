@@ -39,23 +39,7 @@
 
 /* Font Awesome */
 
-/* Sidebar icons */
-.sidebar .icon {
-	color: var(--sidebar-option-color);
-	font-size: 1.2rem;
-	width: 1.2rem;
-	height: 1.2rem;
-	display: inline-block;
-	vertical-align: middle;
-	margin-right: 0.5rem;
-}
-.sidebar-nav a.active .icon {
-	color: var(--sidebar-bg);
-}
-
-.sidebar-nav a:hover .icon {
-	color: var(--sidebar-bg);
-}
+/* sidebar-specific styles moved to component stylesheet (shared/sidebar/sidebar.css) */
 
 body{
     margin: 0;

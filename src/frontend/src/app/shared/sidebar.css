@@ -1,6 +1,7 @@
 :host {
   display: block;
 }
+
 .sidebar {
   width: var(--sidebar-width);
   min-height: calc(100vh - 0px);
@@ -74,31 +75,13 @@
   font-size: var(--label-font-size);
 }
 
-/* icon color / alignment moved from global styles into the sidebar component */
-.sidebar .icon {
-  color: var(--sidebar-option-color);
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 0.5rem;
-}
-
-.sidebar-nav a.active .icon {
-  color: var(--sidebar-bg);
-}
-
-.sidebar-nav a:hover .icon {
-  color: var(--sidebar-bg);
-}
-
 .sidebar-nav a:hover {
   background: var(--sidebar-hover-bg);
-  color: var(--sidebar-bg);
-  font-weight: 600;
 }
 
 .sidebar-nav a.active {
   background: var(--active-bg);
-  color: var(--sidebar-bg);
+  color: var(--accent);
   font-weight: 600;
 }
 
