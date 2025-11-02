@@ -53,3 +53,9 @@
 .sidebar-nav a:hover .icon {
 	color: rgba(92,31,31,0.85);
 }
+
+body{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
