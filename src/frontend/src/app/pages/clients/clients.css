@@ -1,3 +1,95 @@
 .page {
 	padding: var(--page-inner-padding);
 }
+
+.clients-toolbar {
+	display: flex;
+	justify-content: flex-end;
+	margin: 12px 0;
+}
+
+.search {
+	padding: 8px 12px;
+	border-radius: 8px;
+	border: 1px solid #e6e9ee;
+	min-width: 220px;
+}
+
+.clients-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.clients-table thead {
+    /* background: #f9fafb; */
+    border-bottom: 1px solid #e6e9ee;
+}
+
+.clients-table thead th {
+	text-align: left;
+	padding: 10px 12px;
+	color: #111827;
+	font-weight: 700;
+	font-size: 13px;
+}
+
+.clients-table tbody tr {
+	background: #ffffff;
+	/* border-bottom: 1px solid #f1f5f9; */
+}
+
+.clients-table td {
+	padding: 10px 12px;
+	vertical-align: middle;
+	font-size: 14px;
+	color: #374151;
+}
+
+.client-name {
+	font-weight: 600;
+	color: #111827;
+}
+
+.client-meta, .client-extra {
+	font-size: 12px;
+	color: #6b7280;
+}
+
+.col-account { width: 28%; }
+.col-email { width: 24%; }
+.col-nif { width: 12%; text-align: left; }
+.col-date { width: 14%; }
+.col-status { width: 12%; }
+.col-actions { width: 6%; text-align: right; }
+
+.badge {
+	display: inline-block;
+	padding: 6px 12px;
+	border-radius: 999px;
+	font-weight: 600;
+	font-size: 13px;
+}
+
+.badge-active { background: #ecfdf5; color: #059669; }
+.badge-inactive { background: #fff1f2; color: #dc2626; }
+.badge-pending { background: #fffbeb; color: #d97706; }
+
+.btn-ellipsis {
+	background: #fff;
+	border: 1px solid #eef2f7;
+	height: 28px;
+	width: 28px;
+	border-radius: 8px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 14px;
+	color: #6b7280;
+	padding: 0;
+	line-height: 1;
+}
+
+.empty { padding: 24px; color: #6b7280; }
+
+.loading { padding: 12px; color: #6b7280; }
