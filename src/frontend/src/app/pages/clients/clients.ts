@@ -9,7 +9,15 @@ import { Client } from '../../models/client';
   standalone: true,
   template: `
     <section class="page">
-      <app-page-title title="Clients"></app-page-title>
+      <div class="page-header">
+        <app-page-title title="Clients"></app-page-title>
+        <div class="clients-toolbar">
+          <div class="search-box">
+            <i class="fa fa-search search-icon" aria-hidden="true"></i>
+            <input class="search" type="search" placeholder="Search" (input)="onSearch($event.target.value)" />
+          </div>
+        </div>
+      </div>
 
       <div class="clients-filters">
         <button class="filter-pill" [class.active]="selectedFilter === 'all'" (click)="applyFilter('all')">
@@ -27,11 +35,7 @@ import { Client } from '../../models/client';
           <span class="filter-count">{{ inactiveClients }}</span>
         </button>
       </div>
-
-      <div class="clients-toolbar">
-        <input class="search" type="search" placeholder="Search by name..." (input)="onSearch($event.target.value)" />
-      </div>
-
+      
       <div *ngIf="loading" class="loading">Loading clients...</div>
       <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
 
@@ -160,7 +164,12 @@ export class ClientsComponent implements OnInit {
       list = list.filter(c => !c.isActive);
     }
     if (q) {
-      list = list.filter(c => (c.name || '').toLowerCase().includes(q));
+      list = list.filter(c => {
+        const name = (c.name || '').toLowerCase();
+        const email = (c.email || '').toLowerCase();
+        const tax = (c.taxId || '').toLowerCase();
+        return name.includes(q) || email.includes(q) || tax.includes(q);
+      });
     }
     
     if (this.sortBy) {
