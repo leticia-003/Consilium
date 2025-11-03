@@ -90,6 +90,34 @@
 	font-size: 13px;
 }
 
+.th-sort {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: transparent;
+	border: none;
+	padding: 0;
+	font-weight: 700;
+	color: inherit;
+	cursor: pointer;
+}
+
+.th-sort .chev {
+	font-size: 14px;
+	color: #9ca3af;
+	transition: opacity 110ms cubic-bezier(.0,.0,.2,1), transform 120ms cubic-bezier(.0,.0,.2,1), color 110ms ease;
+}
+
+.chev-wrap { position: relative; display:inline-block; width: 18px; height: 18px; }
+.chev { position: absolute; inset: 0; display: inline-flex; align-items: center; justify-content: center; opacity: 0; transform: translateY(2px) scale(0.98); }
+.chev-default { opacity: 1; transform: translateY(0) scale(1); }
+.th-sort[aria-sort="ascending"] .chev-default { opacity: 0; transform: translateY(-2px) scale(0.98); }
+.th-sort[aria-sort="descending"] .chev-default { opacity: 0; transform: translateY(2px) scale(0.98); }
+.th-sort[aria-sort="ascending"] .chev-asc { opacity: 1; transform: translateY(0) scale(1); }
+.th-sort[aria-sort="descending"] .chev-desc { opacity: 1; transform: translateY(0) scale(1); }
+
+.th-sort:hover .chev { color: #6b7280; }
+
 .clients-table tbody tr {
 	background: #ffffff;
 	/* border-bottom: 1px solid #f1f5f9; */

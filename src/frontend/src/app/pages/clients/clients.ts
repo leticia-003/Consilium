@@ -39,10 +39,37 @@ import { Client } from '../../models/client';
         <table class="clients-table" *ngIf="filteredClients.length > 0">
           <thead>
             <tr>
-              <th class="col-account">Account</th>
+              <th class="col-account">
+                <button class="th-sort" (click)="toggleSort('name')" [attr.aria-sort]="ariaSort('name')">
+                  <span>Account</span>
+                  <span class="chev-wrap" aria-hidden="true">
+                    <i class="chev chev-default fas fa-sort"></i>
+                    <i class="chev chev-asc fas fa-sort-up"></i>
+                    <i class="chev chev-desc fas fa-sort-down"></i>
+                  </span>
+                </button>
+              </th>
               <th class="col-email">Email</th>
-              <th class="col-nif">NIF</th>
-              <th class="col-date">Date</th>
+              <th class="col-nif">
+                <button class="th-sort" (click)="toggleSort('taxId')" [attr.aria-sort]="ariaSort('taxId')">
+                  <span>NIF</span>
+                  <span class="chev-wrap" aria-hidden="true">
+                    <i class="chev chev-default fas fa-sort"></i>
+                    <i class="chev chev-asc fas fa-sort-up"></i>
+                    <i class="chev chev-desc fas fa-sort-down"></i>
+                  </span>
+                </button>
+              </th>
+              <th class="col-date">
+                <button class="th-sort" (click)="toggleSort('createdAt')" [attr.aria-sort]="ariaSort('createdAt')">
+                  <span>Date</span>
+                  <span class="chev-wrap" aria-hidden="true">
+                    <i class="chev chev-default fas fa-sort"></i>
+                    <i class="chev chev-asc fas fa-sort-up"></i>
+                    <i class="chev chev-desc fas fa-sort-down"></i>
+                  </span>
+                </button>
+              </th>
               <th class="col-status">Status</th>
               <th class="col-actions"></th>
             </tr>
@@ -81,6 +108,8 @@ export class ClientsComponent implements OnInit {
   errorMessage = '';
   selectedFilter: 'all' | 'active' | 'inactive' = 'all';
   searchTerm = '';
+  sortBy: 'name' | 'taxId' | 'createdAt' | null = null;
+  sortDir: 'asc' | 'desc' = 'asc';
 
   constructor(private clientService: ClientService, private cdr: ChangeDetectorRef) {}
 
@@ -133,6 +162,60 @@ export class ClientsComponent implements OnInit {
     if (q) {
       list = list.filter(c => (c.name || '').toLowerCase().includes(q));
     }
+    
+    if (this.sortBy) {
+      const dir = this.sortDir === 'asc' ? 1 : -1;
+      list.sort((a, b) => {
+        let res = 0;
+        if (this.sortBy === 'name') {
+          const an = (a.name || '').toString();
+          const bn = (b.name || '').toString();
+          res = an.localeCompare(bn, undefined, { sensitivity: 'base' });
+        } else if (this.sortBy === 'taxId') {
+          const at = (a.taxId || '').toString();
+          const bt = (b.taxId || '').toString();
+          
+          const anNum = parseFloat(at.replace(/[^0-9.-]/g, ''));
+          const bnNum = parseFloat(bt.replace(/[^0-9.-]/g, ''));
+          if (!isNaN(anNum) && !isNaN(bnNum)) {
+            res = anNum - bnNum;
+          } else {
+            res = at.localeCompare(bt, undefined, { sensitivity: 'base' });
+          }
+        } else if (this.sortBy === 'createdAt') {
+          const ad = a.createdAt ? new Date(a.createdAt) : new Date(0);
+          const bd = b.createdAt ? new Date(b.createdAt) : new Date(0);
+          res = ad.getTime() - bd.getTime();
+        }
+        return res * dir;
+      });
+    }
     this.filteredClients = list;
   }
+
+  toggleSort(column: 'name' | 'taxId' | 'createdAt') {
+    if (this.sortBy === column) {
+      // cycle: asc -> desc -> none
+      if (this.sortDir === 'asc') {
+        this.sortDir = 'desc';
+      } else if (this.sortDir === 'desc') {
+        this.sortBy = null;
+      }
+    } else {
+      this.sortBy = column;
+      this.sortDir = 'asc';
+    }
+    this.updateFilteredClients();
+  }
+
+  isSorted(column: 'name' | 'taxId' | 'createdAt', dir: 'asc' | 'desc') {
+    return this.sortBy === column && this.sortDir === dir;
+  }
+
+  ariaSort(column: 'name' | 'taxId' | 'createdAt') {
+    if (this.sortBy !== column) return 'none';
+    return this.sortDir === 'asc' ? 'ascending' : 'descending';
+  }
+
+
 }
