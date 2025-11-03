@@ -8,6 +8,63 @@
 	margin: 12px 0;
 }
 
+.clients-filters {
+	display: flex;
+	gap: 18px;
+	align-items: center;
+	margin: 18px 0 6px 0;
+}
+
+.filter-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 16px;
+	padding: 12px 22px;
+	transition: border-radius 140ms ease, background-color 140ms ease, transform 160ms ease, box-shadow 160ms ease;
+	border-radius: 20px;
+	background: #fff;
+	border: 1.5px solid #f1f5f9;
+	cursor: pointer;
+	min-height: 56px;
+	box-shadow: none;
+	overflow: hidden;
+}
+
+.filter-pill:hover {
+	transform: translateY(-3px);
+	background-color: #fbfdff;
+	border-color: #e6e9ee;
+	box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+}
+
+.filter-pill:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+}
+
+.filter-pill.active:hover {
+	border-color: #000;
+	background-color: #fff;
+}
+.filter-pill .filter-label {
+	font-weight: 700;
+	color: #111827;
+	font-size: 15px;
+}
+
+.filter-pill .filter-count {
+	margin-left: 6px;
+	font-weight: 800;
+	color: #111827;
+	font-size: 20px;
+}
+
+.filter-pill.active {
+	border-color: #000;
+	box-shadow: none;
+}
+
+
 .search {
 	padding: 8px 12px;
 	border-radius: 8px;

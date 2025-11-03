@@ -11,6 +11,23 @@ import { Client } from '../../models/client';
     <section class="page">
       <app-page-title title="Clients"></app-page-title>
 
+      <div class="clients-filters">
+        <button class="filter-pill" [class.active]="selectedFilter === 'all'" (click)="applyFilter('all')">
+          <span class="filter-label">All Clients</span>
+          <span class="filter-count">{{ totalClients }}</span>
+        </button>
+
+        <button class="filter-pill" [class.active]="selectedFilter === 'active'" (click)="applyFilter('active')">
+          <span class="filter-label">Active Clients</span>
+          <span class="filter-count">{{ activeClients }}</span>
+        </button>
+
+        <button class="filter-pill" [class.active]="selectedFilter === 'inactive'" (click)="applyFilter('inactive')">
+          <span class="filter-label">Inactive Clients</span>
+          <span class="filter-count">{{ inactiveClients }}</span>
+        </button>
+      </div>
+
       <div class="clients-toolbar">
         <input class="search" type="search" placeholder="Search by name..." (input)="onSearch($event.target.value)" />
       </div>
@@ -62,6 +79,8 @@ export class ClientsComponent implements OnInit {
   filteredClients: Client[] = [];
   loading = false;
   errorMessage = '';
+  selectedFilter: 'all' | 'active' | 'inactive' = 'all';
+  searchTerm = '';
 
   constructor(private clientService: ClientService, private cdr: ChangeDetectorRef) {}
 
@@ -75,14 +94,14 @@ export class ClientsComponent implements OnInit {
     this.clientService.getClients().subscribe({
       next: (data) => {
         this.clients = data;
-        this.filteredClients = [...this.clients];
+        this.updateFilteredClients();
         this.loading = false;
         // Força a deteção de mudanças
         try { this.cdr.detectChanges(); } catch (e) { /* noop */ }
       },
       error: (err) => {
         console.error('Failed to load clients', err);
-        this.errorMessage = 'Erro ao carregar clientes.';
+        this.errorMessage = 'Failed to load clients.';
         this.loading = false;
         try { this.cdr.detectChanges(); } catch (e) { /* noop */ }
       }
@@ -90,11 +109,30 @@ export class ClientsComponent implements OnInit {
   }
 
   onSearch(term: string): void {
-    const q = (term || '').trim().toLowerCase();
-    if (!q) {
-      this.filteredClients = [...this.clients];
-      return;
+    this.searchTerm = (term || '').trim();
+    this.updateFilteredClients();
+  }
+
+  applyFilter(filter: 'all' | 'active' | 'inactive'): void {
+    this.selectedFilter = filter;
+    this.updateFilteredClients();
+  }
+
+  get totalClients(): number { return this.clients.length; }
+  get activeClients(): number { return this.clients.filter(c => !!c.isActive).length; }
+  get inactiveClients(): number { return this.clients.filter(c => !c.isActive).length; }
+
+  private updateFilteredClients(): void {
+    const q = (this.searchTerm || '').trim().toLowerCase();
+    let list = [...this.clients];
+    if (this.selectedFilter === 'active') {
+      list = list.filter(c => !!c.isActive);
+    } else if (this.selectedFilter === 'inactive') {
+      list = list.filter(c => !c.isActive);
     }
-    this.filteredClients = this.clients.filter(c => (c.name || '').toLowerCase().includes(q));
+    if (q) {
+      list = list.filter(c => (c.name || '').toLowerCase().includes(q));
+    }
+    this.filteredClients = list;
   }
 }
