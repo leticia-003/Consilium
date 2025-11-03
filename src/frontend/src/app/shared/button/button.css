@@ -1,0 +1,40 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.btn-primary {
+  background: var(--active-bg);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(166, 24, 46, 0.12);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+}
+
+.btn .fa {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  line-height: 1;
+  font-size: 14px;
+}
+
+.btn--icon-only {
+  padding: 8px;
+  border-radius: 10px;
+  height: 36px;
+  min-height: 36px;
+}

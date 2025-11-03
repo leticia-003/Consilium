@@ -53,3 +53,7 @@ html, body {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
+
+.page {
+	padding: var(--page-inner-padding);
+}

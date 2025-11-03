@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PageTitleComponent } from '../../shared/page-title/page-title';
+import { ButtonComponent } from '../../shared/button/button';
 import { ClientService } from '../../services/client.service';
 import { Client } from '../../models/client';
 
@@ -12,14 +13,16 @@ import { Client } from '../../models/client';
       <div class="page-header">
         <app-page-title title="Clients"></app-page-title>
         <div class="clients-toolbar">
-          <div class="search-box">
+          <div class="search-box" *ngIf="!loading && !errorMessage && filteredClients.length > 0">
             <i class="fa fa-search search-icon" aria-hidden="true"></i>
             <input class="search" type="search" placeholder="Search" (input)="onSearch($event.target.value)" />
           </div>
+
+          <app-button label="Add New Client" icon="fa-plus" [link]="['/create-client']" variant="primary"></app-button>
         </div>
       </div>
 
-      <div class="clients-filters">
+      <div class="clients-filters" *ngIf="!loading && !errorMessage && filteredClients.length > 0">
         <button class="filter-pill" [class.active]="selectedFilter === 'all'" (click)="applyFilter('all')">
           <span class="filter-label">All Clients</span>
           <span class="filter-count">{{ totalClients }}</span>
@@ -35,7 +38,7 @@ import { Client } from '../../models/client';
           <span class="filter-count">{{ inactiveClients }}</span>
         </button>
       </div>
-      
+
       <div *ngIf="loading" class="loading">Loading clients...</div>
       <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
 
@@ -103,7 +106,7 @@ import { Client } from '../../models/client';
     </section>
   `,
   styleUrls: ['./clients.css'],
-  imports: [PageTitleComponent, CommonModule]
+  imports: [PageTitleComponent, CommonModule, ButtonComponent],
 })
 export class ClientsComponent implements OnInit {
   clients: Client[] = [];
