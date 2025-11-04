@@ -21,7 +21,7 @@ jobs:
 
       # Instala a CLI do Render
       - name: Install Render CLI
-        run: curl -o /usr/local/bin/render https://render-build-output.s3.amazonaws.com/render-cli/latest/render-cli-linux-x64 && chmod +x /usr/local/bin/render
+        run: curl -fsSL https://raw.githubusercontent.com/render-oss/cli/refs/heads/main/bin/install.sh | sh
       
       # Autentica a CLI com a sua chave
       - name: Authenticate Render CLI
