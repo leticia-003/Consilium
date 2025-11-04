@@ -18,7 +18,7 @@ import { FormsModule } from '@angular/forms';
       <div class="page-header">
         <app-page-title title="Clients"></app-page-title>
         <div class="clients-toolbar">
-          <div class="search-box" *ngIf="!loading && !errorMessage && filteredClients.length > 0">
+          <div class="search-box" *ngIf="!loading && !errorMessage">
             <i class="fa fa-search search-icon" aria-hidden="true"></i>
             <input class="search" type="search" placeholder="Search" (input)="onSearch($event.target.value)" />
           </div>
@@ -27,7 +27,7 @@ import { FormsModule } from '@angular/forms';
         </div>
       </div>
 
-      <div class="clients-filters" *ngIf="!loading && !errorMessage && filteredClients.length > 0">
+      <div class="clients-filters" *ngIf="!loading && !errorMessage">
         <button class="filter-pill" [class.active]="selectedFilter === 'all'" (click)="applyFilter('all')">
           <span class="filter-label">All Clients</span>
           <span class="filter-count">{{ totalClients }}</span>
@@ -106,6 +106,8 @@ import { FormsModule } from '@angular/forms';
           </tbody>
         </table>
 
+        <div *ngIf="filteredClients.length === 0" class="empty">No clients to display.</div>
+
         <div class="pagination">
           <button (click)="goToPage(1)" [disabled]="currentPage === 1">First</button>
           <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">Previous</button>
@@ -127,9 +129,7 @@ import { FormsModule } from '@angular/forms';
           <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">Next</button>
           <button (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages">Last</button>
         </div>
-
-
-        <div *ngIf="filteredClients.length === 0" class="empty">No clients to display.</div>
+        
       </div>
     </section>
   `,
