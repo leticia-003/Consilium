@@ -5,67 +5,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   selector: 'app-sidebar',
   standalone: true,
   imports: [RouterLink, RouterLinkActive],
-  template: `
-    <aside class="sidebar">
-      <div class="sidebar-top">
-        <div class="brand">
-          <img class="logo" src="assets/logo.svg" alt="Consilium logo" />
-        </div>
-
-        <!-- <div class="user-card">
-          <img class="avatar" src="assets/avatars/default.jpg" alt="User avatar" />
-          <div class="user-name">Emily Collins</div>
-        </div> -->
-      </div>
-
-      <nav class="sidebar-nav" aria-label="Main navigation">
-        <ul>
-          <li>
-            <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-              <i class="fa-solid fa-house icon" aria-hidden="true"></i>
-              <span class="label">Home</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/chatbot" routerLinkActive="active">
-              <i class="fa-solid fa-message icon" aria-hidden="true"></i>
-              <span class="label">ChatBot</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/lawyers" routerLinkActive="active">
-              <i class="fa-solid fa-gavel icon" aria-hidden="true"></i>
-              <span class="label">Lawyers</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/clients" routerLinkActive="active">
-              <i class="fa-solid fa-users icon" aria-hidden="true"></i>
-              <span class="label">Clients</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/cases" routerLinkActive="active">
-              <i class="fa-solid fa-folder-open icon" aria-hidden="true"></i>
-              <span class="label">Cases</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/profiles" routerLinkActive="active">
-              <i class="fa-solid fa-address-card icon" aria-hidden="true"></i>
-              <span class="label">Profiles</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/settings" routerLinkActive="active">
-              <i class="fa-solid fa-cog icon" aria-hidden="true"></i>
-              <span class="label">Settings</span>
-            </a>
-          </li>
-        </ul>
-      </nav>
-    </aside>
-  `,
+  templateUrl: './sidebar.html',
   styleUrls: ['./sidebar.css']
 })
 export class SidebarComponent {}

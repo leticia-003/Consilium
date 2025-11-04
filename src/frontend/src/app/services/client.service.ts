@@ -9,13 +9,24 @@ import { API_BASE_URL } from '../config';
 @Injectable({ providedIn: 'root' })
 export class ClientService {
   // Toggle aqui para usar mocks ou a API real.
-  // Quando a API estiver pronta, muda para false e assegura que o HttpClientModule está importado.
+  // Quando a API estiver pronta, mudar para false e assegurar que o HttpClientModule está importado.
   private useMock = false;
 
   constructor(private http: HttpClient) {}
 
   getClients(params?: any): Observable<any> {
+    if (this.useMock) {
+      return of({ data: MOCK_CLIENTS, meta: { totalCount: MOCK_CLIENTS.length } }).pipe(delay(250));
+    }
     return this.http.get<any>(`${API_BASE_URL}/clients`, { params });
+  }
+
+  getClient(id: string): Observable<any> {
+    if (this.useMock) {
+      const found = MOCK_CLIENTS.find(c => c.id === id);
+      return of(found).pipe(delay(200));
+    }
+    return this.http.get<any>(`${API_BASE_URL}/clients/${id}`);
   }
 
 }

@@ -1,0 +1,5 @@
+.client-details { padding: 1rem; }
+.details-table { width: 100%; border-collapse: collapse; }
+.details-table th { text-align: left; padding: 0.5rem 1rem; width: 160px; color: #555; }
+.details-table td { padding: 0.5rem 1rem; }
+.loading, .error { padding: 1rem; }
