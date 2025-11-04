@@ -45,7 +45,7 @@ jobs:
 
       - name: Trigger Development Deploy (development)
         if: github.ref == 'refs/heads/development'
-        run: curl "${{ secrets.RENDER_HOOK_API_DEVELPOPMENT }}"
+        run: curl "${{ secrets.RENDER_HOOK_API_DEVELOPMENT }}"
 
   # ------ JOB 3: DEPLOY DO FRONTEND ------
   deploy-frontend:
@@ -60,4 +60,4 @@ jobs:
 
       - name: Trigger Development Deploy (development)
         if: github.ref == 'refs/heads/development'
-        run: curl "${{ secrets.RENDER_HOOK_WEB_DEVELPOPMENT }}"
+        run: curl "${{ secrets.RENDER_HOOK_WEB_DEVELOPMENT }}"
