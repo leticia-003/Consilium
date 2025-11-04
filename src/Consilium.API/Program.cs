@@ -45,8 +45,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseCors();
+
+app.MapGet("/", () => Results.Ok(new { status = "ok", message = "Everything is working" }));
 
 // --- Map API Endpoints ---
 app.MapAuthEndpoints();

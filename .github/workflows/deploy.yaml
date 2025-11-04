@@ -1,61 +1,61 @@
-# .github/workflows/deploy-backend.yml
-name: Deploy Backend to Render
+# # .github/workflows/deploy-backend.yml
+# name: Deploy Backend to Render
 
-on:
-  push:
-    branches:
-      - main        # Para Production
-      - development # Para Staging
+# on:
+#   push:
+#     branches:
+#       - main        # Para Production
+#       - development # Para Staging
 
-jobs:
-  build-and-deploy:
-    name: Build and Deploy Backend
-    runs-on: ubuntu-latest
+# jobs:
+#   build-and-deploy:
+#     name: Build and Deploy Backend
+#     runs-on: ubuntu-latest
 
-    env:
-      RENDER_API_KEY: ${{ secrets.API_KEY }}
-      RENDER_REGISTRY_USERNAME: ${{ secrets.RENDER_REGISTRY_USERNAME }} 
+#     env:
+#       RENDER_API_KEY: ${{ secrets.API_KEY }}
+#       RENDER_REGISTRY_USERNAME: ${{ secrets.RENDER_REGISTRY_USERNAME }} 
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
 
-      # 1. Instala a CLI do Render
-      - name: Install Render CLI
-        run: curl -fsSL https://raw.githubusercontent.com/render-oss/cli/refs/heads/main/bin/install.sh | sh
+#       # 1. Instala a CLI do Render
+#       - name: Install Render CLI
+#         run: curl -fsSL https://raw.githubusercontent.com/render-oss/cli/refs/heads/main/bin/install.sh | sh
       
-      # 2. Define os nomes das apps/IDs
-      - name: Set dynamic names
-        run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "APP_NAME=consilium-api-prod" >> $GITHUB_ENV
-            echo "SERVICE_ID=${{ secrets.RENDER_DEPLOY_ID_PROD }}" >> $GITHUB_ENV
-          else
-            echo "APP_NAME=consilium-api-staging" >> $GITHUB_ENV # (Usa o nome do teu serviço staging)
-            echo "SERVICE_ID=${{ secrets.RENDER_DEPLOY_ID_DEVLOPMENT }}" >> $GITHUB_ENV
-          fi
+#       # 2. Define os nomes das apps/IDs
+#       - name: Set dynamic names
+#         run: |
+#           if [ "${{ github.ref_name }}" = "main" ]; then
+#             echo "APP_NAME=consilium-api-prod" >> $GITHUB_ENV
+#             echo "SERVICE_ID=${{ secrets.RENDER_DEPLOY_ID_PROD }}" >> $GITHUB_ENV
+#           else
+#             echo "APP_NAME=consilium-api-staging" >> $GITHUB_ENV # (Usa o nome do teu serviço staging)
+#             echo "SERVICE_ID=${{ secrets.RENDER_DEPLOY_ID_DEVLOPMENT }}" >> $GITHUB_ENV
+#           fi
 
-      # 3. Faz login no Registo de Containers do Render
-      - name: Log in to Render Container Registry
-        run: |
-          echo "${{ env.RENDER_API_KEY }}" | \
-          docker login registry.render.com -u "${{ env.RENDER_REGISTRY_USERNAME }}" --password-stdin
+#       # 3. Faz login no Registo de Containers do Render
+#       - name: Log in to Render Container Registry
+#         run: |
+#           echo "${{ env.RENDER_API_KEY }}" | \
+#           docker login registry.render.com -u "${{ env.RENDER_REGISTRY_USERNAME }}" --password-stdin
 
-      # 4. Constrói e faz PUSH da imagem
-      - name: Build and Push Docker Image
-        run: |
-          IMAGE_PATH="registry.render.com/${{ env.RENDER_REGISTRY_USERNAME }}/${{ env.APP_NAME }}:latest"
-          docker build -t $IMAGE_PATH .
-          docker push $IMAGE_PATH
+#       # 4. Constrói e faz PUSH da imagem
+#       - name: Build and Push Docker Image
+#         run: |
+#           IMAGE_PATH="registry.render.com/${{ env.RENDER_REGISTRY_USERNAME }}/${{ env.APP_NAME }}:latest"
+#           docker build -t $IMAGE_PATH .
+#           docker push $IMAGE_PATH
       
-      # 5. AVISA o Render para usar a nova imagem (COM A TUA CORREÇÃO)
-      - name: Trigger Deploy in Render
-        run: |
-          IMAGE_PATH="registry.render.com/${{ env.RENDER_REGISTRY_USERNAME }}/${{ env.APP_NAME }}:latest"
+#       # 5. AVISA o Render para usar a nova imagem (COM A TUA CORREÇÃO)
+#       - name: Trigger Deploy in Render
+#         run: |
+#           IMAGE_PATH="registry.render.com/${{ env.RENDER_REGISTRY_USERNAME }}/${{ env.APP_NAME }}:latest"
           
-          # AQUI ESTÁ A TUA CORREÇÃO: Define o workspace
-          # (Tem de estar entre aspas por causa dos espaços)
-          render workspace set "LES - Team C's workspace"
+#           # AQUI ESTÁ A TUA CORREÇÃO: Define o workspace
+#           # (Tem de estar entre aspas por causa dos espaços)
+#           render workspace set "LES - Team C's workspace"
           
-          # Corre o comando 'deploys create'
-          render deploys create --service-id "${{ env.SERVICE_ID }}" --image "${IMAGE_PATH}"
+#           # Corre o comando 'deploys create'
+#           render deploys create --service-id "${{ env.SERVICE_ID }}" --image "${IMAGE_PATH}"
