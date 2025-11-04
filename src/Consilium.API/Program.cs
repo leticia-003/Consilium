@@ -47,7 +47,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
-app.MapGet("/", () => Results.Ok(new { status = "ok", message = "Everything is working" }));
+app.MapGet("/", () => Results.Ok(new { status = "ok", message = "Everything is working reallyyyyy welll" }));
 
 // --- Map API Endpoints ---
 app.MapAuthEndpoints();
