@@ -25,6 +25,25 @@ public record LoginRequest(
     string Password
 );
 
+/// <summary>
+/// Request DTO for updating user information
+/// </summary>
+public record UpdateUserRequest(
+    string? Name,
+    string? Email,
+    string? Password
+);
+
+/// <summary>
+/// Request DTO for updating client information (updates both User and Client data)
+/// </summary>
+public record UpdateClientRequest(
+    string? Name,
+    string? Email,
+    string? Password,
+    string? Address
+);
+
 // ============================================
 // RESPONSE DTOs (for outgoing data)
 // ============================================

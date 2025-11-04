@@ -36,7 +36,7 @@ namespace Consilium.Infrastructure.Data
                 .HasOne(c => c.User)
                 .WithOne(u => u.Client)
                 .HasForeignKey<Client>(c => c.ID)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Configure Phone entity with 1:N relationship to User
             modelBuilder.Entity<Phone>()
