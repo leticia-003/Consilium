@@ -24,6 +24,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 // --- Register Services (Dependency Injection) ---
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
+builder.Services.AddScoped<ILawyerRepository, LawyerRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<JwtTokenService>();
 
@@ -94,5 +95,6 @@ app.MapGet("/", () => Results.Ok(new { status = "ok", message = "Everything is w
 app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapClientEndpoints();
+app.MapLawyerEndpoints();
 
 app.Run();

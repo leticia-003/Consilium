@@ -44,6 +44,27 @@ public record UpdateClientRequest(
     string? Address
 );
 
+/// <summary>
+/// Request DTO for creating a new lawyer
+/// </summary>
+public record CreateLawyerRequest(
+    string Email,
+    string Password,
+    string Name,
+    string NIF,
+    string ProfessionalRegister
+);
+
+/// <summary>
+/// Request DTO for updating lawyer information (updates both User and Lawyer data)
+/// </summary>
+public record UpdateLawyerRequest(
+    string? Name,
+    string? Email,
+    string? Password,
+    string? ProfessionalRegister
+);
+
 // ============================================
 // RESPONSE DTOs (for outgoing data)
 // ============================================
@@ -68,6 +89,18 @@ public record ClientResponse(
     UserStatus Status,
     string NIF,
     string? Address
+);
+
+/// <summary>
+/// Response DTO for Lawyer data (User + Lawyer info)
+/// </summary>
+public record LawyerResponse(
+    Guid Id,
+    string Email,
+    string Name,
+    UserStatus Status,
+    string NIF,
+    string ProfessionalRegister
 );
 
 /// <summary>
