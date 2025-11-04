@@ -7,6 +7,7 @@ import { Client } from '../../models/client';
 import { disableDebugTools } from '@angular/platform-browser';
 import { debounceTime } from 'rxjs/internal/operators/debounceTime';
 import { Subject } from 'rxjs';
+import { FormsModule } from '@angular/forms';
 
 
 @Component({
@@ -105,12 +106,35 @@ import { Subject } from 'rxjs';
           </tbody>
         </table>
 
+        <div class="pagination">
+          <button (click)="goToPage(1)" [disabled]="currentPage === 1">First</button>
+          <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">Previous</button>
+
+          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+
+          <span>
+            Go to:
+            <input
+              type="number"
+              min="1"
+              [max]="totalPages"
+              [(ngModel)]="goToPageNumber"
+              style="width: 60px; text-align: center;"
+            />
+            <button (click)="goToPage(goToPageNumber)">Go</button>
+          </span>
+
+          <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">Next</button>
+          <button (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages">Last</button>
+        </div>
+
+
         <div *ngIf="filteredClients.length === 0" class="empty">No clients to display.</div>
       </div>
     </section>
   `,
   styleUrls: ['./clients.css'],
-  imports: [PageTitleComponent, CommonModule, ButtonComponent],
+  imports: [PageTitleComponent, CommonModule, ButtonComponent, FormsModule],
 })
 
 export class ClientsComponent implements OnInit, OnDestroy {
@@ -122,6 +146,11 @@ export class ClientsComponent implements OnInit, OnDestroy {
   searchTerm = '';
   sortBy: 'name' | 'nif' | 'createdAt' | null = null;
   sortDir: 'asc' | 'desc' = 'asc';
+  currentPage = 1;
+  totalPages = 1;
+  pageSize = 10;
+  totalCount = 0;
+  goToPageNumber = 1;
 
   private searchSubject = new Subject<string>();
   private searchSubscription: any;
@@ -136,14 +165,19 @@ export class ClientsComponent implements OnInit, OnDestroy {
     this.loadClients();
   }
 
-  loadClients(): void {
+  loadClients(page = 1): void {
     this.loading = true;
     this.errorMessage = '';
+    this.currentPage = page;
 
-    this.clientService.getClients().subscribe({
+    this.clientService.getClients({ page: this.currentPage, limit: this.pageSize }).subscribe({
       next: (data: any) => {
         const apiData = Array.isArray(data) ? data : data.data;
         this.clients = this.transformApiData(apiData);
+
+        this.totalCount = data.meta?.totalCount || this.clients.length;
+        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
         this.filteredClients = [...this.clients];
         this.loading = false;
         this.cdr.detectChanges();
@@ -156,6 +190,7 @@ export class ClientsComponent implements OnInit, OnDestroy {
     });
   }
 
+
   onSearch(term: string): void {
     this.searchTerm = (term || '').trim();
     this.searchSubject.next(this.searchTerm);
@@ -166,21 +201,33 @@ export class ClientsComponent implements OnInit, OnDestroy {
     return this.sortDir === 'asc' ? 'ascending' : 'descending';
   }
 
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
 
-  private fetchClients(term: string): void {
+    if (this.searchTerm) {
+      this.fetchClients(this.searchTerm, page);
+    } else {
+      this.loadClients(page);
+    }
+  }
+
+  private fetchClients(term: string, page = 1): void {
     this.loading = true;
-    this.clientService.getClients({ search: term }).subscribe({
+    this.currentPage = page;
+
+    this.clientService.getClients({ search: term, page: this.currentPage, limit: this.pageSize }).subscribe({
       next: (data: any) => {
         const apiData = Array.isArray(data) ? data : data.data;
         this.clients = this.transformApiData(apiData);
+
+        this.totalCount = data.meta?.totalCount || this.clients.length;
+        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
         this.filteredClients = [...this.clients];
         this.loading = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
-        console.error('Search failed', err);
-        this.loading = false;
-      }
+      error: () => this.loading = false
     });
   }
 
