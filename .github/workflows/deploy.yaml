@@ -26,9 +26,9 @@ jobs:
       # Deploy de Produção (main)
       - name: Deploy to Production (main)
         if: github.ref == 'refs/heads/main'
-        run: render deploy create ${{ secrets.RENDER_DEPLOY_ID_PROD }}
+        run: render deploys create ${{ secrets.RENDER_DEPLOY_ID_PROD }}
 
       # Deploy de Staging (development)
       - name: Deploy to Staging (development)
         if: github.ref == 'refs/heads/development'
-        run: render deploy create ${{ secrets.RENDER_DEPLOY_ID_DEVLOPMENT }}
+        run: render deploys create ${{ secrets.RENDER_DEPLOY_ID_DEVLOPMENT }}
