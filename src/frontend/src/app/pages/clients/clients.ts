@@ -58,7 +58,7 @@ import { Client } from '../../models/client';
               </th>
               <th class="col-email">Email</th>
               <th class="col-nif">
-                <button class="th-sort" (click)="toggleSort('taxId')" [attr.aria-sort]="ariaSort('taxId')">
+                <button class="th-sort" (click)="toggleSort('nif')" [attr.aria-sort]="ariaSort('nif')">
                   <span>NIF</span>
                   <span class="chev-wrap" aria-hidden="true">
                     <i class="chev chev-default fas fa-sort"></i>
@@ -87,7 +87,7 @@ import { Client } from '../../models/client';
                 <div class="account-name">{{ c.name }}</div>
               </td>
               <td class="col-email">{{ c.email || '—' }}</td>
-              <td class="col-nif">{{ c.taxId || '—' }}</td>
+              <td class="col-nif">{{ c.nif || '—' }}</td>
               <td class="col-date">{{ c.createdAt ? (c.createdAt | date:'dd MMM, yyyy') : '—' }}</td>
               <td class="col-status">
                 <span class="badge" [ngClass]="{ 'badge-active': c.isActive, 'badge-inactive': !c.isActive }">
@@ -115,7 +115,7 @@ export class ClientsComponent implements OnInit {
   errorMessage = '';
   selectedFilter: 'all' | 'active' | 'inactive' = 'all';
   searchTerm = '';
-  sortBy: 'name' | 'taxId' | 'createdAt' | null = null;
+  sortBy: 'name' | 'nif' | 'createdAt' | null = null;
   sortDir: 'asc' | 'desc' = 'asc';
 
   constructor(private clientService: ClientService, private cdr: ChangeDetectorRef) {}
@@ -128,13 +128,23 @@ export class ClientsComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
     this.clientService.getClients().subscribe({
-      next: (data) => {
-        this.clients = data;
+      next: (data: any[]) => {
+        this.clients = data.map(c => ({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          address: c.address,
+          nif: c.nif,
+          phone: c.phone,
+          isActive: c.status?.toUpperCase() === 'ACTIVE',
+          createdAt: c.createdAt || null
+        }));
+
         this.updateFilteredClients();
         this.loading = false;
-        // Força a deteção de mudanças
         try { this.cdr.detectChanges(); } catch (e) { /* noop */ }
       },
+
       error: (err) => {
         console.error('Failed to load clients', err);
         this.errorMessage = 'Failed to load clients.';
@@ -170,7 +180,7 @@ export class ClientsComponent implements OnInit {
       list = list.filter(c => {
         const name = (c.name || '').toLowerCase();
         const email = (c.email || '').toLowerCase();
-        const tax = (c.taxId || '').toLowerCase();
+        const tax = (c.nif || '').toLowerCase();
         return name.includes(q) || email.includes(q) || tax.includes(q);
       });
     }
@@ -183,9 +193,9 @@ export class ClientsComponent implements OnInit {
           const an = (a.name || '').toString();
           const bn = (b.name || '').toString();
           res = an.localeCompare(bn, undefined, { sensitivity: 'base' });
-        } else if (this.sortBy === 'taxId') {
-          const at = (a.taxId || '').toString();
-          const bt = (b.taxId || '').toString();
+        } else if (this.sortBy === 'nif') {
+          const at = (a.nif || '').toString();
+          const bt = (b.nif || '').toString();
           
           const anNum = parseFloat(at.replace(/[^0-9.-]/g, ''));
           const bnNum = parseFloat(bt.replace(/[^0-9.-]/g, ''));
@@ -205,7 +215,7 @@ export class ClientsComponent implements OnInit {
     this.filteredClients = list;
   }
 
-  toggleSort(column: 'name' | 'taxId' | 'createdAt') {
+  toggleSort(column: 'name' | 'nif' | 'createdAt') {
     if (this.sortBy === column) {
       // cycle: asc -> desc -> none
       if (this.sortDir === 'asc') {
@@ -220,11 +230,11 @@ export class ClientsComponent implements OnInit {
     this.updateFilteredClients();
   }
 
-  isSorted(column: 'name' | 'taxId' | 'createdAt', dir: 'asc' | 'desc') {
+  isSorted(column: 'name' | 'nif' | 'createdAt', dir: 'asc' | 'desc') {
     return this.sortBy === column && this.sortDir === dir;
   }
 
-  ariaSort(column: 'name' | 'taxId' | 'createdAt') {
+  ariaSort(column: 'name' | 'nif' | 'createdAt') {
     if (this.sortBy !== column) return 'none';
     return this.sortDir === 'asc' ? 'ascending' : 'descending';
   }

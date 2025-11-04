@@ -4,7 +4,7 @@ export interface Client {
 
   // From CORE.USER
   name: string; // USER_NAME
-  taxId?: string; // USER_NIF
+  nif?: string; // USER_NIF
   email?: string; // USER_EMAIL
   isActive?: boolean; // USER_IS_ACTIVE
 
