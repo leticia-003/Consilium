@@ -1,9 +1,13 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PageTitleComponent } from '../../shared/page-title/page-title';
 import { ButtonComponent } from '../../shared/button/button';
 import { ClientService } from '../../services/client.service';
 import { Client } from '../../models/client';
+import { disableDebugTools } from '@angular/platform-browser';
+import { debounceTime } from 'rxjs/internal/operators/debounceTime';
+import { Subject } from 'rxjs';
+
 
 @Component({
   selector: 'app-clients',
@@ -108,7 +112,8 @@ import { Client } from '../../models/client';
   styleUrls: ['./clients.css'],
   imports: [PageTitleComponent, CommonModule, ButtonComponent],
 })
-export class ClientsComponent implements OnInit {
+
+export class ClientsComponent implements OnInit, OnDestroy {
   clients: Client[] = [];
   filteredClients: Client[] = [];
   loading = false;
@@ -118,120 +123,42 @@ export class ClientsComponent implements OnInit {
   sortBy: 'name' | 'nif' | 'createdAt' | null = null;
   sortDir: 'asc' | 'desc' = 'asc';
 
+  private searchSubject = new Subject<string>();
+  private searchSubscription: any;
+
   constructor(private clientService: ClientService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
+    this.searchSubscription = this.searchSubject
+      .pipe(debounceTime(500))
+      .subscribe((term: string) => this.fetchClients(term));
+
     this.loadClients();
   }
 
   loadClients(): void {
     this.loading = true;
     this.errorMessage = '';
+
     this.clientService.getClients().subscribe({
-      next: (data: any[]) => {
-        this.clients = data.map(c => ({
-          id: c.id,
-          name: c.name,
-          email: c.email,
-          address: c.address,
-          nif: c.nif,
-          phone: c.phone,
-          isActive: c.status?.toUpperCase() === 'ACTIVE',
-          createdAt: c.createdAt || null
-        }));
-
-        this.updateFilteredClients();
+      next: (data: any) => {
+        const apiData = Array.isArray(data) ? data : data.data;
+        this.clients = this.transformApiData(apiData);
+        this.filteredClients = [...this.clients];
         this.loading = false;
-        try { this.cdr.detectChanges(); } catch (e) { /* noop */ }
+        this.cdr.detectChanges();
       },
-
       error: (err) => {
         console.error('Failed to load clients', err);
         this.errorMessage = 'Failed to load clients.';
         this.loading = false;
-        try { this.cdr.detectChanges(); } catch (e) { /* noop */ }
       }
     });
   }
 
   onSearch(term: string): void {
     this.searchTerm = (term || '').trim();
-    this.updateFilteredClients();
-  }
-
-  applyFilter(filter: 'all' | 'active' | 'inactive'): void {
-    this.selectedFilter = filter;
-    this.updateFilteredClients();
-  }
-
-  get totalClients(): number { return this.clients.length; }
-  get activeClients(): number { return this.clients.filter(c => !!c.isActive).length; }
-  get inactiveClients(): number { return this.clients.filter(c => !c.isActive).length; }
-
-  private updateFilteredClients(): void {
-    const q = (this.searchTerm || '').trim().toLowerCase();
-    let list = [...this.clients];
-    if (this.selectedFilter === 'active') {
-      list = list.filter(c => !!c.isActive);
-    } else if (this.selectedFilter === 'inactive') {
-      list = list.filter(c => !c.isActive);
-    }
-    if (q) {
-      list = list.filter(c => {
-        const name = (c.name || '').toLowerCase();
-        const email = (c.email || '').toLowerCase();
-        const tax = (c.nif || '').toLowerCase();
-        return name.includes(q) || email.includes(q) || tax.includes(q);
-      });
-    }
-    
-    if (this.sortBy) {
-      const dir = this.sortDir === 'asc' ? 1 : -1;
-      list.sort((a, b) => {
-        let res = 0;
-        if (this.sortBy === 'name') {
-          const an = (a.name || '').toString();
-          const bn = (b.name || '').toString();
-          res = an.localeCompare(bn, undefined, { sensitivity: 'base' });
-        } else if (this.sortBy === 'nif') {
-          const at = (a.nif || '').toString();
-          const bt = (b.nif || '').toString();
-          
-          const anNum = parseFloat(at.replace(/[^0-9.-]/g, ''));
-          const bnNum = parseFloat(bt.replace(/[^0-9.-]/g, ''));
-          if (!isNaN(anNum) && !isNaN(bnNum)) {
-            res = anNum - bnNum;
-          } else {
-            res = at.localeCompare(bt, undefined, { sensitivity: 'base' });
-          }
-        } else if (this.sortBy === 'createdAt') {
-          const ad = a.createdAt ? new Date(a.createdAt) : new Date(0);
-          const bd = b.createdAt ? new Date(b.createdAt) : new Date(0);
-          res = ad.getTime() - bd.getTime();
-        }
-        return res * dir;
-      });
-    }
-    this.filteredClients = list;
-  }
-
-  toggleSort(column: 'name' | 'nif' | 'createdAt') {
-    if (this.sortBy === column) {
-      // cycle: asc -> desc -> none
-      if (this.sortDir === 'asc') {
-        this.sortDir = 'desc';
-      } else if (this.sortDir === 'desc') {
-        this.sortBy = null;
-      }
-    } else {
-      this.sortBy = column;
-      this.sortDir = 'asc';
-    }
-    this.updateFilteredClients();
-  }
-
-  isSorted(column: 'name' | 'nif' | 'createdAt', dir: 'asc' | 'desc') {
-    return this.sortBy === column && this.sortDir === dir;
+    this.searchSubject.next(this.searchTerm);
   }
 
   ariaSort(column: 'name' | 'nif' | 'createdAt') {
@@ -240,4 +167,71 @@ export class ClientsComponent implements OnInit {
   }
 
 
+  private fetchClients(term: string): void {
+    this.loading = true;
+    this.clientService.getClients({ search: term }).subscribe({
+      next: (data: any) => {
+        const apiData = Array.isArray(data) ? data : data.data;
+        this.clients = this.transformApiData(apiData);
+        this.filteredClients = [...this.clients];
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Search failed', err);
+        this.loading = false;
+      }
+    });
+  }
+
+  private transformApiData(apiData: any[]): Client[] {
+    return (apiData || []).map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      email: c.email,
+      address: c.address,
+      nif: c.nif,
+      phone: c.phone,
+      isActive: c.status?.toUpperCase() === 'ACTIVE',
+      createdAt: c.createdAt || null
+    }));
+  }
+
+  applyFilter(filter: 'all' | 'active' | 'inactive'): void {
+    this.selectedFilter = filter;
+    if (filter === 'active') {
+      this.filteredClients = this.clients.filter(c => c.isActive);
+    } else if (filter === 'inactive') {
+      this.filteredClients = this.clients.filter(c => !c.isActive);
+    } else {
+      this.filteredClients = [...this.clients];
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.searchSubscription) this.searchSubscription.unsubscribe();
+  }
+
+  // Sorting helpers (still client-side)
+  toggleSort(column: 'name' | 'nif' | 'createdAt') {
+    if (this.sortBy === column) {
+      this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortBy = column;
+      this.sortDir = 'asc';
+    }
+
+    const dir = this.sortDir === 'asc' ? 1 : -1;
+    this.filteredClients.sort((a: any, b: any) => {
+      let res = 0;
+      if (column === 'name') res = a.name.localeCompare(b.name);
+      if (column === 'nif') res = Number(a.nif) - Number(b.nif);
+      if (column === 'createdAt') res = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return res * dir;
+    });
+  }
+
+  get totalClients(): number { return this.clients.length; }
+  get activeClients(): number { return this.clients.filter(c => !!c.isActive).length; }
+  get inactiveClients(): number { return this.clients.filter(c => !c.isActive).length; }
 }

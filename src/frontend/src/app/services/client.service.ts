@@ -14,16 +14,8 @@ export class ClientService {
 
   constructor(private http: HttpClient) {}
 
-  getClients(): Observable<Client[]> {
-    if (this.useMock) {
-      return of(MOCK_CLIENTS).pipe(delay(300));
-    }
-
-    return this.http.get<Client[]>(`${API_BASE_URL}/clients`).pipe(
-      catchError((err) => {
-        console.error('Error fetching clients:', err);
-        throw err;
-      })
-    );
+  getClients(params?: any): Observable<any> {
+    return this.http.get<any>(`${API_BASE_URL}/clients`, { params });
   }
+
 }

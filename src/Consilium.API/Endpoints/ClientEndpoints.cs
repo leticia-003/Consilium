@@ -2,6 +2,7 @@ using Consilium.Application.Interfaces;
 using Consilium.Domain.Models;
 using Consilium.Domain.Enums;
 using Consilium.API.Dtos;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Consilium.API.Endpoints;
 
@@ -26,21 +27,37 @@ public static class ClientEndpoints
             .WithDescription("Create a new client");
     }
 
-    private static async Task<IResult> GetAllClients(IClientRepository repo)
+    private static async Task<IResult> GetAllClients(
+        IClientRepository repo,
+        [FromQuery] string? search,
+        [FromQuery] string? status,
+        [FromQuery] int page = 1,
+        [FromQuery] int limit = 20,
+        [FromQuery] string? sortBy = "name",
+        [FromQuery] string? sortOrder = "asc")
     {
-        var clients = await repo.GetAll();
+        var (clients, totalCount) = await repo.GetAll(search, status, page, limit, sortBy, sortOrder);
+
         var response = clients.Select(c => new ClientResponse(
             Id: c.ID,
             Email: c.User?.Email ?? string.Empty,
             Name: c.User?.Name ?? string.Empty,
             Phone: c.User?.Phone,
-            // Convert string from DB to enum for response
-            Status: Enum.TryParse<UserStatus>(c.User?.Status, true, out var status) ? status : UserStatus.INACTIVE,
+            Status: Enum.TryParse<UserStatus>(c.User?.Status, true, out var statusEnum) ? statusEnum : UserStatus.INACTIVE,
             NIF: c.NIF,
             Address: c.Address
         ));
-        return Results.Ok(response);
+
+        return Results.Ok(new {
+            data = response,
+            meta = new {
+                totalCount,
+                page,
+                limit
+            }
+        });
     }
+
 
     private static async Task<IResult> GetClientById(Guid id, IClientRepository repo)
     {
@@ -54,7 +71,6 @@ public static class ClientEndpoints
             Email: client.User?.Email ?? string.Empty,
             Name: client.User?.Name ?? string.Empty,
             Phone: client.User?.Phone,
-            // Convert string from DB to enum for response
             Status: Enum.TryParse<UserStatus>(client.User?.Status, true, out var status) ? status : UserStatus.INACTIVE,
             NIF: client.NIF,
             Address: client.Address
@@ -81,14 +97,14 @@ public static class ClientEndpoints
         // Hash the password
         var hashedPassword = hasher.HashPassword(request.Password);
 
-        // Create user and client - convert enum to string for DB
+        // Create user and client
         var user = new User
         {
             Email = request.Email,
             PasswordHash = hashedPassword,
             Name = request.Name,
             Phone = request.Phone,
-            Status = "ACTIVE"  // Store as string in database
+            Status = "ACTIVE"
         };
 
         var client = new Client
@@ -100,7 +116,7 @@ public static class ClientEndpoints
         // Save to database
         var newClient = await repo.Create(user, client);
 
-        // Prepare response - convert string back to enum
+        // Prepare response
         var response = new ClientResponse(
             Id: newClient.ID,
             Email: newClient.User?.Email ?? string.Empty,

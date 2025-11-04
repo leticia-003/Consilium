@@ -22,12 +22,57 @@ namespace Consilium.Infrastructure.Repositories
                 .FirstOrDefaultAsync(c => c.ID == id);
         }
 
-        public async Task<List<Client>> GetAll()
+        public async Task<(List<Client> Clients, int TotalCount)> GetAll(
+            string? search,
+            string? status,
+            int page,
+            int limit,
+            string? sortBy,
+            string? sortOrder)
         {
-            return await _context.Clients
+            var query = _context.Clients
                 .Include(c => c.User)
+                .AsQueryable();
+
+            // Text search across Name, Email, and NIF
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(c =>
+                    c.User.Name.Contains(search) ||
+                    c.User.Email.Contains(search) ||
+                    c.NIF.ToString().Contains(search));
+            }
+
+            // Filter by status
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query = query.Where(c => c.User.Status == status);
+            }
+
+            // Count before pagination
+            var totalCount = await query.CountAsync();
+
+            // ↕Sorting
+            if (!string.IsNullOrWhiteSpace(sortBy))
+            {
+                sortBy = sortBy.ToLower();
+                sortOrder = sortOrder?.ToLower() ?? "asc";
+
+                if (sortBy == "nif")
+                    query = sortOrder == "desc" ? query.OrderByDescending(c => c.NIF) : query.OrderBy(c => c.NIF);
+                else
+                    query = sortOrder == "desc" ? query.OrderByDescending(c => c.User.Name) : query.OrderBy(c => c.User.Name);
+            }
+
+            // Pagination
+            var clients = await query
+                .Skip((page - 1) * limit)
+                .Take(limit)
                 .ToListAsync();
+
+            return (clients, totalCount);
         }
+
         
         public async Task<Client> Create(User user, Client client)
         {
