@@ -92,37 +92,52 @@ public static class ClientEndpoints
         if (string.IsNullOrWhiteSpace(request.NIF) || request.NIF.Length != 9)
             return Results.BadRequest(new { message = "NIF must be a 9-character string" });
 
-        // Hash the password
-        var hashedPassword = hasher.HashPassword(request.Password);
-
-        // Create user and client
-        var user = new User
+        try
         {
-            Email = request.Email,
-            PasswordHash = hashedPassword,
-            Name = request.Name,
-            NIF = request.NIF,
-            IsActive = true
-        };
+            // Hash the password
+            var hashedPassword = hasher.HashPassword(request.Password);
 
-        var client = new Client
+            // Create user and client
+            var user = new User
+            {
+                Email = request.Email,
+                PasswordHash = hashedPassword,
+                Name = request.Name,
+                NIF = request.NIF,
+                IsActive = true
+            };
+
+            var client = new Client
+            {
+                Address = request.Address ?? string.Empty
+            };
+
+            // Save to database
+            var newClient = await repo.Create(user, client);
+
+            // Prepare response
+            var response = new ClientResponse(
+                Id: newClient.ID,
+                Email: newClient.User?.Email ?? string.Empty,
+                Name: newClient.User?.Name ?? string.Empty,
+                Status: UserStatus.ACTIVE,
+                NIF: newClient.User?.NIF ?? string.Empty,
+                Address: newClient.Address
+            );
+
+            return Results.Created($"/api/clients/{newClient.ID}", response);
+        }
+        catch (Exception ex) when (ex.InnerException?.Message.Contains("uk_user_01_nif") == true)
         {
-            Address = request.Address ?? string.Empty
-        };
-
-        // Save to database
-        var newClient = await repo.Create(user, client);
-
-        // Prepare response
-        var response = new ClientResponse(
-            Id: newClient.ID,
-            Email: newClient.User?.Email ?? string.Empty,
-            Name: newClient.User?.Name ?? string.Empty,
-            Status: UserStatus.ACTIVE,
-            NIF: newClient.User?.NIF ?? string.Empty,
-            Address: newClient.Address
-        );
-
-        return Results.Created($"/api/clients/{newClient.ID}", response);
+            return Results.Conflict(new { message = "A client with this NIF already exists" });
+        }
+        catch (Exception ex) when (ex.InnerException?.Message.Contains("uk_user_02_email") == true)
+        {
+            return Results.Conflict(new { message = "A user with this email already exists" });
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest(new { message = $"Error creating client: {ex.Message}" });
+        }
     }
 }
