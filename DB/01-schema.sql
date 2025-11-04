@@ -92,7 +92,7 @@ CREATE TABLE CORE.LAWYER (
     -- RELAÇÃO DE HERANÇA (1:1).
     CONSTRAINT FK_LAWYER_USER_01 FOREIGN KEY (LAWYER_ID)
         REFERENCES CORE.USER (USER_ID)
-        ON DELETE RESTRICT
+        ON DELETE CASCADE
 );
 
 -- *******************************************
@@ -107,7 +107,7 @@ CREATE TABLE CORE.ADMIN (
     -- RELAÇÃO DE HERANÇA (1:1).
     CONSTRAINT FK_ADMIN_USER_01 FOREIGN KEY (ADMIN_ID)
         REFERENCES CORE.USER (USER_ID)
-        ON DELETE RESTRICT
+        ON DELETE CASCADE
 );
 
 -- *******************************************

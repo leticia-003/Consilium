@@ -28,9 +28,7 @@ public static class UserEndpoints
             Id: u.ID,
             Email: u.Email,
             Name: u.Name,
-            Phone: u.Phone,
-            // Convert string from DB to enum for response
-            Status: Enum.TryParse<UserStatus>(u.Status, true, out var status) ? status : UserStatus.INACTIVE
+            Status: u.IsActive ? UserStatus.ACTIVE : UserStatus.INACTIVE
         ));
         return Results.Ok(response);
     }
@@ -46,9 +44,7 @@ public static class UserEndpoints
             Id: user.ID,
             Email: user.Email,
             Name: user.Name,
-            Phone: user.Phone,
-            // Convert string from DB to enum for response
-            Status: Enum.TryParse<UserStatus>(user.Status, true, out var status) ? status : UserStatus.INACTIVE
+            Status: user.IsActive ? UserStatus.ACTIVE : UserStatus.INACTIVE
         );
 
         return Results.Ok(response);

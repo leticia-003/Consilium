@@ -42,9 +42,8 @@ public static class ClientEndpoints
             Id: c.ID,
             Email: c.User?.Email ?? string.Empty,
             Name: c.User?.Name ?? string.Empty,
-            Phone: c.User?.Phone,
-            Status: Enum.TryParse<UserStatus>(c.User?.Status, true, out var statusEnum) ? statusEnum : UserStatus.INACTIVE,
-            NIF: c.NIF,
+            Status: c.User?.IsActive == true ? UserStatus.ACTIVE : UserStatus.INACTIVE,
+            NIF: c.User?.NIF ?? string.Empty,
             Address: c.Address
         ));
 
@@ -70,9 +69,8 @@ public static class ClientEndpoints
             Id: client.ID,
             Email: client.User?.Email ?? string.Empty,
             Name: client.User?.Name ?? string.Empty,
-            Phone: client.User?.Phone,
-            Status: Enum.TryParse<UserStatus>(client.User?.Status, true, out var status) ? status : UserStatus.INACTIVE,
-            NIF: client.NIF,
+            Status: client.User?.IsActive == true ? UserStatus.ACTIVE : UserStatus.INACTIVE,
+            NIF: client.User?.NIF ?? string.Empty,
             Address: client.Address
         );
 
@@ -91,8 +89,8 @@ public static class ClientEndpoints
         if (string.IsNullOrWhiteSpace(request.Password))
             return Results.BadRequest(new { message = "Password is required" });
 
-        if (request.NIF <= 0)
-            return Results.BadRequest(new { message = "NIF must be a positive number" });
+        if (string.IsNullOrWhiteSpace(request.NIF) || request.NIF.Length != 9)
+            return Results.BadRequest(new { message = "NIF must be a 9-character string" });
 
         // Hash the password
         var hashedPassword = hasher.HashPassword(request.Password);
@@ -103,14 +101,13 @@ public static class ClientEndpoints
             Email = request.Email,
             PasswordHash = hashedPassword,
             Name = request.Name,
-            Phone = request.Phone,
-            Status = "ACTIVE"
+            NIF = request.NIF,
+            IsActive = true
         };
 
         var client = new Client
         {
-            NIF = request.NIF,
-            Address = request.Address
+            Address = request.Address ?? string.Empty
         };
 
         // Save to database
@@ -121,9 +118,8 @@ public static class ClientEndpoints
             Id: newClient.ID,
             Email: newClient.User?.Email ?? string.Empty,
             Name: newClient.User?.Name ?? string.Empty,
-            Phone: newClient.User?.Phone,
             Status: UserStatus.ACTIVE,
-            NIF: newClient.NIF,
+            NIF: newClient.User?.NIF ?? string.Empty,
             Address: newClient.Address
         );
 

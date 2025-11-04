@@ -40,13 +40,14 @@ namespace Consilium.Infrastructure.Repositories
                 query = query.Where(c =>
                     c.User.Name.Contains(search) ||
                     c.User.Email.Contains(search) ||
-                    c.NIF.ToString().Contains(search));
+                    c.User.NIF.Contains(search));
             }
 
-            // Filter by status
+            // Filter by status (IsActive boolean)
             if (!string.IsNullOrWhiteSpace(status))
             {
-                query = query.Where(c => c.User.Status == status);
+                var isActive = status.Equals("ACTIVE", StringComparison.OrdinalIgnoreCase);
+                query = query.Where(c => c.User.IsActive == isActive);
             }
 
             // Count before pagination
@@ -59,7 +60,7 @@ namespace Consilium.Infrastructure.Repositories
                 sortOrder = sortOrder?.ToLower() ?? "asc";
 
                 if (sortBy == "nif")
-                    query = sortOrder == "desc" ? query.OrderByDescending(c => c.NIF) : query.OrderBy(c => c.NIF);
+                    query = sortOrder == "desc" ? query.OrderByDescending(c => c.User.NIF) : query.OrderBy(c => c.User.NIF);
                 else
                     query = sortOrder == "desc" ? query.OrderByDescending(c => c.User.Name) : query.OrderBy(c => c.User.Name);
             }
@@ -81,16 +82,11 @@ namespace Consilium.Infrastructure.Repositories
             try
             {
                 // Set the Client's ID to be the same as the User's ID
-                user.ID = Guid.NewGuid(); // Or let Postgres generate it if configured
+                user.ID = Guid.NewGuid();
                 client.ID = user.ID;
-                // Defensive: ensure Status is one of allowed values (DB has a CHECK constraint)
-                // Normalize incoming status to upper-case and fallback to ACTIVE if invalid.
-                var status = (user.Status ?? string.Empty).ToUpperInvariant();
-                if (status != "ACTIVE" && status != "INACTIVE")
-                {
-                    status = "ACTIVE";
-                }
-                user.Status = status;
+                
+                // Ensure IsActive is set (should default to true)
+                user.IsActive = true;
 
                 // Add the User first
                 _context.Users.Add(user);
@@ -106,8 +102,6 @@ namespace Consilium.Infrastructure.Repositories
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                // Log and rethrow with the original exception preserved so logs include DB details
-                // (Use Console.WriteLine to ensure the message appears in container logs)
                 Console.WriteLine($"Error saving User/Client to DB: {ex.GetType()}: {ex.Message}");
                 throw;
             }

@@ -13,8 +13,7 @@ public record CreateClientRequest(
     string Email,
     string Password,
     string Name,
-    int Phone,
-    int NIF,
+    string NIF,
     string? Address
 );
 
@@ -37,7 +36,6 @@ public record UserResponse(
     Guid Id,
     string Email,
     string Name,
-    int? Phone,
     UserStatus Status
 );
 
@@ -48,9 +46,8 @@ public record ClientResponse(
     Guid Id,
     string Email,
     string Name,
-    int? Phone,
     UserStatus Status,
-    int NIF,
+    string NIF,
     string? Address
 );
 
