@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - main    # Para Production
-      - develop # Para Staging
+      - development # Para Staging
 
 jobs:
   build-and-deploy:

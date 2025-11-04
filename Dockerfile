@@ -1,18 +1,18 @@
-# ===== STAGE 1: Build Angular =====
-# (No changes needed for this stage)
-FROM node:20 AS build-frontend
-WORKDIR /app
-COPY src/frontend/package*.json ./ 
-RUN npm install
-COPY src/frontend/ .
-RUN npm run build
+# # ===== STAGE 1: Build Angular =====
+# # (No changes needed for this stage)
+# FROM node:20 AS build-frontend
+# WORKDIR /app
+# COPY src/frontend/package*.json ./ 
+# RUN npm install
+# COPY src/frontend/ .
+# RUN npm run build
 
-# ===== STAGE 2: Frontend Production (nginx) =====
-# (No changes needed for this stage)
-FROM nginx:alpine AS build-frontend-prod
-COPY --from=build-frontend /app/dist/browser /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+# # ===== STAGE 2: Frontend Production (nginx) =====
+# # (No changes needed for this stage)
+# FROM nginx:alpine AS build-frontend-prod
+# COPY --from=build-frontend /app/dist/browser /usr/share/nginx/html
+# COPY nginx.conf /etc/nginx/conf.d/default.conf
+# EXPOSE 80
 
 # ===== STAGE 3: Build .NET backend (Updated) =====
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-backend
