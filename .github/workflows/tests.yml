@@ -23,16 +23,13 @@ jobs:
           dotnet-version: '9.0.x'
       
       - name: Restore dependencies
-        run: dotnet restore
-        working-directory: ./src
+        run: dotnet restore C.sln
       
       - name: Build
-        run: dotnet build --no-restore --configuration Release
-        working-directory: ./src
+        run: dotnet build C.sln --no-restore --configuration Release
       
       - name: Run tests
-        run: dotnet test --no-build --configuration Release --verbosity normal
-        working-directory: ./src/Consilium.Tests
+        run: dotnet test src/Consilium.Tests/Consilium.Tests.csproj --no-build --configuration Release --verbosity normal
 
   frontend-tests:
     name: Frontend Tests (Angular)
