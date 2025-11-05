@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { PageTitleComponent } from '../../shared/page-title/page-title';
 import { ButtonComponent } from '../../shared/button/button';
+import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal';
+import { Router } from '@angular/router';
 import { ClientService } from '../../services/client.service';
 import { BreadcrumbService } from '../../shared/breadcrumb/breadcrumb.service';
 
@@ -11,12 +13,13 @@ import { BreadcrumbService } from '../../shared/breadcrumb/breadcrumb.service';
   standalone: true,
   templateUrl: './client-details.html',
   styleUrls: ['./client-details.css'],
-  imports: [CommonModule, PageTitleComponent, ButtonComponent],
+  imports: [CommonModule, PageTitleComponent, ButtonComponent, ConfirmModalComponent],
 })
 export class ClientDetailsComponent implements OnInit, OnDestroy {
   client: any = null;
   loading = false;
   error = '';
+  showDeleteModal = false;
   // unavailable values (backend doesn't provide these yet)
   totalProcesses: number | null = null;
   lastActivity: string | null = null;
@@ -25,7 +28,8 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private clientService: ClientService,
     private breadcrumbService: BreadcrumbService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -81,10 +85,22 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
   }
   
   onDelete() {
-    const ok = confirm('Delete this client account? This action cannot be undone.');
-    if (!ok) return;
-    // TODO: wire to real delete API. For now just log and show a message.
-    console.warn('Delete requested for client', this.client?.id);
-    this.error = 'Delete not implemented yet.';
+    this.showDeleteModal = true;
+  }
+
+  confirmDelete() {
+    if (!this.client?.id) return;
+    this.loading = true;
+    this.clientService.deleteClient(this.client.id).subscribe({
+      next: () => {
+        this.router.navigate(['/clients']);
+      },
+      error: (err) => {
+        console.error('Failed to delete client', err);
+        this.error = 'Failed to delete client.';
+        this.loading = false;
+        this.showDeleteModal = false;
+      }
+    });
   }
 }

@@ -29,4 +29,11 @@ export class ClientService {
     return this.http.get<any>(`${API_BASE_URL}/clients/${id}`);
   }
 
+  deleteClient(id: string): Observable<any> {
+    if (this.useMock) {
+      return of({}).pipe(delay(200));
+    }
+    return this.http.delete<any>(`${API_BASE_URL}/clients/${id}`);
+  }
+
 }

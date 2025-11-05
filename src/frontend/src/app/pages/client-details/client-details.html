@@ -7,6 +7,16 @@
     </div>
   </div>
 
+  <app-confirm-modal *ngIf="showDeleteModal"
+    [title]="'Delete Account'"
+    [message]="'Once deleted, this user and all related information will be permanently lost. This action cannot be reversed.'"
+    [confirmLabel]="'Delete'"
+    [cancelLabel]="'Cancel'"
+    [danger]="true"
+    (confirm)="confirmDelete()"
+    (cancel)="showDeleteModal = false"
+  ></app-confirm-modal>
+
   <div *ngIf="loading" class="loading">Loading client...</div>
   <div *ngIf="error" class="error">{{ error }}</div>
 
