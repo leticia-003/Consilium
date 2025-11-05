@@ -13,8 +13,7 @@ public record CreateClientRequest(
     string Email,
     string Password,
     string Name,
-    int Phone,
-    int NIF,
+    string NIF,
     string? Address
 );
 
@@ -24,6 +23,46 @@ public record CreateClientRequest(
 public record LoginRequest(
     string Email,
     string Password
+);
+
+/// <summary>
+/// Request DTO for updating user information
+/// </summary>
+public record UpdateUserRequest(
+    string? Name,
+    string? Email,
+    string? Password
+);
+
+/// <summary>
+/// Request DTO for updating client information (updates both User and Client data)
+/// </summary>
+public record UpdateClientRequest(
+    string? Name,
+    string? Email,
+    string? Password,
+    string? Address
+);
+
+/// <summary>
+/// Request DTO for creating a new lawyer
+/// </summary>
+public record CreateLawyerRequest(
+    string Email,
+    string Password,
+    string Name,
+    string NIF,
+    string ProfessionalRegister
+);
+
+/// <summary>
+/// Request DTO for updating lawyer information (updates both User and Lawyer data)
+/// </summary>
+public record UpdateLawyerRequest(
+    string? Name,
+    string? Email,
+    string? Password,
+    string? ProfessionalRegister
 );
 
 // ============================================
@@ -37,7 +76,6 @@ public record UserResponse(
     Guid Id,
     string Email,
     string Name,
-    int? Phone,
     UserStatus Status
 );
 
@@ -48,10 +86,21 @@ public record ClientResponse(
     Guid Id,
     string Email,
     string Name,
-    int? Phone,
     UserStatus Status,
-    int NIF,
+    string NIF,
     string? Address
+);
+
+/// <summary>
+/// Response DTO for Lawyer data (User + Lawyer info)
+/// </summary>
+public record LawyerResponse(
+    Guid Id,
+    string Email,
+    string Name,
+    UserStatus Status,
+    string NIF,
+    string ProfessionalRegister
 );
 
 /// <summary>

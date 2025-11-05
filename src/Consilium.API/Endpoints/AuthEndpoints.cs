@@ -45,16 +45,14 @@ public static class AuthEndpoints
             return Results.Unauthorized();
 
         // Check if user is active
-        if (user.Status.Equals("INACTIVE", StringComparison.OrdinalIgnoreCase))
+        if (!user.IsActive)
             return Results.BadRequest(new { message = "User account is inactive" });
 
         // Generate JWT token
         var token = tokenService.GenerateToken(user);
 
-        // Parse status to enum for response
-        var status = Enum.TryParse<UserStatus>(user.Status, true, out var parsedStatus) 
-            ? parsedStatus 
-            : UserStatus.INACTIVE;
+        // Determine status based on IsActive
+        var status = user.IsActive ? UserStatus.ACTIVE : UserStatus.INACTIVE;
 
         var response = new LoginResponse(
             Token: token,

@@ -3,26 +3,31 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Consilium.Domain.Models
 {
-    [Table("User")]
+    [Table("user", Schema = "core")]
     public class User
     {
         [Key]
-        [Column("ID")]
+        [Column("user_id")]
         public Guid ID { get; set; }
 
-        [Column("email")]
-        public string Email { get; set; } = string.Empty;
-
-        [Column("Name")]
+        [Column("user_name")]
         public string Name { get; set; } = string.Empty;
 
-        [Column("password_hash")]
+        [Column("user_nif")]
+        public string NIF { get; set; } = string.Empty;
+
+        [Column("user_email")]
+        public string Email { get; set; } = string.Empty;
+
+        [Column("user_password_hash")]
         public string PasswordHash { get; set; } = string.Empty;
 
-        [Column("phone")]
-        public int? Phone { get; set; }
+        [Column("user_is_active")]
+        public bool IsActive { get; set; } = true;
 
-        [Column("status")]
-        public string Status { get; set; } = "ACTIVE";
+        // Navigation properties
+        public Client? Client { get; set; }
+        public Lawyer? Lawyer { get; set; }
+        public ICollection<Phone> Phones { get; set; } = new List<Phone>();
     }
 }

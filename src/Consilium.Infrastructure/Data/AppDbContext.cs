@@ -11,13 +11,57 @@ namespace Consilium.Infrastructure.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Client> Clients { get; set; }
+        public DbSet<Lawyer> Lawyers { get; set; }
+        public DbSet<Phone> Phones { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
+            // Set default schema to core (lowercase)
+            modelBuilder.HasDefaultSchema("core");
+
+            // Configure User entity
             modelBuilder.Entity<User>()
-                .HasOne<Client>()
-                .WithOne(c => c.User)
-                .HasForeignKey<Client>(c => c.ID);
+                .HasKey(u => u.ID);
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.IsActive)
+                .HasDefaultValue(true);
+
+            // Configure Client entity with 1:1 relationship to User
+            modelBuilder.Entity<Client>()
+                .HasKey(c => c.ID);
+
+            modelBuilder.Entity<Client>()
+                .HasOne(c => c.User)
+                .WithOne(u => u.Client)
+                .HasForeignKey<Client>(c => c.ID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Lawyer entity with 1:1 relationship to User
+            modelBuilder.Entity<Lawyer>()
+                .HasKey(l => l.ID);
+
+            modelBuilder.Entity<Lawyer>()
+                .HasOne(l => l.User)
+                .WithOne(u => u.Lawyer)
+                .HasForeignKey<Lawyer>(l => l.ID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Phone entity with 1:N relationship to User
+            modelBuilder.Entity<Phone>()
+                .HasKey(p => p.ID);
+
+            modelBuilder.Entity<Phone>()
+                .HasOne(p => p.User)
+                .WithMany(u => u.Phones)
+                .HasForeignKey(p => p.UserID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Phone>()
+                .Property(p => p.CountryCode)
+                .HasDefaultValue((short)351);
         }
     }
 }

@@ -3,18 +3,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Consilium.Domain.Models
 {
-    [Table("Client")]
+    [Table("client", Schema = "core")]
     public class Client
     {
         [Key]
-        [Column("ID")]
+        [Column("client_id")]
         public Guid ID { get; set; } // This is both PK and FK
 
-        [Column("nif")]
-        public int NIF { get; set; }
-        
-        [Column("address")]
-        public string? Address { get; set; }
+        [Column("client_address")]
+        public string Address { get; set; } = string.Empty;
 
         // Navigation property to link back to the User
         [ForeignKey("ID")]
