@@ -114,15 +114,49 @@ namespace Consilium.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task<Client?> UpdateClientAndUser(Guid clientId, Client clientUpdates, User userUpdates)
+        {
+            // Get the existing client with its user
+            var existingClient = await _context.Clients
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.ID == clientId);
+
+            if (existingClient == null)
+                return null;
+
+            // Update User fields if provided
+            if (!string.IsNullOrWhiteSpace(userUpdates.Name))
+                existingClient.User.Name = userUpdates.Name;
+
+            if (!string.IsNullOrWhiteSpace(userUpdates.Email))
+                existingClient.User.Email = userUpdates.Email;
+
+            if (!string.IsNullOrWhiteSpace(userUpdates.PasswordHash))
+                existingClient.User.PasswordHash = userUpdates.PasswordHash;
+
+            // Update Client fields if provided
+            if (!string.IsNullOrWhiteSpace(clientUpdates.Address))
+                existingClient.Address = clientUpdates.Address;
+
+            _context.Clients.Update(existingClient);
+            _context.Users.Update(existingClient.User);
+            await _context.SaveChangesAsync();
+
+            return existingClient;
+        }
+
         public async Task Delete(Guid id)
         {
-            // Deleting the User will cascade and delete the Client
+            // Get the user and client
             var user = await _context.Users.FindAsync(id);
-            if (user != null)
-            {
-                _context.Users.Remove(user);
-                await _context.SaveChangesAsync();
-            }
+            if (user == null)
+                throw new KeyNotFoundException($"Client with ID {id} not found");
+
+            // TODO: Check if client has active/open cases when PROCESS table is implemented
+            // For now, we just delete the user (which will cascade delete the client due to 1:1 relationship)
+            
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
         }
     }
 }

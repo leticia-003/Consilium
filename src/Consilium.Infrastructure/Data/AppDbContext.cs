@@ -11,6 +11,7 @@ namespace Consilium.Infrastructure.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Client> Clients { get; set; }
+        public DbSet<Lawyer> Lawyers { get; set; }
         public DbSet<Phone> Phones { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -36,7 +37,17 @@ namespace Consilium.Infrastructure.Data
                 .HasOne(c => c.User)
                 .WithOne(u => u.Client)
                 .HasForeignKey<Client>(c => c.ID)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Lawyer entity with 1:1 relationship to User
+            modelBuilder.Entity<Lawyer>()
+                .HasKey(l => l.ID);
+
+            modelBuilder.Entity<Lawyer>()
+                .HasOne(l => l.User)
+                .WithOne(u => u.Lawyer)
+                .HasForeignKey<Lawyer>(l => l.ID)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Configure Phone entity with 1:N relationship to User
             modelBuilder.Entity<Phone>()

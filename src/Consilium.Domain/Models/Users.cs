@@ -27,6 +27,7 @@ namespace Consilium.Domain.Models
 
         // Navigation properties
         public Client? Client { get; set; }
+        public Lawyer? Lawyer { get; set; }
         public ICollection<Phone> Phones { get; set; } = new List<Phone>();
     }
 }
