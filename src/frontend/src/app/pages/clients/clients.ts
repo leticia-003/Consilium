@@ -30,7 +30,7 @@ export class ClientsComponent implements OnInit, OnDestroy {
   sortDir: 'asc' | 'desc' = 'asc';
   currentPage = 1;
   totalPages = 1;
-  pageSize = 10;
+  pageSize = 1;
   totalCount = 0;
   goToPageNumber = 1;
 

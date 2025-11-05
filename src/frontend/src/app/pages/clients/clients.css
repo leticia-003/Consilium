@@ -238,15 +238,71 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-  margin-top: 16px;
+  gap: 10px;
+  padding: 10px clamp(12px, 4vw, 20px);
+  background-color: #f8f9fa;
+  border-radius: 999px;
+  margin: 24px auto;
+  width: 100%;
+  max-width: 920px;
+  box-sizing: border-box;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
 }
 
 .pagination button {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 14px;
   padding: 6px 12px;
-  border-radius: 4px;
-  background-color: #f0f0f0;
+  border-radius: 999px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  font-weight: 560;
+}
+
+.page-btn.active {
+  background-color: #a4161a;
+  color: white;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  font-weight: 800;
+  box-shadow: 0 0 0 6px rgba(164, 22, 26, 0.18);
+}
+
+.pagination span {
+  font-size: 14px;
+}
+
+.pagination input.goto-input {
+  width: 60px;
+  padding: 4px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.pagination .go-to-btn {
+  padding: 4px 12px;
+  border-radius: 5px;
+  background-color: #a4161a;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.pagination .go-to-btn:hover {
+  background-color: #8c1418;
 }
 
 .pagination button:disabled {
