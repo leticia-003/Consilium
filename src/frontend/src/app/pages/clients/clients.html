@@ -100,13 +100,13 @@
 
       <span>
         Go to:
-        <input
-          type="number"
-          min="1"
-          [max]="totalPages"
-          [(ngModel)]="goToPageNumber"
-          style="width: 60px; text-align: center;"
-        />
+            <input
+              type="number"
+              min="1"
+              [max]="totalPages"
+              [(ngModel)]="goToPageNumber"
+              class="goto-input"
+            />
         <button (click)="goToPage(goToPageNumber)">Go</button>
       </span>
 

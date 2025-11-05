@@ -17,6 +17,9 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
   client: any = null;
   loading = false;
   error = '';
+  // unavailable values (backend doesn't provide these yet)
+  totalProcesses: number | null = null;
+  lastActivity: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -35,12 +38,23 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
     this.loadClient(id);
   }
 
+  get initials(): string {
+    if (!this.client?.name) return '';
+    return this.client.name
+      .split(' ')
+      .map((s: string) => s.charAt(0))
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+  }
+
   loadClient(id: string) {
     this.loading = true;
     this.error = '';
     this.clientService.getClient(id).subscribe({
       next: (data: any) => {
         this.client = data;
+        this.client.isActive = (data?.status ?? '').toString().toUpperCase() === 'ACTIVE';
         try {
           const url = `/clients/${id}`;
           if (this.client?.name) this.breadcrumbService.setLabelOverride(url, this.client.name);
@@ -64,5 +78,13 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
     if (id) {
       this.breadcrumbService.clearLabelOverride(`/clients/${id}`);
     }
+  }
+  
+  onDelete() {
+    const ok = confirm('Delete this client account? This action cannot be undone.');
+    if (!ok) return;
+    // TODO: wire to real delete API. For now just log and show a message.
+    console.warn('Delete requested for client', this.client?.id);
+    this.error = 'Delete not implemented yet.';
   }
 }

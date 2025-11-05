@@ -253,3 +253,13 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* input used in pagination 'Go to' */
+.goto-input {
+	width: 60px;
+	text-align: center;
+	padding: 6px 8px;
+	border-radius: 6px;
+	border: 1px solid #e6e9ee;
+	background: #fff;
+}
