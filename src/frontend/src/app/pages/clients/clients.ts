@@ -1,5 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { PageTitleComponent } from '../../shared/page-title/page-title';
 import { ButtonComponent } from '../../shared/button/button';
 import { ClientService } from '../../services/client.service';
@@ -13,139 +14,9 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-clients',
   standalone: true,
-  template: `
-    <section class="page">
-      <div class="page-header">
-        <app-page-title title="Clients"></app-page-title>
-        <div class="clients-toolbar">
-          <div class="search-box" *ngIf="!loading && !errorMessage">
-            <i class="fa fa-search search-icon" aria-hidden="true"></i>
-            <input class="search" type="search" placeholder="Search" (input)="onSearch($event.target.value)" />
-          </div>
-
-          <app-button label="Add New Client" icon="fa-plus" [link]="['/create-client']" variant="primary"></app-button>
-        </div>
-      </div>
-
-      <div class="clients-filters" *ngIf="!loading && !errorMessage">
-        <button class="filter-pill" [class.active]="selectedFilter === 'all'" (click)="applyFilter('all')">
-          <span class="filter-label">All Clients</span>
-          <span class="filter-count">{{ totalClients }}</span>
-        </button>
-
-        <button class="filter-pill" [class.active]="selectedFilter === 'active'" (click)="applyFilter('active')">
-          <span class="filter-label">Active Clients</span>
-          <span class="filter-count">{{ activeClients }}</span>
-        </button>
-
-        <button class="filter-pill" [class.active]="selectedFilter === 'inactive'" (click)="applyFilter('inactive')">
-          <span class="filter-label">Inactive Clients</span>
-          <span class="filter-count">{{ inactiveClients }}</span>
-        </button>
-      </div>
-
-      <div *ngIf="loading" class="loading">Loading clients...</div>
-      <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
-
-      <div *ngIf="!loading && !errorMessage">
-        <table class="clients-table" *ngIf="filteredClients.length > 0">
-          <thead>
-            <tr>
-              <th class="col-account">
-                <button class="th-sort" (click)="toggleSort('name')" [attr.aria-sort]="ariaSort('name')">
-                  <span>Account</span>
-                  <span class="chev-wrap" aria-hidden="true">
-                    <i class="chev chev-default fas fa-sort"></i>
-                    <i class="chev chev-asc fas fa-sort-up"></i>
-                    <i class="chev chev-desc fas fa-sort-down"></i>
-                  </span>
-                </button>
-              </th>
-              <th class="col-email">Email</th>
-              <th class="col-nif">
-                <button class="th-sort" (click)="toggleSort('nif')" [attr.aria-sort]="ariaSort('nif')">
-                  <span>NIF</span>
-                  <span class="chev-wrap" aria-hidden="true">
-                    <i class="chev chev-default fas fa-sort"></i>
-                    <i class="chev chev-asc fas fa-sort-up"></i>
-                    <i class="chev chev-desc fas fa-sort-down"></i>
-                  </span>
-                </button>
-              </th>
-              <th class="col-date">
-                <button class="th-sort" (click)="toggleSort('createdAt')" [attr.aria-sort]="ariaSort('createdAt')">
-                  <span>Date</span>
-                  <span class="chev-wrap" aria-hidden="true">
-                    <i class="chev chev-default fas fa-sort"></i>
-                    <i class="chev chev-asc fas fa-sort-up"></i>
-                    <i class="chev chev-desc fas fa-sort-down"></i>
-                  </span>
-                </button>
-              </th>
-              <th class="col-status">Status</th>
-              <th class="col-actions"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let c of filteredClients; let i = index">
-              <td class="col-account">
-                <div class="account-name">{{ c.name }}</div>
-              </td>
-              <td class="col-email">{{ c.email || '—' }}</td>
-              <td class="col-nif">{{ c.nif || '—' }}</td>
-              <td class="col-date">{{ c.createdAt ? (c.createdAt | date:'dd MMM, yyyy') : '—' }}</td>
-              <td class="col-status">
-                <span class="badge" [ngClass]="{ 'badge-active': c.isActive, 'badge-inactive': !c.isActive }">
-                  {{ c.isActive ? 'Active' : 'Inactive' }}
-                </span>
-              </td>
-              <td class="col-actions">
-                <button class="btn-ellipsis" aria-label="Actions">⋯</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div *ngIf="filteredClients.length === 0" class="empty">No clients to display.</div>
-
-        <div class="pagination-container" *ngIf="totalPages > 1">
-          <button
-            class="nav-btn prev-btn"
-            [disabled]="currentPage === 1"
-            (click)="goToPage(currentPage - 1)">
-            ‹ Previous
-          </button>
-
-          <div class="page-numbers">
-            <ng-container *ngFor="let page of visiblePages">
-              <button
-                *ngIf="page !== '...'; else dots"
-                class="page-btn"
-                [class.active]="page === currentPage"
-                (click)="onPageClick(page)">
-                {{ page }}
-              </button>
-              <ng-template #dots>
-                <span class="dots">...</span>
-              </ng-template>
-            </ng-container>
-          </div>
-
-          <button
-            class="nav-btn next-btn"
-            [disabled]="currentPage === totalPages"
-            (click)="goToPage(currentPage + 1)">
-            Next ›
-          </button>
-        </div>
-
-
-
-      </div>
-    </section>
-  `,
+  templateUrl: './clients.html',
   styleUrls: ['./clients.css'],
-  imports: [PageTitleComponent, CommonModule, ButtonComponent, FormsModule],
+  imports: [PageTitleComponent, CommonModule, ButtonComponent, FormsModule, RouterLink],
 })
 
 export class ClientsComponent implements OnInit, OnDestroy {

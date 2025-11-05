@@ -8,6 +8,8 @@ import { BreadcrumbItem } from './breadcrumb.model';
 export class BreadcrumbService {
   private _crumbs = new BehaviorSubject<BreadcrumbItem[]>([]);
   readonly crumbs$ = this._crumbs.asObservable();
+  // optional overrides for crumb labels by URL (useful for dynamic labels e.g. names)
+  private overrides = new Map<string, string>();
 
   constructor(private router: Router, private route: ActivatedRoute) {
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => {
@@ -17,19 +19,50 @@ export class BreadcrumbService {
     this.build(this.route.root);
   }
 
+  setLabelOverride(url: string, label: string) {
+    if (!url) return;
+    this.overrides.set(url, label);
+    // if crumbs already built, update immediately
+    const current = this._crumbs.getValue();
+    const found = current.find((c) => c.url === url);
+    if (found) {
+      found.label = label;
+      this._crumbs.next([...current]);
+    }
+  }
+
+  clearLabelOverride(url: string) {
+    if (!url) return;
+    this.overrides.delete(url);
+  }
+
   private build(route: ActivatedRoute) {
     const crumbs: BreadcrumbItem[] = [];
     this.addCrumbs(route, '', crumbs);
 
     // Home page has no breadcrumb
+
+    if (!crumbs.find((c) => c.url === '/')) {
+      crumbs.unshift({ label: 'Consilium', url: '/' });
+    }
+
     const currentUrl = this.router.url || '';
+    // Home page has no breadcrumb
     if (currentUrl === '/' || currentUrl === '') {
       this._crumbs.next([]);
       return;
     }
+    const segments = currentUrl.split('/').filter(Boolean);
+    if (segments.length >= 2) {
+      const parentUrl = `/${segments[0]}`;
+      if (!crumbs.find((c) => c.url === parentUrl)) {
 
-    if (!crumbs.find((c) => c.url === '/')) {
-      crumbs.unshift({ label: 'Consilium', url: '/' });
+        const cfg = this.router.config.find((r) => r.path === segments[0]);
+        const parentLabel = (cfg && (cfg['title'] || cfg.data?.['breadcrumb'] || cfg.data?.['title'])) ?? this.titleize(segments[0]);
+
+        const insertIndex = Math.max(1, crumbs.length - 1);
+        crumbs.splice(insertIndex, 0, { label: parentLabel ?? '', url: parentUrl });
+      }
     }
 
     // mark last as non-clickable
@@ -51,7 +84,10 @@ export class BreadcrumbService {
         label = routeURL ? this.titleize(routeURL) : '';
       }
 
-      this.setCrumb(nextUrl, (label as string) ?? '', crumbs);
+      const override = this.overrides.get(nextUrl);
+      const finalLabel = override ?? ((label as string) ?? '');
+
+      this.setCrumb(nextUrl, finalLabel, crumbs);
 
       this.addCrumbs(child, nextUrl, crumbs);
     }
@@ -65,6 +101,12 @@ export class BreadcrumbService {
 
   private titleize(path: string) {
     const seg = path.split('/').pop() ?? path;
+    
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(seg);
+    const isLongHex = /^[0-9a-f]{24}$/i.test(seg);
+    const isNumeric = /^\d+$/.test(seg);
+    if (isUuid || isLongHex || isNumeric) return '';
+
     return seg
       .replace(/[-_]/g, ' ')
       .replace(/\b\w/g, (l) => l.toUpperCase());
