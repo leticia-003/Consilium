@@ -1,0 +1,57 @@
+Summary
+  Generated on: 05/11/2025 - 23:23:48
+  Coverage date: 05/11/2025 - 23:13:59 - 05/11/2025 - 23:23:37
+  Parser: MultiReport (2x Cobertura)
+  Assemblies: 3
+  Classes: 31
+  Files: 19
+  Line coverage: 27.4%
+  Covered lines: 286
+  Uncovered lines: 757
+  Coverable lines: 1043
+  Total lines: 1852
+  Branch coverage: 12.5% (55 of 438)
+  Covered branches: 55
+  Total branches: 438
+  Method coverage: 25.3% (40 of 158)
+  Full method coverage: 21.5% (34 of 158)
+  Covered methods: 40
+  Fully covered methods: 34
+  Total methods: 158
+
+Consilium.API                                               6.3%
+  Consilium.API.Dtos.AdminResponse                            0%
+  Consilium.API.Dtos.ClientResponse                           0%
+  Consilium.API.Dtos.CreateAdminRequest                       0%
+  Consilium.API.Dtos.CreateClientRequest                      0%
+  Consilium.API.Dtos.CreateLawyerRequest                      0%
+  Consilium.API.Dtos.LawyerResponse                           0%
+  Consilium.API.Dtos.LoginRequest                             0%
+  Consilium.API.Dtos.LoginResponse                            0%
+  Consilium.API.Dtos.UpdateAdminRequest                       0%
+  Consilium.API.Dtos.UpdateClientRequest                      0%
+  Consilium.API.Dtos.UpdateLawyerRequest                      0%
+  Consilium.API.Dtos.UpdateUserRequest                        0%
+  Consilium.API.Dtos.UserResponse                             0%
+  Consilium.API.Endpoints.AdminEndpoints                      0%
+  Consilium.API.Endpoints.AuthEndpoints                       0%
+  Consilium.API.Endpoints.ClientEndpoints                     0%
+  Consilium.API.Endpoints.LawyerEndpoints                     0%
+  Consilium.API.Endpoints.UserEndpoints                       0%
+  Consilium.API.Services.JwtTokenService                    100%
+  Program                                                     0%
+
+Consilium.Domain                                             64%
+  Consilium.Domain.Models.Admin                             100%
+  Consilium.Domain.Models.Client                            100%
+  Consilium.Domain.Models.Lawyer                            100%
+  Consilium.Domain.Models.Phone                               0%
+  Consilium.Domain.Models.User                               70%
+
+Consilium.Infrastructure                                   67.5%
+  Consilium.Infrastructure.Data.AppDbContext                100%
+  Consilium.Infrastructure.Repositories.AdminRepository       0%
+  Consilium.Infrastructure.Repositories.ClientRepository   80.4%
+  Consilium.Infrastructure.Repositories.LawyerRepository   86.6%
+  Consilium.Infrastructure.Repositories.UserRepository        0%
+  Consilium.Infrastructure.Services.PasswordHasher          100%
