@@ -12,6 +12,7 @@ namespace Consilium.Infrastructure.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Client> Clients { get; set; }
         public DbSet<Lawyer> Lawyers { get; set; }
+        public DbSet<Admin> Admins { get; set; }
         public DbSet<Phone> Phones { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -48,6 +49,20 @@ namespace Consilium.Infrastructure.Data
                 .WithOne(u => u.Lawyer)
                 .HasForeignKey<Lawyer>(l => l.ID)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Admin entity with 1:1 relationship to User
+            modelBuilder.Entity<Admin>()
+                .HasKey(a => a.ID);
+
+            modelBuilder.Entity<Admin>()
+                .HasOne(a => a.User)
+                .WithOne(u => u.Admin)
+                .HasForeignKey<Admin>(a => a.ID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Admin>()
+                .Property(a => a.StartedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             // Configure Phone entity with 1:N relationship to User
             modelBuilder.Entity<Phone>()

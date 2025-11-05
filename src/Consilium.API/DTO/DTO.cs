@@ -65,6 +65,25 @@ public record UpdateLawyerRequest(
     string? ProfessionalRegister
 );
 
+/// <summary>
+/// Request DTO for creating a new admin
+/// </summary>
+public record CreateAdminRequest(
+    string Email,
+    string Password,
+    string Name,
+    string NIF
+);
+
+/// <summary>
+/// Request DTO for updating admin information (updates both User and Admin data)
+/// </summary>
+public record UpdateAdminRequest(
+    string? Name,
+    string? Email,
+    string? Password
+);
+
 // ============================================
 // RESPONSE DTOs (for outgoing data)
 // ============================================
@@ -101,6 +120,18 @@ public record LawyerResponse(
     UserStatus Status,
     string NIF,
     string ProfessionalRegister
+);
+
+/// <summary>
+/// Response DTO for Admin data (User + Admin info)
+/// </summary>
+public record AdminResponse(
+    Guid Id,
+    string Email,
+    string Name,
+    UserStatus Status,
+    string NIF,
+    DateTime StartedAt
 );
 
 /// <summary>
