@@ -4,13 +4,18 @@ html, body {
 }
 
 .app-layout {
-	display: flex;
-	min-height: 100vh;
-	background: var(--page-bg);
+  display: flex;
+  min-height: 100vh;
+  background: var(--page-bg);
+  flex-direction: row;
 }
 
 .app-layout app-sidebar {
 	flex: 0 0 var(--sidebar-width);
+}
+
+.app-layout.no-sidebar {
+  flex-direction: column;
 }
 
 .page-content {
@@ -27,6 +32,10 @@ html, body {
 	box-shadow: var(--card-shadow);
 }
 
+.app-layout.no-sidebar .page-content {
+  padding: 0;
+}
+
 @media (max-width: 900px) {
 	.app-layout {
 		align-items: flex-start;
@@ -36,6 +45,10 @@ html, body {
 	}
 	.page-content {
 		padding: 12px;
+	}
+	.app-layout.no-sidebar .page-content {
+		padding: 12px;
+		margin-top: 0;
 	}
 }
 
