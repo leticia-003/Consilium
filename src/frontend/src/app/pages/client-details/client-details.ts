@@ -4,6 +4,8 @@ import { ActivatedRoute } from '@angular/router';
 import { PageTitleComponent } from '../../shared/page-title/page-title';
 import { ButtonComponent } from '../../shared/button/button';
 import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal';
+import { NotificationComponent } from '../../shared/notification/notification.component';
+import { NotificationService } from '../../shared/notification/notification.service';
 import { Router } from '@angular/router';
 import { ClientService } from '../../services/client.service';
 import { BreadcrumbService } from '../../shared/breadcrumb/breadcrumb.service';
@@ -13,7 +15,7 @@ import { BreadcrumbService } from '../../shared/breadcrumb/breadcrumb.service';
   standalone: true,
   templateUrl: './client-details.html',
   styleUrls: ['./client-details.css'],
-  imports: [CommonModule, PageTitleComponent, ButtonComponent, ConfirmModalComponent],
+  imports: [CommonModule, PageTitleComponent, ButtonComponent, ConfirmModalComponent, NotificationComponent],
 })
 export class ClientDetailsComponent implements OnInit, OnDestroy {
   client: any = null;
@@ -29,7 +31,8 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
     private clientService: ClientService,
     private breadcrumbService: BreadcrumbService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -89,8 +92,8 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
   }
 
   confirmDelete() {
-    if (!this.client?.id) return;
-    this.loading = true;
+        this.notificationService.showSuccess('Client successfully deleted.', 3000);
+        setTimeout(() => this.router.navigate(['/clients']), 800);
     this.clientService.deleteClient(this.client.id).subscribe({
       next: () => {
         this.router.navigate(['/clients']);

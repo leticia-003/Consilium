@@ -2,11 +2,12 @@ import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from './shared/sidebar/sidebar';
 import { BreadcrumbComponent } from './shared/breadcrumb/breadcrumb';
+import { NotificationComponent } from './shared/notification/notification.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, BreadcrumbComponent],
+  imports: [RouterOutlet, SidebarComponent, BreadcrumbComponent, NotificationComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
