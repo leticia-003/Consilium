@@ -25,6 +25,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<ILawyerRepository, LawyerRepository>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<JwtTokenService>();
 
@@ -96,5 +97,6 @@ app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapClientEndpoints();
 app.MapLawyerEndpoints();
+app.MapAdminEndpoints();
 
 app.Run();
