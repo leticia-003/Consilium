@@ -75,7 +75,7 @@ CREATE TABLE CORE.CLIENT (
     -- RELAÇÃO DE HERANÇA (1:1).
     CONSTRAINT FK_CLIENT_USER_01 FOREIGN KEY (CLIENT_ID)
         REFERENCES CORE.USER (USER_ID)
-        ON DELETE RESTRICT
+        ON DELETE CASCADE
 );
 
 -- *******************************************
