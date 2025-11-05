@@ -108,28 +108,39 @@ import { FormsModule } from '@angular/forms';
 
         <div *ngIf="filteredClients.length === 0" class="empty">No clients to display.</div>
 
-        <div class="pagination">
-          <button (click)="goToPage(1)" [disabled]="currentPage === 1">First</button>
-          <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">Previous</button>
+        <div class="pagination-container" *ngIf="totalPages > 1">
+          <button
+            class="nav-btn prev-btn"
+            [disabled]="currentPage === 1"
+            (click)="goToPage(currentPage - 1)">
+            ‹ Previous
+          </button>
 
-          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+          <div class="page-numbers">
+            <ng-container *ngFor="let page of visiblePages">
+              <button
+                *ngIf="page !== '...'; else dots"
+                class="page-btn"
+                [class.active]="page === currentPage"
+                (click)="onPageClick(page)">
+                {{ page }}
+              </button>
+              <ng-template #dots>
+                <span class="dots">...</span>
+              </ng-template>
+            </ng-container>
+          </div>
 
-          <span>
-            Go to:
-            <input
-              type="number"
-              min="1"
-              [max]="totalPages"
-              [(ngModel)]="goToPageNumber"
-              style="width: 60px; text-align: center;"
-            />
-            <button (click)="goToPage(goToPageNumber)">Go</button>
-          </span>
-
-          <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">Next</button>
-          <button (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages">Last</button>
+          <button
+            class="nav-btn next-btn"
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(currentPage + 1)">
+            Next ›
+          </button>
         </div>
-        
+
+
+
       </div>
     </section>
   `,
@@ -148,7 +159,7 @@ export class ClientsComponent implements OnInit, OnDestroy {
   sortDir: 'asc' | 'desc' = 'asc';
   currentPage = 1;
   totalPages = 1;
-  pageSize = 10;
+  pageSize = 2;
   totalCount = 0;
   goToPageNumber = 1;
 
@@ -190,7 +201,6 @@ export class ClientsComponent implements OnInit, OnDestroy {
     });
   }
 
-
   onSearch(term: string): void {
     this.searchTerm = (term || '').trim();
     this.searchSubject.next(this.searchTerm);
@@ -230,6 +240,32 @@ export class ClientsComponent implements OnInit, OnDestroy {
       error: () => this.loading = false
     });
   }
+
+  get visiblePages(): (number | string)[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const delta = 2;
+    const range: (number | string)[] = [];
+
+    // Always show first and last page
+    const left = Math.max(2, current - delta);
+    const right = Math.min(total - 1, current + delta);
+
+    range.push(1);
+
+    if (left > 2) range.push('...');
+    for (let i = left; i <= right; i++) range.push(i);
+    if (right < total - 1) range.push('...');
+
+    if (total > 1) range.push(total);
+    return range;
+  }
+
+  onPageClick(page: number | string): void {
+    if (page === '...') return;
+    this.goToPage(Number(page));
+  }
+
 
   private transformApiData(apiData: any[]): Client[] {
     return (apiData || []).map((c: any) => ({

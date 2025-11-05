@@ -234,22 +234,71 @@
 
 .loading { padding: 12px; color: #6b7280; }
 
-.pagination {
+.pagination-container {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  margin-top: 16px;
+  gap: clamp(6px, 1.2vw, 12px);
+  padding: 10px clamp(12px, 4vw, 20px);
+  background-color: #f8f9fa;
+  border-radius: 999px;
+  margin: 24px auto;
+  width: 100%;
+  max-width: 920px;
+  box-sizing: border-box;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
 }
 
-.pagination button {
+.page-btn,
+.nav-btn {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 14px;
   padding: 6px 12px;
-  border-radius: 4px;
-  background-color: #f0f0f0;
+  border-radius: 999px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  font-weight: 560;
 }
 
-.pagination button:disabled {
-  opacity: 0.5;
+.page-btn.active {
+  background-color: #a4161a;
+  color: white;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  font-weight: 800;
+  box-shadow: 0 0 0 6px rgba(164, 22, 26, 0.18);
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex: 1;
+}
+
+.page-btn:hover:not(.active),
+.nav-btn:hover:not(:disabled) {
+  background-color: #eee;
+}
+
+.nav-btn:disabled {
+  color: #aaa;
   cursor: not-allowed;
 }
+
+.dots {
+  color: #888;
+  padding: 0 4px;
+}
+
