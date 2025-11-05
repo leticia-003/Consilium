@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { PageTitleComponent } from '../../shared/page-title/page-title';
 import { ButtonComponent } from '../../shared/button/button';
 import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal';
-import { NotificationComponent } from '../../shared/notification/notification.component';
+import { parseAddress } from '../../shared/address.util';
 import { NotificationService } from '../../shared/notification/notification.service';
 import { Router } from '@angular/router';
 import { ClientService } from '../../services/client.service';
@@ -15,7 +15,7 @@ import { BreadcrumbService } from '../../shared/breadcrumb/breadcrumb.service';
   standalone: true,
   templateUrl: './client-details.html',
   styleUrls: ['./client-details.css'],
-  imports: [CommonModule, PageTitleComponent, ButtonComponent, ConfirmModalComponent, NotificationComponent],
+  imports: [CommonModule, PageTitleComponent, ButtonComponent, ConfirmModalComponent],
 })
 export class ClientDetailsComponent implements OnInit, OnDestroy {
   client: any = null;
@@ -62,6 +62,18 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
       next: (data: any) => {
         this.client = data;
         this.client.isActive = (data?.status ?? '').toString().toUpperCase() === 'ACTIVE';
+        try {
+          const parsed = parseAddress(data?.address || '');
+          this.client.addressStreet = parsed.street || '';
+          this.client.addressCityState = parsed.cityState || '';
+          this.client.addressCountry = parsed.country || '';
+          this.client.addressZip = parsed.zip || '';
+        } catch (e) {
+          this.client.addressStreet = data?.address || '';
+          this.client.addressCityState = '';
+          this.client.addressCountry = '';
+          this.client.addressZip = '';
+        }
         try {
           const url = `/clients/${id}`;
           if (this.client?.name) this.breadcrumbService.setLabelOverride(url, this.client.name);

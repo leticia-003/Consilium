@@ -55,24 +55,24 @@
         <div class="row">
           <div class="field">
             <label>Street</label>
-            <div class="value">{{ client.address || '—' }}</div>
+            <div class="value">{{ client.addressStreet || '—' }}</div>
           </div>
 
           <div class="field">
             <label>City/State</label>
-            <div class="value">—</div>
+            <div class="value">{{ client.addressCityState || '—' }}</div>
           </div>
         </div>
 
         <div class="row">
           <div class="field">
             <label>Country</label>
-            <div class="value">—</div>
+            <div class="value">{{ client.addressCountry || '—' }}</div>
           </div>
 
           <div class="field">
             <label>ZIP Code</label>
-            <div class="value">—</div>
+            <div class="value">{{ client.addressZip || '—' }}</div>
           </div>
         </div>
       </section>

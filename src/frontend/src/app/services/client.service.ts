@@ -36,4 +36,17 @@ export class ClientService {
     return this.http.delete<any>(`${API_BASE_URL}/clients/${id}`);
   }
 
+  createClient(payload: Partial<Client>): Observable<any> {
+    if (this.useMock) {
+      const created: any = { ...payload, id: Math.random().toString(36).slice(2), createdAt: new Date().toISOString() };
+      try {
+        (MOCK_CLIENTS as any[]).unshift(created);
+      } catch {}
+      return of(created).pipe(delay(300));
+    }
+    return this.http.post<any>(`${API_BASE_URL}/clients`, payload).pipe(
+      catchError(err => { throw err; })
+    );
+  }
+
 }

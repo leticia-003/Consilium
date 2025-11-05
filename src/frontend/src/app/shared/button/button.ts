@@ -14,6 +14,7 @@ export class ButtonComponent {
   @Input() icon = '';
   @Input() variant: 'primary' | 'secondary' = 'primary';
   @Input() link: string | any[] | null = null;
+  @Input() disabled: boolean = false;
 
   get variantClass() {
     return this.variant === 'primary' ? 'btn-primary' : '';
