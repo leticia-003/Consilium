@@ -114,7 +114,7 @@ namespace Consilium.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Client?> UpdateClientAndUser(Guid clientId, Client clientUpdates, User userUpdates)
+        public async Task<Client?> UpdateClientAndUser(Guid clientId, Client clientUpdates, User userUpdates, bool? isActive)
         {
             // Get the existing client with its user
             var existingClient = await _context.Clients
@@ -130,6 +130,18 @@ namespace Consilium.Infrastructure.Repositories
 
             if (!string.IsNullOrWhiteSpace(userUpdates.Email))
                 existingClient.User.Email = userUpdates.Email;
+
+            // Update NIF if provided
+            if (!string.IsNullOrWhiteSpace(userUpdates.NIF))
+                existingClient.User.NIF = userUpdates.NIF;
+
+            // Update active flag if provided
+            if (isActive.HasValue)
+                existingClient.User.IsActive = isActive.Value;
+
+            // Update NIF if provided
+            if (!string.IsNullOrWhiteSpace(userUpdates.NIF))
+                existingClient.User.NIF = userUpdates.NIF;
 
             if (!string.IsNullOrWhiteSpace(userUpdates.PasswordHash))
                 existingClient.User.PasswordHash = userUpdates.PasswordHash;

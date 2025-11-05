@@ -49,4 +49,18 @@ export class ClientService {
     );
   }
 
+  updateClient(id: string, payload: Partial<Client>): Observable<any> {
+    if (this.useMock) {
+      const idx = (MOCK_CLIENTS as any[]).findIndex(c => c.id === id);
+      if (idx >= 0) {
+        (MOCK_CLIENTS as any[])[idx] = { ...MOCK_CLIENTS[idx], ...payload } as any;
+        return of((MOCK_CLIENTS as any[])[idx]).pipe(delay(200));
+      }
+      return of(null).pipe(delay(200));
+    }
+    return this.http.patch<any>(`${API_BASE_URL}/clients/${id}`, payload).pipe(
+      catchError(err => { throw err; })
+    );
+  }
+
 }

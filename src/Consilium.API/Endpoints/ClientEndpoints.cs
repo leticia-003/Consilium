@@ -161,9 +161,17 @@ public static class ClientEndpoints
         if (string.IsNullOrWhiteSpace(request.Name) && 
             string.IsNullOrWhiteSpace(request.Email) && 
             string.IsNullOrWhiteSpace(request.Password) && 
-            string.IsNullOrWhiteSpace(request.Address))
+            string.IsNullOrWhiteSpace(request.Address) &&
+            string.IsNullOrWhiteSpace(request.NIF) &&
+            !request.IsActive.HasValue)
         {
             return Results.BadRequest(new { message = "At least one field must be provided for update" });
+        }
+
+        // If NIF is provided, ensure basic length validation
+        if (!string.IsNullOrWhiteSpace(request.NIF) && request.NIF.Length != 9)
+        {
+            return Results.BadRequest(new { message = "NIF must be a 9-character string" });
         }
 
         // Prepare the update data
@@ -171,7 +179,8 @@ public static class ClientEndpoints
         {
             Name = request.Name ?? string.Empty,
             Email = request.Email ?? string.Empty,
-            PasswordHash = !string.IsNullOrWhiteSpace(request.Password) ? hasher.HashPassword(request.Password) : string.Empty
+            PasswordHash = !string.IsNullOrWhiteSpace(request.Password) ? hasher.HashPassword(request.Password) : string.Empty,
+            NIF = request.NIF ?? string.Empty
         };
 
         var clientUpdates = new Client
@@ -180,7 +189,7 @@ public static class ClientEndpoints
         };
 
         // Update in the repository
-        var updatedClient = await repo.UpdateClientAndUser(id, clientUpdates, userUpdates);
+    var updatedClient = await repo.UpdateClientAndUser(id, clientUpdates, userUpdates, request.IsActive);
 
         if (updatedClient == null)
             return Results.NotFound(new { message = $"Client with ID {id} not found" });

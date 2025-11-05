@@ -41,8 +41,11 @@ public record UpdateClientRequest(
     string? Name,
     string? Email,
     string? Password,
-    string? Address
+    string? Address,
+    string? NIF,
+    bool? IsActive
 );
+
 
 /// <summary>
 /// Request DTO for creating a new lawyer

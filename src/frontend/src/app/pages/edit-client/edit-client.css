@@ -1,0 +1,40 @@
+.help { color: #6b7280; font-size: 13px; }
+
+/* edit-client specific styles (switch control + warnings) */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 24px;
+}
+.switch input { display: none; }
+.switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  border-radius: 24px;
+  transition: .2s;
+}
+.switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  top: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: .2s;
+}
+.switch input:checked + .slider { background-color: #07824b; }
+.switch input:checked + .slider:before { transform: translateX(18px); }
+
+.warning-note {
+  color: #b45a42;
+  background: #fff4f2;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 8px;
+}
