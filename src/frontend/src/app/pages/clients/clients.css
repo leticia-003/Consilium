@@ -234,6 +234,91 @@
 
 .loading { padding: 12px; color: #6b7280; }
 
+/* Pagination Styles */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  margin: 24px auto;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  max-width: 920px;
+  flex-wrap: wrap;
+}
+
+.pagination button {
+  background: #f3f4f6;
+  border: 2px solid #d1d5db;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.pagination button:hover:not(:disabled) {
+  background: #a4161a;
+  color: white;
+  border-color: #a4161a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(164, 22, 26, 0.2);
+}
+
+.pagination button:disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  border-color: #e5e7eb;
+  box-shadow: none;
+}
+
+.pagination span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination input.goto-input {
+  width: 70px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  text-align: center;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.pagination input.goto-input:focus {
+  outline: none;
+  border-color: #a4161a;
+  box-shadow: 0 0 0 3px rgba(164, 22, 26, 0.1);
+}
+
+.pagination span:has(.goto-input) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: rgba(164, 22, 26, 0.05);
+  border-radius: 8px;
+}
+
 .pagination-container {
   display: flex;
   justify-content: space-between;

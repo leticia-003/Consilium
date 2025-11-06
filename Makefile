@@ -36,9 +36,10 @@ help:
 # Build
 # ------------------------
 build-dev:
-	$(COMPOSE) -f $(DEV_FILE) build
+	$(COMPOSE) -f $(DEV_FILE) build --no-cache
 
 build-prod:
+	$(COMPOSE) -f $(PROD_FILE) build --no-cache
 	$(COMPOSE) -f $(PROD_FILE) build
 
 # ------------------------
