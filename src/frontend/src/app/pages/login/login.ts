@@ -37,7 +37,7 @@ export class LoginComponent {
     
     // Dummy authentication
     if (email === 'admin@company.com' && password === 'password') {
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/home']);
     } else {
       this.errorMessage = 'Invalid email or password';
       this.loading = false;
