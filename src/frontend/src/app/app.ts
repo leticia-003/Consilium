@@ -1,8 +1,7 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet, Router } from '@angular/router';
+import { Component, signal, OnInit } from '@angular/core';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { SidebarComponent } from './shared/sidebar/sidebar';
 import { BreadcrumbComponent } from './shared/breadcrumb/breadcrumb';
-import { NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
 import { CommonModule } from '@angular/common';
 
@@ -13,7 +12,7 @@ import { CommonModule } from '@angular/common';
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
-export class App {
+export class App implements OnInit {
   protected readonly title = signal('frontend');
   isLoginPage: boolean = false;
 
@@ -21,7 +20,11 @@ export class App {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: NavigationEnd) => {
-      this.isLoginPage = event.url === '/login';
+      this.isLoginPage = event.urlAfterRedirects === '/' || event.urlAfterRedirects === '/login';
     });
+  }
+
+  ngOnInit(): void {
+    this.isLoginPage = this.router.url === '/' || this.router.url === '/login';
   }
 }

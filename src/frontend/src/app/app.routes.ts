@@ -12,7 +12,7 @@ import { LoginComponent } from './pages/login/login';
 import { NgModule } from '@angular/core';
 
 export const routes: Routes = [
-	{ path: '', redirectTo: '/home', pathMatch: 'full' },
+	{ path: '', component: LoginComponent, title: 'Login' },
 	{ path: 'home', component: HomeComponent, title: 'Home' },
 	{ path: 'clients/:id', component: ClientDetailsComponent, title: 'Client Details' },
 	{ path: 'clients', component: ClientsComponent, title: 'Clients' },
