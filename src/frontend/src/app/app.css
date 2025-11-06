@@ -24,7 +24,6 @@ html, body {
 	box-sizing: border-box;
 }
 
-/* content area placeholder styles */
 .page-content .page {
 	background: var(--card-bg);
 	border-radius: var(--card-radius);

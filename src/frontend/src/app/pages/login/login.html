@@ -1,41 +1,45 @@
-<section class="login-page">
-  <div class="login-container">
-    <h2>Login</h2>
-    
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input
-          type="email"
-          id="email"
-          formControlName="email"
-          placeholder="Enter your email"
-        />
-        <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="error">
-          Please enter a valid email address.
-        </div>
-      </div>
+<div class="login-container">
+  <div class="login-image-section">
+    </div>
 
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          formControlName="password"
-          placeholder="Enter your password"
-        />
-        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error">
-          Password must be at least 6 characters long.
-        </div>
-      </div>
+  <div class="login-form-section">
+    <div class="logo-container" style="display:flex; justify-content:flex-end; width:100%; align-items:center;">
+      <img src="assets/logo.svg" alt="Consilium Logo" class="consilium-logo">
+    </div>
 
-      <button type="submit" [disabled]="loading || loginForm.invalid" class="login-btn">
-        {{ loading ? 'Logging in...' : 'Login' }}
-      </button>
-      
-      <div *ngIf="errorMessage" class="error-message">
-        {{ errorMessage }}
-      </div>
-    </form>
+    <div class="login-card">
+      <h2 class="welcome-title">Welcome to your Consilium</h2>
+      <p class="tagline">Justice simplified through smarter communication.</p>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <div class="form-group">
+          <input id="email" type="email" formControlName="email" placeholder="Enter your e-mail or username">
+          <div *ngIf="loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)" class="error-message">
+            <div *ngIf="loginForm.get('email')?.errors?.['email']">Please enter a valid email.</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <input id="password" type="password" formControlName="password" placeholder="Enter your Password">
+          <div *ngIf="loginForm.get('password')?.invalid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched)" class="error-message">
+            <div *ngIf="loginForm.get('password')?.errors?.['required']">Password is required.</div>
+            <div *ngIf="loginForm.get('password')?.errors?.['minlength']">Password must be at least 6 characters.</div>
+          </div>
+        </div>
+
+        <div class="remember-me-container">
+            <input type="checkbox" id="rememberMe">
+            <label for="rememberMe">Remember Me</label>
+        </div>
+
+        <div *ngIf="errorMessage" class="error-message auth-error">{{ errorMessage }}</div>
+
+        <button type="submit" [disabled]="loginForm.invalid || loading">
+          <span *ngIf="loading" class="spinner"></span>
+          {{ loading ? 'Signing In...' : 'Sign In' }}
+        </button>
+      </form>
+
+    </div>
   </div>
-</section>
+</div>
