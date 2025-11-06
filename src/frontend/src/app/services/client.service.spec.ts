@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ClientService } from './client.service';
-import { API_BASE_URL } from '../config';
+import { environment } from '../../environments/environment';
 
 describe('ClientService', () => {
   let service: ClientService;
@@ -46,7 +46,7 @@ describe('ClientService', () => {
       done();
     });
 
-    const req = httpMock.expectOne(`${API_BASE_URL}/clients`);
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/clients`);
     expect(req.request.method).toBe('GET');
     req.flush(mockClients);
   });
@@ -57,7 +57,7 @@ describe('ClientService', () => {
     service.getClients(params).subscribe();
 
     const req = httpMock.expectOne((request) => {
-      return request.url === `${API_BASE_URL}/clients` &&
+      return request.url === `${environment.apiBaseUrl}/clients` &&
              request.params.get('page') === '1' &&
              request.params.get('limit') === '10' &&
              request.params.get('search') === 'John';
@@ -81,7 +81,7 @@ describe('ClientService', () => {
       done();
     });
 
-    const req = httpMock.expectOne(`${API_BASE_URL}/clients/123`);
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/clients/123`);
     expect(req.request.method).toBe('GET');
     req.flush(mockClient);
   });
@@ -92,7 +92,7 @@ describe('ClientService', () => {
       done();
     });
 
-    const req = httpMock.expectOne(`${API_BASE_URL}/clients/123`);
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/clients/123`);
     expect(req.request.method).toBe('DELETE');
     req.flush({});
   });
@@ -106,7 +106,7 @@ describe('ClientService', () => {
       }
     });
 
-    const req = httpMock.expectOne(`${API_BASE_URL}/clients`);
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/clients`);
     req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
   });
 });

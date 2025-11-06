@@ -4,7 +4,7 @@ import { Observable, of } from 'rxjs';
 import { delay, catchError } from 'rxjs/operators';
 import { Client } from '../models/client';
 import { MOCK_CLIENTS } from '../pages/clients/mock-clients';
-import { API_BASE_URL } from '../config';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ClientService {
@@ -18,7 +18,7 @@ export class ClientService {
     if (this.useMock) {
       return of({ data: MOCK_CLIENTS, meta: { totalCount: MOCK_CLIENTS.length } }).pipe(delay(250));
     }
-    return this.http.get<any>(`${API_BASE_URL}/clients`, { params });
+    return this.http.get<any>(`${environment.apiBaseUrl}/clients`, { params });
   }
 
   getClient(id: string): Observable<any> {
@@ -26,14 +26,14 @@ export class ClientService {
       const found = MOCK_CLIENTS.find(c => c.id === id);
       return of(found).pipe(delay(200));
     }
-    return this.http.get<any>(`${API_BASE_URL}/clients/${id}`);
+    return this.http.get<any>(`${environment.apiBaseUrl}/clients/${id}`);
   }
 
   deleteClient(id: string): Observable<any> {
     if (this.useMock) {
       return of({}).pipe(delay(200));
     }
-    return this.http.delete<any>(`${API_BASE_URL}/clients/${id}`);
+    return this.http.delete<any>(`${environment.apiBaseUrl}/clients/${id}`);
   }
 
 }
