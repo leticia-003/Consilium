@@ -1,0 +1,11 @@
+<div class="notif-wrap" aria-live="polite">
+  <div *ngFor="let n of notifications" class="notif" [ngClass]="[n.type, n.closing ? 'closing' : '']">
+    <div class="icon" aria-hidden>
+      <i *ngIf="n.type==='success'" class="fa fa-check"></i>
+      <i *ngIf="n.type==='error'" class="fa fa-exclamation-triangle"></i>
+      <i *ngIf="n.type==='info'" class="fa fa-info-circle"></i>
+    </div>
+    <div class="message">{{ n.message }}</div>
+    <button class="close" (click)="remove(n.id)" aria-label="Dismiss">×</button>
+  </div>
+</div>

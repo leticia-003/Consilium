@@ -20,7 +20,9 @@
   box-shadow: 0 6px 18px rgba(166, 24, 46, 0.12);
 }
 
-.btn-primary:hover {
+/* Only apply hover transform for enabled buttons (covers <button> and <a> cases) */
+.btn-primary:not(.disabled):hover,
+.btn-primary:not([disabled]):hover {
   transform: translateY(-2px);
 }
 
@@ -37,4 +39,27 @@
   border-radius: 10px;
   height: 36px;
   min-height: 36px;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-muted, #666);
+  font-weight: 600;
+  height: 40px;
+  padding: 0 12px;
+}
+
+.btn-secondary:hover {
+  /* intentionally no visual change on hover for secondary (cancel/link-like) buttons */
+  text-decoration: none;
+}
+
+.btn.disabled,
+a.btn.disabled,
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.6;
+  pointer-events: none;
+  cursor: default;
+  transform: none !important; /* prevent hover/transform */
 }

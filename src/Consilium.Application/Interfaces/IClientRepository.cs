@@ -16,7 +16,7 @@ namespace Consilium.Application.Interfaces
 
         Task<Client> Create(User user, Client client);
         Task Update(Client client);
-        Task<Client?> UpdateClientAndUser(Guid clientId, Client clientUpdates, User userUpdates);
+    Task<Client?> UpdateClientAndUser(Guid clientId, Client clientUpdates, User userUpdates, bool? isActive);
         Task Delete(Guid id);
     }
 

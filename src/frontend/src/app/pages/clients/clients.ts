@@ -30,7 +30,7 @@ export class ClientsComponent implements OnInit, OnDestroy {
   sortDir: 'asc' | 'desc' = 'asc';
   currentPage = 1;
   totalPages = 1;
-  pageSize = 1;
+  pageSize = 2;
   totalCount = 0;
   goToPageNumber = 1;
 
@@ -72,7 +72,6 @@ export class ClientsComponent implements OnInit, OnDestroy {
     });
   }
 
-
   onSearch(term: string): void {
     this.searchTerm = (term || '').trim();
     this.searchSubject.next(this.searchTerm);
@@ -112,6 +111,32 @@ export class ClientsComponent implements OnInit, OnDestroy {
       error: () => this.loading = false
     });
   }
+
+  get visiblePages(): (number | string)[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const delta = 2;
+    const range: (number | string)[] = [];
+
+    // Always show first and last page
+    const left = Math.max(2, current - delta);
+    const right = Math.min(total - 1, current + delta);
+
+    range.push(1);
+
+    if (left > 2) range.push('...');
+    for (let i = left; i <= right; i++) range.push(i);
+    if (right < total - 1) range.push('...');
+
+    if (total > 1) range.push(total);
+    return range;
+  }
+
+  onPageClick(page: number | string): void {
+    if (page === '...') return;
+    this.goToPage(Number(page));
+  }
+
 
   private transformApiData(apiData: any[]): Client[] {
     return (apiData || []).map((c: any) => ({

@@ -10,11 +10,13 @@ import { SettingsComponent } from './pages/settings';
 import { CreateClientComponent } from './pages/create-client/create-client';
 import { LoginComponent } from './pages/login/login';
 import { NgModule } from '@angular/core';
+import { EditClientComponent } from './pages/edit-client/edit-client';
 
 export const routes: Routes = [
 	{ path: '', component: LoginComponent, title: 'Login' },
 	{ path: 'home', component: HomeComponent, title: 'Home' },
 	{ path: 'clients/:id', component: ClientDetailsComponent, title: 'Client Details' },
+	{ path: 'clients/:id/edit', component: EditClientComponent, title: 'Edit Client' },
 	{ path: 'clients', component: ClientsComponent, title: 'Clients' },
 	{ path: 'lawyers', component: LawyersComponent, title: 'Lawyers' },
 	{ path: 'chatbot', component: ChatbotComponent, title: 'ChatBot' },

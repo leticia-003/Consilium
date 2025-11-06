@@ -4,11 +4,12 @@ import { SidebarComponent } from './shared/sidebar/sidebar';
 import { BreadcrumbComponent } from './shared/breadcrumb/breadcrumb';
 import { filter } from 'rxjs';
 import { CommonModule } from '@angular/common';
+import { NotificationComponent } from './shared/notification/notification.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, BreadcrumbComponent, CommonModule],
+  imports: [RouterOutlet, SidebarComponent, BreadcrumbComponent, NotificationComponent , CommonModule],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })

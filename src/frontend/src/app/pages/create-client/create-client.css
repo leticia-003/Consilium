@@ -20,27 +20,6 @@
     margin-bottom: 1.2rem;
 }
 
-.delete-account {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	height: 44px;
-	min-height: 44px;
-	padding: 0 14px;
-	border-radius: 12px;
-	box-sizing: border-box;
-	background: transparent;
-	border: 1px solid rgba(220,38,38,0.06);
-	color: #dc2626;
-	font-weight: 700;
-	font-size: 14px;
-	cursor: pointer;
-}
-
-.delete-account:hover {
-  background: rgba(220,38,38,0.06);
-}
-
 .layout-grid {
 	display: grid;
 	grid-template-columns: 2fr 1fr;
@@ -70,11 +49,22 @@
 	flex: 1;
 }
 
+.field.full { flex: 1 1 100%; }
+
 .field label {
 	display: block;
 	font-weight: 600;
 	color: #333;
 	margin-bottom: 0.4rem;
+}
+
+.field input {
+	width: 100%;
+	padding: 0.6rem 0.9rem;
+	border-radius: 10px;
+	border: 1px solid #e6e9ee;
+	background: #fff;
+	box-sizing: border-box;
 }
 
 .value {
@@ -83,23 +73,6 @@
 	border-radius: 12px;
 	color: #333;
 }
-
-.phone-flag { font-size: 16px; line-height: 1; margin-right: 6px; }
-/* .phone-code { color: #1f2937; font-weight: 700; font-size: 13px; } */
-.phone-number { vertical-align: middle; }
-
-.field.code-field { flex: 0 0 110px; max-width: 140px; }
-.value.value-inline {
-	display: flex;
-	align-items: center;
-	justify-content: flex-start;
-	gap: 8px;
-	background: #f7f7f7;
-	border-radius: 12px;
-	color: #333;
-	box-sizing: border-box;
-}
-.value.value-inline .phone-flag { margin-right: 6px; }
 
 .profile-card {
 	text-align: center;
@@ -119,13 +92,6 @@
 	font-size: 28px;
 	color: #0a2540;
 	overflow: hidden;
-}
-
-.avatar img {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	display: block;
 }
 
 .meta {
@@ -203,3 +169,5 @@
 .error {
 	padding: 1rem;
 }
+
+.help { color: #6b7280; font-size: 13px; }
