@@ -44,7 +44,7 @@ export class ClientService {
       } catch {}
       return of(created).pipe(delay(300));
     }
-    return this.http.post<any>(`${API_BASE_URL}/clients`, payload).pipe(
+    return this.http.post<any>(`${environment.apiBaseUrl}/clients`, payload).pipe(
       catchError(err => { throw err; })
     );
   }
@@ -58,7 +58,7 @@ export class ClientService {
       }
       return of(null).pipe(delay(200));
     }
-    return this.http.patch<any>(`${API_BASE_URL}/clients/${id}`, payload).pipe(
+    return this.http.patch<any>(`${environment.apiBaseUrl}/clients/${id}`, payload).pipe(
       catchError(err => { throw err; })
     );
   }

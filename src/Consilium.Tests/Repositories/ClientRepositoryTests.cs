@@ -206,7 +206,7 @@ public class ClientRepositoryTests
         var clientUpdates = new Client { Address = "New Address" };
 
         // Act
-        var result = await repository.UpdateClientAndUser(client.ID, clientUpdates, userUpdates);
+        var result = await repository.UpdateClientAndUser(client.ID, clientUpdates, userUpdates, null);
 
         // Assert
         Assert.NotNull(result);
@@ -227,7 +227,7 @@ public class ClientRepositoryTests
         var clientUpdates = new Client { Address = "New Address" };
 
         // Act
-        var result = await repository.UpdateClientAndUser(nonExistingId, clientUpdates, userUpdates);
+        var result = await repository.UpdateClientAndUser(nonExistingId, clientUpdates, userUpdates, null);
 
         // Assert
         Assert.Null(result);
