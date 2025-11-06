@@ -19,6 +19,10 @@ public static class UserEndpoints
         group.MapGet("/{id:guid}", GetUserById)
             .WithName("GetUserById")
             .WithDescription("Retrieve a user by ID");
+
+        group.MapDelete("/{id:guid}", DeleteUser)
+            .WithName("DeleteUser")
+            .WithDescription("Delete a user by ID");
     }
 
     private static async Task<IResult> GetAllUsers(IUserRepository repo)
@@ -28,9 +32,7 @@ public static class UserEndpoints
             Id: u.ID,
             Email: u.Email,
             Name: u.Name,
-            Phone: u.Phone,
-            // Convert string from DB to enum for response
-            Status: Enum.TryParse<UserStatus>(u.Status, true, out var status) ? status : UserStatus.INACTIVE
+            Status: u.IsActive ? UserStatus.ACTIVE : UserStatus.INACTIVE
         ));
         return Results.Ok(response);
     }
@@ -46,11 +48,42 @@ public static class UserEndpoints
             Id: user.ID,
             Email: user.Email,
             Name: user.Name,
-            Phone: user.Phone,
-            // Convert string from DB to enum for response
-            Status: Enum.TryParse<UserStatus>(user.Status, true, out var status) ? status : UserStatus.INACTIVE
+            Status: user.IsActive ? UserStatus.ACTIVE : UserStatus.INACTIVE
         );
 
         return Results.Ok(response);
+    }
+
+    /// <summary>
+    /// Deletes a user and all related data (Client, Phone records).
+    /// This method is reusable by User, Advocate, and Admin delete endpoints.
+    /// </summary>
+    private static async Task<IResult> DeleteUserAsync(Guid id, IClientRepository clientRepo)
+    {
+        try
+        {
+            // Use the ClientRepository delete method which handles User deletion
+            // and cascade deletes to Client and Phone records
+            await clientRepo.Delete(id);
+            return Results.NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return Results.NotFound(new { message = $"User with ID {id} not found" });
+        }
+    }
+
+    /// <summary>
+    /// Reusable delete method that can be called from User, Advocate, and Admin endpoints.
+    /// Handles the deletion logic consistently across all entity types.
+    /// </summary>
+    public static async Task<IResult> DeleteUserAndDependents(Guid id, IClientRepository clientRepo)
+    {
+        return await DeleteUserAsync(id, clientRepo);
+    }
+
+    private static async Task<IResult> DeleteUser(Guid id, IClientRepository clientRepo)
+    {
+        return await DeleteUserAndDependents(id, clientRepo);
     }
 }

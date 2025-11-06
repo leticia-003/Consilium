@@ -1,0 +1,65 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.btn-primary {
+  background: var(--active-bg);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(166, 24, 46, 0.12);
+}
+
+/* Only apply hover transform for enabled buttons (covers <button> and <a> cases) */
+.btn-primary:not(.disabled):hover,
+.btn-primary:not([disabled]):hover {
+  transform: translateY(-2px);
+}
+
+.btn .fa {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  line-height: 1;
+  font-size: 14px;
+}
+
+.btn--icon-only {
+  padding: 8px;
+  border-radius: 10px;
+  height: 36px;
+  min-height: 36px;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-muted, #666);
+  font-weight: 600;
+  height: 40px;
+  padding: 0 12px;
+}
+
+.btn-secondary:hover {
+  /* intentionally no visual change on hover for secondary (cancel/link-like) buttons */
+  text-decoration: none;
+}
+
+.btn.disabled,
+a.btn.disabled,
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.6;
+  pointer-events: none;
+  cursor: default;
+  transform: none !important; /* prevent hover/transform */
+}

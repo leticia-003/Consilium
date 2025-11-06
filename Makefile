@@ -27,15 +27,19 @@ help:
 	@echo "  frontend-watch      Frontend hot reload (dev)"
 	@echo "  status              Check status of all services"
 	@echo "  status-dev          Check status of dev services"
+	@echo "  test                Run all tests (backend + frontend)"
+	@echo "  test-backend        Run backend tests only"
+	@echo "  test-frontend       Run frontend tests only"
 	@echo "  clean               Remove all containers"
 
 # ------------------------
 # Build
 # ------------------------
 build-dev:
-	$(COMPOSE) -f $(DEV_FILE) build
+	$(COMPOSE) -f $(DEV_FILE) build --no-cache
 
 build-prod:
+	$(COMPOSE) -f $(PROD_FILE) build --no-cache
 	$(COMPOSE) -f $(PROD_FILE) build
 
 # ------------------------
@@ -130,3 +134,19 @@ status-dev:
 	@curl -s http://localhost:6333/ | jq '.title' 2>/dev/null || echo "❌ Qdrant not responding"
 	@echo ""
 	@echo "✅ Dev status check complete"
+
+# ------------------------
+# Tests
+# ------------------------
+test-backend:
+	@echo "=== Running Backend Tests (.NET) ==="
+	@cd src && dotnet test Consilium.Tests/Consilium.Tests.csproj --verbosity minimal
+	@echo ""
+
+test-frontend:
+	@echo "=== Running Frontend Tests (Angular) ==="
+	@cd src/frontend && npm test -- --watch=false --browsers=ChromeHeadless
+	@echo ""
+
+test: test-backend test-frontend
+	@echo "✅ All tests completed successfully!"

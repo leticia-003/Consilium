@@ -1,0 +1,11 @@
+<div class="cm-backdrop" role="dialog" aria-modal="true">
+  <div class="cm-panel">
+    <h3 class="cm-title">{{ title }}</h3>
+    <div class="cm-body">{{ message }}</div>
+
+    <div class="cm-actions">
+      <button class="cm-btn cm-cancel" (click)="onCancel()">{{ cancelLabel }}</button>
+      <button class="cm-btn cm-confirm" [class.danger]="danger" (click)="onConfirm()">{{ confirmLabel }}</button>
+    </div>
+  </div>
+</div>

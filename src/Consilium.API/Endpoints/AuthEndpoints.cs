@@ -38,23 +38,21 @@ public static class AuthEndpoints
         var user = users.FirstOrDefault(u => u.Email.Equals(request.Email, StringComparison.OrdinalIgnoreCase));
 
         if (user is null)
-            return Results.Unauthorized();
+            return Results.Json(new { message = "Invalid email or password" }, statusCode: 401);
 
         // Verify password
         if (!hasher.VerifyPassword(request.Password, user.PasswordHash))
-            return Results.Unauthorized();
+            return Results.Json(new { message = "Invalid email or password" }, statusCode: 401);
 
         // Check if user is active
-        if (user.Status.Equals("INACTIVE", StringComparison.OrdinalIgnoreCase))
+        if (!user.IsActive)
             return Results.BadRequest(new { message = "User account is inactive" });
 
         // Generate JWT token
-        var token = tokenService.GenerateToken(user);
+        var token = await tokenService.GenerateToken(user);
 
-        // Parse status to enum for response
-        var status = Enum.TryParse<UserStatus>(user.Status, true, out var parsedStatus) 
-            ? parsedStatus 
-            : UserStatus.INACTIVE;
+        // Determine status based on IsActive
+        var status = user.IsActive ? UserStatus.ACTIVE : UserStatus.INACTIVE;
 
         var response = new LoginResponse(
             Token: token,

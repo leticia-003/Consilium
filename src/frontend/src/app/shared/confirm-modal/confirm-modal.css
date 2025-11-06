@@ -1,0 +1,63 @@
+.cm-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(9, 10, 13, 0.45);
+  z-index: 2000;
+  padding: 24px;
+}
+
+.cm-panel {
+  background: #fff;
+  border-radius: 14px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+  padding: 20px 22px;
+}
+
+.cm-title {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.cm-body {
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.cm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cm-btn {
+  height: 44px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid #e6e9ee;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.cm-btn.cm-confirm {
+  background: var(--active-bg);
+  color: #fff;
+  border-color: transparent;
+}
+
+.cm-btn.cm-confirm.danger {
+  background: var(--active-bg);
+}
+
+.cm-btn.cm-cancel {
+  background: #fff;
+}

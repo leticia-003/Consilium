@@ -1,0 +1,118 @@
+<section class="page">
+  <div class="page-header">
+    <app-page-title title="Clients"></app-page-title>
+    <div class="clients-toolbar">
+      <div class="search-box" *ngIf="!loading && !errorMessage">
+        <i class="fa fa-search search-icon" aria-hidden="true"></i>
+        <input class="search" type="search" placeholder="Search" (input)="onSearch($event.target.value)" />
+      </div>
+
+      <app-button label="Add New Client" icon="fa-plus" [link]="['/create-client']" variant="primary"></app-button>
+    </div>
+  </div>
+
+  <div class="clients-filters" *ngIf="!loading && !errorMessage">
+    <button class="filter-pill" [class.active]="selectedFilter === 'all'" (click)="applyFilter('all')">
+      <span class="filter-label">All Clients</span>
+      <span class="filter-count">{{ totalClients }}</span>
+    </button>
+
+    <button class="filter-pill" [class.active]="selectedFilter === 'active'" (click)="applyFilter('active')">
+      <span class="filter-label">Active Clients</span>
+      <span class="filter-count">{{ activeClients }}</span>
+    </button>
+
+    <button class="filter-pill" [class.active]="selectedFilter === 'inactive'" (click)="applyFilter('inactive')">
+      <span class="filter-label">Inactive Clients</span>
+      <span class="filter-count">{{ inactiveClients }}</span>
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Loading clients...</div>
+  <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
+  <div *ngIf="!loading && !errorMessage">
+    <table class="clients-table" *ngIf="filteredClients.length > 0">
+      <thead>
+        <tr>
+          <th class="col-account">
+            <button class="th-sort" (click)="toggleSort('name')" [attr.aria-sort]="ariaSort('name')">
+              <span>Account</span>
+              <span class="chev-wrap" aria-hidden="true">
+                <i class="chev chev-default fas fa-sort"></i>
+                <i class="chev chev-asc fas fa-sort-up"></i>
+                <i class="chev chev-desc fas fa-sort-down"></i>
+              </span>
+            </button>
+          </th>
+          <th class="col-email">Email</th>
+          <th class="col-nif">
+            <button class="th-sort" (click)="toggleSort('nif')" [attr.aria-sort]="ariaSort('nif')">
+              <span>NIF</span>
+              <span class="chev-wrap" aria-hidden="true">
+                <i class="chev chev-default fas fa-sort"></i>
+                <i class="chev chev-asc fas fa-sort-up"></i>
+                <i class="chev chev-desc fas fa-sort-down"></i>
+              </span>
+            </button>
+          </th>
+          <th class="col-date">
+            <button class="th-sort" (click)="toggleSort('createdAt')" [attr.aria-sort]="ariaSort('createdAt')">
+              <span>Date</span>
+              <span class="chev-wrap" aria-hidden="true">
+                <i class="chev chev-default fas fa-sort"></i>
+                <i class="chev chev-asc fas fa-sort-up"></i>
+                <i class="chev chev-desc fas fa-sort-down"></i>
+              </span>
+            </button>
+          </th>
+          <th class="col-status">Status</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of filteredClients; let i = index">
+          <td class="col-account">
+            <div class="account-name">{{ c.name }}</div>
+          </td>
+          <td class="col-email">{{ c.email || '—' }}</td>
+          <td class="col-nif">{{ c.nif || '—' }}</td>
+          <td class="col-date">{{ c.createdAt ? (c.createdAt | date:'dd MMM, yyyy') : '—' }}</td>
+          <td class="col-status">
+            <span class="badge" [ngClass]="{ 'badge-active': c.isActive, 'badge-inactive': !c.isActive }">
+              {{ c.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td class="col-actions">
+            <button class="btn-ellipsis" aria-label="Actions" [routerLink]="['/clients', c.id]">⋯</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="filteredClients.length === 0" class="empty">No clients to display.</div>
+
+    <div class="pagination">
+      <button (click)="goToPage(1)" [disabled]="currentPage === 1">First</button>
+      <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">Previous</button>
+
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+
+      <span>
+        Go to:
+            <input
+              type="number"
+              min="1"
+              [max]="totalPages"
+              [(ngModel)]="goToPageNumber"
+              class="goto-input"
+            />
+        <button (click)="goToPage(goToPageNumber)">Go</button>
+      </span>
+
+      <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">Next</button>
+      <button (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages">Last</button>
+    </div>
+    
+  </div>
+</section>

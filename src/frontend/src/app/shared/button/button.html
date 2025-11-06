@@ -1,0 +1,19 @@
+<a
+  class="btn"
+  [ngClass]="[variantClass]"
+  *ngIf="link; else buttonTpl"
+  [routerLink]="link"
+  [attr.aria-disabled]="disabled"
+  [class.disabled]="disabled"
+  (click)="disabled && $event.preventDefault()"
+  >
+  <i *ngIf="icon" class="fa" [ngClass]="icon" aria-hidden="true"></i>
+  <span *ngIf="label">{{ label }}</span>
+</a>
+
+<ng-template #buttonTpl>
+  <button class="btn" [ngClass]="[variantClass]" [disabled]="disabled">
+    <i *ngIf="icon" class="fa" [ngClass]="icon" aria-hidden="true"></i>
+    <span *ngIf="label">{{ label }}</span>
+  </button>
+</ng-template>

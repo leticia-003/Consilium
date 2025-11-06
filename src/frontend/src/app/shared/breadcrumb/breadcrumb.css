@@ -1,0 +1,31 @@
+.breadcrumb {
+  padding: 0.5rem 1rem;
+  /* background: var(--bg, #fff); */
+  /* border-bottom: 1px solid rgba(0, 0, 0, 0.04); */
+}
+.breadcrumb ol {
+  list-style: none;
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+}
+.breadcrumb li {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 18rem;
+}
+.breadcrumb a {
+  color: rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+}
+.breadcrumb .sep {
+  color: rgba(0, 0, 0, 0.3);
+  margin-left: 0.25rem;
+}
+.breadcrumb .current {
+  color: rgba(0, 0, 0, 0.7);
+  font-weight: 600;
+}

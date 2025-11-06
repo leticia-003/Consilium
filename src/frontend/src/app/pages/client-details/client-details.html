@@ -1,0 +1,120 @@
+<section class="page">
+  <div class="page-header">
+    <app-page-title [title]="'Client Details'"></app-page-title>
+    <div class="page-actions">
+        <button class="delete-account" (click)="onDelete()">Delete Account</button>
+      <app-button label="Edit Profile" icon="fa-pen" [link]="['/clients', client.id, 'edit']" variant="primary"></app-button>
+    </div>
+  </div>
+
+  <app-confirm-modal *ngIf="showDeleteModal"
+    [title]="'Delete Account'"
+    [message]="'Once deleted, this user and all related information will be permanently lost. This action cannot be reversed.'"
+    [confirmLabel]="'Delete'"
+    [cancelLabel]="'Cancel'"
+    [danger]="true"
+    (confirm)="confirmDelete()"
+    (cancel)="showDeleteModal = false"
+  ></app-confirm-modal>
+
+
+  <div *ngIf="loading" class="loading">Loading client...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <div *ngIf="!loading && client" class="client-details layout-grid">
+    <main class="main-col">
+  <section class="card personal prominent">
+        <h3>Personal Information</h3>
+        <div class="row">
+          <div class="field">
+            <label>Full Name</label>
+            <div class="value">{{ client.name || '—' }}</div>
+          </div>
+
+          <div class="field">
+            <label>NIF</label>
+            <div class="value">{{ client.nif || '—' }}</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Email</label>
+            <div class="value">{{ client.email || '—' }}</div>
+          </div>
+
+          <div class="field code-field">
+            <label>Code</label>
+            <div class="value value-inline">
+              <ng-container *ngIf="client.phoneCountryCode; else emptyCode">
+                <span class="phone-flag">{{ getPhoneFlag(client.phoneCountryCode) }}</span>
+                <span class="phone-code">{{ getPhoneDialPrefix(client.phoneCountryCode) }}</span>
+              </ng-container>
+              <ng-template #emptyCode>—</ng-template>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Phone Number</label>
+            <div class="value">{{ client.phone || '—' }}</div>
+          </div>
+        </div>
+      </section>
+
+  <section class="card address prominent">
+        <h3>Address</h3>
+        <div class="row">
+          <div class="field">
+            <label>Street</label>
+            <div class="value">{{ client.addressStreet || '—' }}</div>
+          </div>
+
+          <div class="field">
+            <label>City/State</label>
+            <div class="value">{{ client.addressCityState || '—' }}</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Country</label>
+            <div class="value">{{ client.addressCountry || '—' }}</div>
+          </div>
+
+          <div class="field">
+            <label>ZIP Code</label>
+            <div class="value">{{ client.addressZip || '—' }}</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="side-col">
+  <section class="card profile-card prominent">
+        <div class="avatar" [attr.title]="client.name">
+          <span *ngIf="!client.avatar">{{ initials }}</span>
+          <img *ngIf="client.avatar" [src]="client.avatar" alt="avatar" />
+        </div>
+
+        <div class="meta">
+          <div class="joined">Joined —</div>
+          <div class="status" [ngClass]="{ active: client.isActive, inactive: !client.isActive }">{{ client.isActive ? 'Active' : 'Inactive' }}</div>
+        </div>
+
+        <div class="name">{{ client.name }}</div>
+        <div class="subtitle">Client</div>
+      </section>
+
+  <section class="card stat-card prominent">
+        <div class="big">{{ totalProcesses !== null ? totalProcesses : '—' }}</div>
+        <div class="label">Total Processes</div>
+        <div class="small-note">{{ totalProcesses !== null ? (totalProcesses + ' total') : 'Not available' }}</div>
+      </section>
+
+  <section class="card stat-card small prominent">
+        <div class="big">{{ lastActivity ? lastActivity : '—' }}</div>
+        <div class="label">Last Activity</div>
+      </section>
+    </aside>
+  </div>
+</section>

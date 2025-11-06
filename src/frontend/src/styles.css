@@ -1,1 +1,59 @@
+@import "@fortawesome/fontawesome-free/css/all.min.css";
+
+:root{
+	--sidebar-width: 260px;
+	--sidebar-bg: #101213;
+	--page-bg: #FFFFFF;
+	--accent: #5C1F1F;
+	--active-bg: rgba(163,14,37,1);
+
+	/* sidebar additional tokens */
+	--sidebar-collapsed-width: 72px;
+	--sidebar-padding: 24px 16px;
+	--sidebar-padding-mobile: 12px;
+	--sidebar-border: rgba(0,0,0,0.04);
+	--sidebar-hover-bg: rgba(163,14,37,0.85);
+    --sidebar-option-color: #FFFFFF;
+
+	/* content / typographic tokens */
+	--card-bg: #ffffff;
+	--card-radius: 8px;
+	--card-padding: 20px;
+	--card-shadow: 0 1px 0 rgba(0,0,0,0.04);
+
+	--page-inner-padding: 24px;
+	--text-primary: #222;
+	--text-muted: #333;
+	--avatar-size: 64px;
+	--avatar-size-mobile: 44px;
+	--avatar-radius: 10px;
+	--gap: 12px;
+	--icon-size: 20px;
+	--link-padding: 10px 12px;
+	--label-font-size: 14px;
+
+    --title-color: black;
+	--font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+}
+
 /* You can add global styles to this file, and also import other style files */
+
+/* Font Awesome */
+body{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Global typography: use Apple's system font when available (similar to BF/SF Pro),
+	 falling back to common sans-serif fonts. Also enable font smoothing for crisper text. */
+html, body {
+	font-family: var(--font-family);
+	color: var(--text-primary);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.page {
+	padding: var(--page-inner-padding);
+}
