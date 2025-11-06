@@ -5,7 +5,7 @@ import { PageTitleComponent } from '../../shared/page-title/page-title';
 import { ButtonComponent } from '../../shared/button/button';
 import { ClientService } from '../../services/client.service';
 import { Client } from '../../models/client';
-import { disableDebugTools } from '@angular/platform-browser';
+
 import { debounceTime } from 'rxjs/internal/operators/debounceTime';
 import { Subject } from 'rxjs';
 import { FormsModule } from '@angular/forms';
