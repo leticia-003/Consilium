@@ -238,7 +238,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: clamp(6px, 1.2vw, 12px);
+  gap: 10px;
   padding: 10px clamp(12px, 4vw, 20px);
   background-color: #f8f9fa;
   border-radius: 999px;
@@ -251,8 +251,7 @@
   white-space: nowrap;
 }
 
-.page-btn,
-.nav-btn {
+.pagination button {
   background: none;
   border: none;
   color: #555;
@@ -280,16 +279,30 @@
   box-shadow: 0 0 0 6px rgba(164, 22, 26, 0.18);
 }
 
-.page-numbers {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-  flex: 1;
+.pagination span {
+  font-size: 14px;
 }
 
-.page-btn:hover:not(.active),
-.nav-btn:hover:not(:disabled) {
-  background-color: #eee;
+.pagination input.goto-input {
+  width: 60px;
+  padding: 4px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.pagination .go-to-btn {
+  padding: 4px 12px;
+  border-radius: 5px;
+  background-color: #a4161a;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.pagination .go-to-btn:hover {
+  background-color: #8c1418;
 }
 
 .nav-btn:disabled {

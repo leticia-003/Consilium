@@ -1,8 +1,8 @@
-<div class="app-layout">
-  <app-sidebar></app-sidebar>
+<div class="app-layout" [ngClass]="{'no-sidebar': isLoginPage}">
+  <app-sidebar *ngIf="!isLoginPage"></app-sidebar>
 
   <main class="page-content">
-    <app-breadcrumb></app-breadcrumb>
+    <app-breadcrumb *ngIf="!isLoginPage"></app-breadcrumb> 
     <router-outlet></router-outlet>
   </main>
 

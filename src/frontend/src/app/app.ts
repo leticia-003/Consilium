@@ -1,16 +1,31 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, signal, OnInit } from '@angular/core';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { SidebarComponent } from './shared/sidebar/sidebar';
 import { BreadcrumbComponent } from './shared/breadcrumb/breadcrumb';
+import { filter } from 'rxjs';
+import { CommonModule } from '@angular/common';
 import { NotificationComponent } from './shared/notification/notification.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, BreadcrumbComponent, NotificationComponent],
+  imports: [RouterOutlet, SidebarComponent, BreadcrumbComponent, NotificationComponent , CommonModule],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
-export class App {
+export class App implements OnInit {
   protected readonly title = signal('frontend');
+  isLoginPage: boolean = false;
+
+  constructor(private router: Router) {
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: NavigationEnd) => {
+      this.isLoginPage = event.urlAfterRedirects === '/' || event.urlAfterRedirects === '/login';
+    });
+  }
+
+  ngOnInit(): void {
+    this.isLoginPage = this.router.url === '/' || this.router.url === '/login';
+  }
 }

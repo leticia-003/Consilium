@@ -4,13 +4,18 @@ html, body {
 }
 
 .app-layout {
-	display: flex;
-	min-height: 100vh;
-	background: var(--page-bg);
+  display: flex;
+  min-height: 100vh;
+  background: var(--page-bg);
+  flex-direction: row;
 }
 
 .app-layout app-sidebar {
 	flex: 0 0 var(--sidebar-width);
+}
+
+.app-layout.no-sidebar {
+  flex-direction: column;
 }
 
 .page-content {
@@ -19,12 +24,15 @@ html, body {
 	box-sizing: border-box;
 }
 
-/* content area placeholder styles */
 .page-content .page {
 	background: var(--card-bg);
 	border-radius: var(--card-radius);
 	padding: var(--card-padding);
 	box-shadow: var(--card-shadow);
+}
+
+.app-layout.no-sidebar .page-content {
+  padding: 0;
 }
 
 @media (max-width: 900px) {
@@ -36,6 +44,10 @@ html, body {
 	}
 	.page-content {
 		padding: 12px;
+	}
+	.app-layout.no-sidebar .page-content {
+		padding: 12px;
+		margin-top: 0;
 	}
 }
 
