@@ -29,7 +29,7 @@ jobs:
         run: dotnet build C.sln --no-restore --configuration Release
       
       - name: Run tests
-        run: dotnet test src/Consilium.Tests/Consilium.Tests.csproj --no-build --configuration Release --verbosity normal
+        run: dotnet test C.sln --no-build --configuration Release --verbosity normal
 
   frontend-tests:
     name: Frontend Tests (Angular)
