@@ -43,6 +43,17 @@
             <div class="value">{{ client.email || '—' }}</div>
           </div>
 
+          <div class="field code-field">
+            <label>Code</label>
+            <div class="value value-inline">
+              <ng-container *ngIf="client.phoneCountryCode; else emptyCode">
+                <span class="phone-flag">{{ getPhoneFlag(client.phoneCountryCode) }}</span>
+                <span class="phone-code">{{ getPhoneDialPrefix(client.phoneCountryCode) }}</span>
+              </ng-container>
+              <ng-template #emptyCode>—</ng-template>
+            </div>
+          </div>
+
           <div class="field">
             <label>Phone Number</label>
             <div class="value">{{ client.phone || '—' }}</div>

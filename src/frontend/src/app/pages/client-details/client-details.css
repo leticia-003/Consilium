@@ -84,6 +84,23 @@
 	color: #333;
 }
 
+.phone-flag { font-size: 16px; line-height: 1; margin-right: 6px; }
+/* .phone-code { color: #1f2937; font-weight: 700; font-size: 13px; } */
+.phone-number { vertical-align: middle; }
+
+.field.code-field { flex: 0 0 110px; max-width: 140px; }
+.value.value-inline {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 8px;
+	background: #f7f7f7;
+	border-radius: 12px;
+	color: #333;
+	box-sizing: border-box;
+}
+.value.value-inline .phone-flag { margin-right: 6px; }
+
 .profile-card {
 	text-align: center;
 	padding: 1.5rem;

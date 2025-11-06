@@ -37,7 +37,12 @@
 
             <div class="field">
               <label>Phone Number</label>
-              <input name="phone" [(ngModel)]="model.phone" placeholder="+351 912 345 678" />
+              <app-phone-input
+                [countryDialCode]="model.phoneCountryCode"
+                [number]="model.phone || ''"
+                (numberChange)="model.phone = $event"
+                (countryChange)="model.phoneCountryCode = $event">
+              </app-phone-input>
               <small class="help error" *ngIf="fieldErrors && fieldErrors['phone']">{{ fieldErrors['phone'].join(' ') }}</small>
             </div>
           </div>

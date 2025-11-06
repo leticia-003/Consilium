@@ -9,6 +9,8 @@ import { NotificationService } from '../../shared/notification/notification.serv
 import { Router } from '@angular/router';
 import { ClientService } from '../../services/client.service';
 import { BreadcrumbService } from '../../shared/breadcrumb/breadcrumb.service';
+import { getFlagEmoji, getDialPrefix } from '../../shared/phone-countries/phone-countries';
+
 
 @Component({
   selector: 'app-client-details',
@@ -43,6 +45,14 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
     }
 
     this.loadClient(id);
+  }
+
+  getPhoneFlag(dialCode?: number | string | null) {
+    return getFlagEmoji(dialCode);
+  }
+
+  getPhoneDialPrefix(dialCode?: number | string | null) {
+    return getDialPrefix(dialCode);
   }
 
   get initials(): string {

@@ -19,6 +19,7 @@ namespace Consilium.Infrastructure.Repositories
             // Use Include to also load the related User data
             return await _context.Clients
                 .Include(c => c.User)
+                    .ThenInclude(u => u.Phones)
                 .FirstOrDefaultAsync(c => c.ID == id);
         }
 
@@ -32,6 +33,7 @@ namespace Consilium.Infrastructure.Repositories
         {
             var query = _context.Clients
                 .Include(c => c.User)
+                    .ThenInclude(u => u.Phones)
                 .AsQueryable();
 
             // Text search across Name, Email, and NIF
@@ -97,7 +99,13 @@ namespace Consilium.Infrastructure.Repositories
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return client;
+                // Reload the client with related user and phones so caller gets populated data
+                var loaded = await _context.Clients
+                    .Include(c => c.User)
+                        .ThenInclude(u => u.Phones)
+                    .FirstOrDefaultAsync(c => c.ID == client.ID);
+
+                return loaded ?? client;
             }
             catch (Exception ex)
             {
@@ -119,6 +127,7 @@ namespace Consilium.Infrastructure.Repositories
             // Get the existing client with its user
             var existingClient = await _context.Clients
                 .Include(c => c.User)
+                    .ThenInclude(u => u.Phones)
                 .FirstOrDefaultAsync(c => c.ID == clientId);
 
             if (existingClient == null)
@@ -142,6 +151,39 @@ namespace Consilium.Infrastructure.Repositories
             // Update NIF if provided
             if (!string.IsNullOrWhiteSpace(userUpdates.NIF))
                 existingClient.User.NIF = userUpdates.NIF;
+
+            // Handle phone updates: if the caller provided Phone objects in userUpdates.Phones,
+            // we'll treat the first one as the 'main' phone and upsert it.
+            if (userUpdates.Phones != null && userUpdates.Phones.Any())
+            {
+                var phoneUpd = userUpdates.Phones.First();
+
+                // Try to find an existing main phone
+                var existingMain = existingClient.User.Phones.FirstOrDefault(p => p.IsMain == true);
+                if (existingMain != null)
+                {
+                    // Update existing main phone
+                    if (!string.IsNullOrWhiteSpace(phoneUpd.Number))
+                        existingMain.Number = phoneUpd.Number;
+                    if (phoneUpd.CountryCode != 0)
+                        existingMain.CountryCode = phoneUpd.CountryCode;
+                    existingMain.IsMain = phoneUpd.IsMain;
+                }
+                else
+                {
+                    // Create a new phone record and attach to the user
+                    var newPhone = new Phone
+                    {
+                        ID = Guid.NewGuid(),
+                        UserID = existingClient.User.ID,
+                        Number = phoneUpd.Number ?? string.Empty,
+                        CountryCode = phoneUpd.CountryCode != 0 ? phoneUpd.CountryCode : (short)351,
+                        IsMain = phoneUpd.IsMain
+                    };
+                    existingClient.User.Phones.Add(newPhone);
+                    _context.Phones.Add(newPhone);
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(userUpdates.PasswordHash))
                 existingClient.User.PasswordHash = userUpdates.PasswordHash;

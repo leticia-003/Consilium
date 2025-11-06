@@ -10,13 +10,14 @@ import { NotificationService } from '../../shared/notification/notification.serv
 import { parseAddress, formatAddress } from '../../shared/address.util';
 import { sanitizeModel, sanitizeString } from '../../shared/input.util';
 import { Client } from '../../models/client';
+import { PhoneInputComponent } from '../../shared/phone-input/phone-input';
 
 @Component({
   selector: 'app-edit-client',
   standalone: true,
   templateUrl: './edit-client.html',
   styleUrls: ['./edit-client.css', '../create-client/create-client.css'],
-  imports: [CommonModule, FormsModule, PageTitleComponent, ButtonComponent]
+  imports: [CommonModule, FormsModule, PageTitleComponent, ButtonComponent, PhoneInputComponent]
 })
 export class EditClientComponent implements OnInit {
   // toggle applies to model immediately; save persists via Save button
@@ -29,12 +30,14 @@ export class EditClientComponent implements OnInit {
       addressCityState?: string;
       addressCountry?: string;
       addressZip?: string;
+      phoneCountryCode?: number;
     }
   > = {
     name: '',
     email: '',
     nif: '',
     phone: '',
+  phoneCountryCode: 351,
     addressStreet: '',
     addressCityState: '',
     addressCountry: '',
@@ -43,6 +46,8 @@ export class EditClientComponent implements OnInit {
     password: '',
     confirmPassword: ''
   };
+
+    private originalModel: Record<string, any> = {};
 
   submitting = false;
   fieldErrors: Record<string, string[]> = {};
@@ -74,11 +79,12 @@ export class EditClientComponent implements OnInit {
   loadClient(id: string) {
     this.clientService.getClient(id).subscribe({
       next: (data: any) => {
-        // populate model fields
+
         this.model.name = data?.name || '';
         this.model.email = data?.email || '';
         this.model.nif = data?.nif || '';
         this.model.phone = data?.phone || '';
+        this.model.phoneCountryCode = data?.phoneCountryCode ?? this.model.phoneCountryCode ?? 351;
         this.model.isActive = (data?.status || '').toString().toUpperCase() === 'ACTIVE';
 
         // parse address into parts
@@ -89,6 +95,9 @@ export class EditClientComponent implements OnInit {
         this.model.addressZip = parsed.zip || '';
         // ensure view reflects async-loaded model immediately
         try { this.cd.detectChanges(); } catch (e) {}
+
+        // take a snapshot for change detection
+        this.originalModel = this.snapshotModel();
       },
       error: (err) => {
         console.error('Failed to load client', err);
@@ -129,6 +138,27 @@ export class EditClientComponent implements OnInit {
     );
   }
 
+  private snapshotModel(): Record<string, any> {
+    return {
+      name: (this.model.name || '').toString().trim(),
+      email: (this.model.email || '').toString().trim(),
+      nif: (this.model.nif || '').toString().trim(),
+      phone: (this.model.phone || '').toString().trim(),
+      phoneCountryCode: this.model.phoneCountryCode ?? null,
+      addressStreet: (this.model.addressStreet || '').toString().trim(),
+      addressCityState: (this.model.addressCityState || '').toString().trim(),
+      addressCountry: (this.model.addressCountry || '').toString().trim(),
+      addressZip: (this.model.addressZip || '').toString().trim(),
+      isActive: !!this.model.isActive,
+      password: (this.model.password || '').toString()
+    };
+  }
+
+  hasChanges(): boolean {
+    const current = this.snapshotModel();
+    return JSON.stringify(current) !== JSON.stringify(this.originalModel || {});
+  }
+
   save() {
     if (!this.id || this.submitting) return;
     if (!this.isPasswordValid()) {
@@ -155,6 +185,13 @@ export class EditClientComponent implements OnInit {
     delete payload.addressCountry;
     delete payload.addressZip;
     delete payload.confirmPassword;
+
+    if (sanitized['phone']) {
+      payload.phoneNumber = sanitized['phone'];
+      payload.phoneCountryCode = sanitized['phoneCountryCode'] || 351;
+      payload.phoneIsMain = true;
+      delete payload['phone'];
+    }
 
     this.clientService.updateClient(this.id, payload).subscribe({
       next: _ => {

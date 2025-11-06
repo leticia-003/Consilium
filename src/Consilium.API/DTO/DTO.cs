@@ -14,7 +14,11 @@ public record CreateClientRequest(
     string Password,
     string Name,
     string NIF,
-    string? Address
+    string? Address,
+    // Optional phone info (single/main phone)
+    string? PhoneNumber,
+    short? PhoneCountryCode,
+    bool? PhoneIsMain
 );
 
 /// <summary>
@@ -44,6 +48,11 @@ public record UpdateClientRequest(
     string? Address,
     string? NIF,
     bool? IsActive
+    ,
+    // Optional phone update
+    string? PhoneNumber,
+    short? PhoneCountryCode,
+    bool? PhoneIsMain
 );
 
 
@@ -110,7 +119,9 @@ public record ClientResponse(
     string Name,
     UserStatus Status,
     string NIF,
-    string? Address
+    string? Address,
+    string? Phone,
+    short? PhoneCountryCode
 );
 
 /// <summary>

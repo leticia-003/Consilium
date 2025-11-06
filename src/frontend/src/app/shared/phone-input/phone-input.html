@@ -1,0 +1,27 @@
+<div class="phone-input">
+  <div class="flag-wrapper">
+    <button type="button" class="flag-btn" (click)="dropdownOpen = !dropdownOpen" aria-haspopup="listbox" [attr.aria-expanded]="dropdownOpen">
+      <span class="flag">{{country?.flagEmoji ?? '🌐'}}</span>
+      <span class="dial">+{{country?.dialCode ?? 351}}</span>
+    </button>
+    <div class="dropdown" *ngIf="dropdownOpen">
+      <input class="country-search" placeholder="Search country or code" [(ngModel)]="search" />
+      <ul class="country-list" role="listbox">
+        <li *ngFor="let c of filteredCountries()" (click)="selectCountry(c)" role="option" tabindex="0">
+          <span class="flag">{{c.flagEmoji}}</span>
+          <span class="name">{{c.name}}</span>
+          <span class="code">+{{c.dialCode}}</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <input
+    class="phone-number"
+    type="tel"
+    [value]="number"
+    (input)="onNumberInput($any($event.target).value)"
+    placeholder="912 345 678"
+    aria-label="Phone number"
+  />
+</div>

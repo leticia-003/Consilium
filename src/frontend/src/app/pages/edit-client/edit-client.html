@@ -3,7 +3,7 @@
     <app-page-title title="Edit Client"></app-page-title>
     <div class="page-actions">
       <app-button label="Cancel" variant="secondary" (click)="router.navigate(['/clients'])"></app-button>
-      <app-button label="Save" [disabled]="!isComplete() || submitting" icon="fa-save" (click)="save()" variant="primary"></app-button>
+  <app-button label="Save" [disabled]="!isComplete() || submitting || !hasChanges()" icon="fa-save" (click)="save()" variant="primary"></app-button>
     </div>
   </div>
 
@@ -37,7 +37,12 @@
 
             <div class="field">
               <label>Phone Number</label>
-              <input name="phone" [(ngModel)]="model.phone" placeholder="+351 912 345 678" />
+              <app-phone-input
+                [countryDialCode]="model.phoneCountryCode"
+                [number]="model.phone || ''"
+                (numberChange)="model.phone = $event"
+                (countryChange)="model.phoneCountryCode = $event">
+              </app-phone-input>
               <small class="help error" *ngIf="fieldErrors && fieldErrors['phone']">{{ fieldErrors['phone'].join(' ') }}</small>
             </div>
           </div>
@@ -86,7 +91,16 @@
           </div>
           <div class="meta">
         <div class="joined">Joined —</div>
-        <div class="status" [ngClass]="{ active: model.isActive, inactive: !model.isActive }">{{ model.isActive ? 'Active' : 'Inactive' }}</div>
+          <div class="status" [ngClass]="{ active: model.isActive, inactive: !model.isActive }">{{ model.isActive ? 'Active' : 'Inactive' }}</div>
+          <div class="active-toggle">
+            <div class="toggle-label">
+              <label class="switch">
+                <input type="checkbox" name="isActive" [(ngModel)]="model.isActive" (change)="onActiveToggle($event.target.checked)" />
+                <span class="slider"></span>
+              </label>
+              <small class="help toggle-help">Toggle to activate or deactivate this client</small>
+            </div>
+          </div>
           </div>
           <div class="name">{{ model.name }}</div>
           <div class="subtitle">{{ model.email }}</div>
@@ -94,20 +108,6 @@
 
         <section class="card personal prominent credentials-aside">
           <h3>Credentials</h3>
-
-          <div class="row">
-            <div class="field full">
-              <label>Active</label>
-              <div style="display:flex; align-items:center; gap:12px;">
-                <label class="switch">
-                  <input type="checkbox" name="isActive" [(ngModel)]="model.isActive" (change)="onActiveToggle($event.target.checked)" />
-                  <span class="slider"></span>
-                </label>
-                <small class="help">Toggle to activate or deactivate this client</small>
-              </div>
-            </div>
-          </div>
-
 
           <div class="row">
             <div class="field full">

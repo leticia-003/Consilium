@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PageTitleComponent } from '../../shared/page-title/page-title';
 import { ButtonComponent } from '../../shared/button/button';
+import { PhoneInputComponent } from '../../shared/phone-input/phone-input';
 import { ClientService } from '../../services/client.service';
 import { NotificationService } from '../../shared/notification/notification.service';
 import { formatAddress } from '../../shared/address.util';
@@ -15,7 +16,7 @@ import { Client } from '../../models/client';
   standalone: true,
   templateUrl: './create-client.html',
   styleUrls: ['./create-client.css'],
-  imports: [CommonModule, FormsModule, PageTitleComponent, ButtonComponent]
+  imports: [CommonModule, FormsModule, PageTitleComponent, ButtonComponent, PhoneInputComponent]
 })
 export class CreateClientComponent {
   model: Partial<
@@ -26,12 +27,14 @@ export class CreateClientComponent {
       addressCityState?: string;
       addressCountry?: string;
       addressZip?: string;
+      phoneCountryCode?: number;
     }
   > = {
     name: '',
     email: '',
     nif: '',
     phone: '',
+  phoneCountryCode: 351,
     // address parts (will be concatenated before sending)
     addressStreet: '',
     addressCityState: '',
@@ -82,12 +85,21 @@ export class CreateClientComponent {
       zip: sanitizeString(this.model.addressZip || ''),
     });
 
+    // Map frontend 'phone' to API expected 'phoneNumber' + optional metadata
+    if (sanitized['phone']) {
+      payload.phoneNumber = sanitized['phone'];
+      payload.phoneCountryCode = sanitized['phoneCountryCode'] || 351;
+      payload.phoneIsMain = true;
+    }
+
     // remove transient fields
-    delete payload.addressStreet;
+  delete payload.addressStreet;
     delete payload.addressCityState;
     delete payload.addressCountry;
     delete payload.addressZip;
     delete payload.confirmPassword;
+  // remove the transient frontend-only field
+  delete payload['phone'];
     this.clientService.createClient(payload).subscribe({
       next: _ => {
         this.notifications.showSuccess('Client created successfully');
