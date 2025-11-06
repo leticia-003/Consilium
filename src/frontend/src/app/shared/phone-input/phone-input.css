@@ -1,0 +1,41 @@
+:host { display: block; }
+.phone-input { display: flex; gap:12px; align-items: center; }
+.flag-wrapper { position: relative; }
+
+.flag-btn {
+	display:flex;
+	align-items:center;
+	gap:8px;
+		padding:0.6rem 0.9rem;
+		/* width:110px; */
+		/* min-width:110px; */
+	border-radius:10px;
+	background:#fff;
+	border:1px solid #e6e9ee;
+		border-right: 1px solid #e6e9ee;
+	cursor:pointer;
+}
+.flag { font-size:18px; line-height:1 }
+/* .dial { font-weight:600; font-size:15px } */
+
+.dropdown { position:absolute; top:56px; left:0; z-index:50; background:white; border:1px solid #e6e6e6; box-shadow:0 6px 18px rgba(0,0,0,0.06); border-radius:8px; width:320px; padding:8px }
+.country-search { width:90%; padding:8px; border-radius:6px; border:1px solid #ececec; margin-bottom:8px }
+.country-list { list-style:none; margin:0; padding:0; max-height:240px; overflow:auto }
+.country-list li { display:flex; align-items:center; gap:8px; padding:8px; cursor:pointer }
+.country-list li:hover { background:#f7f7f7 }
+
+.phone-number {
+	flex:1;
+	padding:0.6rem 0.9rem;
+	border-radius:10px;
+	border:1px solid #e6e9ee;
+	background:#fff;
+	/* font-size:16px; */
+}
+
+@media (max-width:520px) {
+	.phone-input { flex-direction: column; align-items: stretch; }
+	.flag-btn { border-radius:28px; border-right:1px solid #eee; }
+	.phone-number { border-radius:28px; }
+	.dropdown { left:0; right:0; width:auto; }
+}

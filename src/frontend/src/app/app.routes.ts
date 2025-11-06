@@ -8,10 +8,12 @@ import { CasesComponent } from './pages/cases';
 import { ProfilesComponent } from './pages/profiles';
 import { SettingsComponent } from './pages/settings';
 import { CreateClientComponent } from './pages/create-client/create-client';
+import { EditClientComponent } from './pages/edit-client/edit-client';
 
 export const routes: Routes = [
 	{ path: '', component: HomeComponent, title: 'Home' },
 	{ path: 'clients/:id', component: ClientDetailsComponent, title: 'Client Details' },
+	{ path: 'clients/:id/edit', component: EditClientComponent, title: 'Edit Client' },
 	{ path: 'clients', component: ClientsComponent, title: 'Clients' },
 	{ path: 'lawyers', component: LawyersComponent, title: 'Lawyers' },
 	{ path: 'chatbot', component: ChatbotComponent, title: 'ChatBot' },
