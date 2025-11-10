@@ -16,9 +16,10 @@ namespace Consilium.Infrastructure.Repositories
 
         public async Task<Lawyer?> GetById(Guid id)
         {
-            // Use Include to also load the related User data
+            // Use Include to also load the related User data and Phones
             return await _context.Lawyers
                 .Include(l => l.User)
+                    .ThenInclude(u => u.Phones)
                 .FirstOrDefaultAsync(l => l.ID == id);
         }
 
@@ -32,6 +33,7 @@ namespace Consilium.Infrastructure.Repositories
         {
             var query = _context.Lawyers
                 .Include(l => l.User)
+                    .ThenInclude(u => u.Phones)
                 .AsQueryable();
 
             // Text search across Name, Email, NIF, and Professional Register
@@ -99,7 +101,13 @@ namespace Consilium.Infrastructure.Repositories
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return lawyer;
+                // Reload the lawyer with related user and phones so caller gets populated data
+                var loaded = await _context.Lawyers
+                    .Include(l => l.User)
+                        .ThenInclude(u => u.Phones)
+                    .FirstOrDefaultAsync(l => l.ID == lawyer.ID);
+
+                return loaded ?? lawyer;
             }
             catch (Exception ex)
             {
@@ -118,9 +126,10 @@ namespace Consilium.Infrastructure.Repositories
 
         public async Task<Lawyer?> UpdateLawyerAndUser(Guid lawyerId, Lawyer lawyerUpdates, User userUpdates)
         {
-            // Get the existing lawyer with its user
+            // Get the existing lawyer with its user and phones
             var existingLawyer = await _context.Lawyers
                 .Include(l => l.User)
+                    .ThenInclude(u => u.Phones)
                 .FirstOrDefaultAsync(l => l.ID == lawyerId);
 
             if (existingLawyer == null)
@@ -135,6 +144,39 @@ namespace Consilium.Infrastructure.Repositories
 
             if (!string.IsNullOrWhiteSpace(userUpdates.PasswordHash))
                 existingLawyer.User.PasswordHash = userUpdates.PasswordHash;
+
+            // Handle phone updates: if the caller provided Phone objects in userUpdates.Phones,
+            // we'll treat the first one as the 'main' phone and upsert it.
+            if (userUpdates.Phones != null && userUpdates.Phones.Any())
+            {
+                var phoneUpd = userUpdates.Phones.First();
+
+                // Try to find an existing main phone
+                var existingMain = existingLawyer.User.Phones.FirstOrDefault(p => p.IsMain == true);
+                if (existingMain != null)
+                {
+                    // Update existing main phone
+                    if (!string.IsNullOrWhiteSpace(phoneUpd.Number))
+                        existingMain.Number = phoneUpd.Number;
+                    if (phoneUpd.CountryCode != 0)
+                        existingMain.CountryCode = phoneUpd.CountryCode;
+                    existingMain.IsMain = phoneUpd.IsMain;
+                }
+                else
+                {
+                    // Create a new phone record and attach to the user
+                    var newPhone = new Phone
+                    {
+                        ID = Guid.NewGuid(),
+                        UserID = existingLawyer.User.ID,
+                        Number = phoneUpd.Number ?? string.Empty,
+                        CountryCode = phoneUpd.CountryCode != 0 ? phoneUpd.CountryCode : (short)351,
+                        IsMain = phoneUpd.IsMain
+                    };
+                    existingLawyer.User.Phones.Add(newPhone);
+                    _context.Phones.Add(newPhone);
+                }
+            }
 
             // Update Lawyer fields if provided
             if (!string.IsNullOrWhiteSpace(lawyerUpdates.ProfessionalRegister))
