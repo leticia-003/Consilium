@@ -71,7 +71,8 @@ export class LawyerDetailsComponent implements OnInit, OnDestroy {
       next: (data: any) => {
         this.lawyer = data;
         this.lawyer.isActive = (data?.status ?? '').toString().toUpperCase() === 'ACTIVE';
-  this.lawyer.professionalRegister = this.lawyer.professionalRegister ?? data?.professionalRegister ?? '';
+    this.lawyer.professionalRegister = this.lawyer.professionalRegister ?? data?.professionalRegister ?? '';
+    this.lawyer.nif = this.lawyer.nif ?? data?.nif ?? '';
 
         try {
           const url = `/lawyers/${id}`;
