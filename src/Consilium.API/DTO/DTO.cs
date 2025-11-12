@@ -80,7 +80,8 @@ public record UpdateLawyerRequest(
     // Optional phone update
     string? PhoneNumber,
     short? PhoneCountryCode,
-    bool? PhoneIsMain
+    bool? PhoneIsMain,
+    bool? IsActive
 );
 
 /// <summary>

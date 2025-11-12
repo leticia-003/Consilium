@@ -12,12 +12,14 @@ import { CreateClientComponent } from './pages/create-client/create-client';
 import { LoginComponent } from './pages/login/login';
 import { NgModule } from '@angular/core';
 import { EditClientComponent } from './pages/edit-client/edit-client';
+import { EditLawyerComponent } from './pages/edit-lawyer/edit-lawyer';
 
 export const routes: Routes = [
 	{ path: '', component: LoginComponent, title: 'Login' },
 	{ path: 'home', component: HomeComponent, title: 'Home' },
 	{ path: 'clients/:id', component: ClientDetailsComponent, title: 'Client Details' },
 	{ path: 'lawyers/:id', component: LawyerDetailsComponent, title: 'Lawyer Details' },
+	{ path: 'lawyers/:id/edit', component: EditLawyerComponent, title: 'Edit Lawyer' },
 	{ path: 'clients/:id/edit', component: EditClientComponent, title: 'Edit Client' },
 	{ path: 'clients', component: ClientsComponent, title: 'Clients' },
 	{ path: 'lawyers', component: LawyersComponent, title: 'Lawyers' },

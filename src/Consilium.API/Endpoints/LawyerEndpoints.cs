@@ -194,7 +194,8 @@ public static class LawyerEndpoints
             string.IsNullOrWhiteSpace(request.Email) && 
             string.IsNullOrWhiteSpace(request.Password) && 
             string.IsNullOrWhiteSpace(request.ProfessionalRegister) &&
-            string.IsNullOrWhiteSpace(request.PhoneNumber))
+            string.IsNullOrWhiteSpace(request.PhoneNumber) &&
+            !request.IsActive.HasValue)
         {
             return Results.BadRequest(new { message = "At least one field must be provided for update" });
         }
@@ -225,8 +226,8 @@ public static class LawyerEndpoints
             ProfessionalRegister = request.ProfessionalRegister ?? string.Empty
         };
 
-        // Update in the repository
-        var updatedLawyer = await repo.UpdateLawyerAndUser(id, lawyerUpdates, userUpdates);
+    // Update in the repository (pass through optional IsActive flag)
+    var updatedLawyer = await repo.UpdateLawyerAndUser(id, lawyerUpdates, userUpdates, request.IsActive);
 
         if (updatedLawyer == null)
             return Results.NotFound(new { message = $"Lawyer with ID {id} not found" });

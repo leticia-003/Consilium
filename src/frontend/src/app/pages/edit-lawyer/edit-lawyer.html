@@ -1,0 +1,123 @@
+<section class="page">
+  <div class="page-header">
+    <app-page-title title="Edit Lawyer"></app-page-title>
+    <div class="page-actions">
+      <app-button label="Cancel" variant="secondary" (click)="router.navigate(['/lawyers'])"></app-button>
+      <app-button label="Save" [disabled]="!isComplete() || submitting || !hasChanges()" icon="fa-save" (click)="save()" variant="primary"></app-button>
+    </div>
+  </div>
+
+  <form (ngSubmit)="save()" #f="ngForm" novalidate>
+    @if (generalError) {
+      <div class="error general-error">{{ generalError }}</div>
+    }
+    <div class="client-details layout-grid">
+      <main class="main-col">
+
+        <section class="card personal prominent">
+          <h3>Personal Information</h3>
+
+          <div class="row">
+            <div class="field">
+              <label>Full Name</label>
+              <input name="name" required [(ngModel)]="model.name" placeholder="e.g. Acme Corporation" />
+            </div>
+
+            <div class="field">
+              <label>Reg. Number</label>
+              <input name="professionalRegister" [(ngModel)]="model.professionalRegister" placeholder="Registration number" />
+              @if (fieldErrors && fieldErrors['professionalregister']) {
+                <small class="help error">{{ fieldErrors['professionalregister'].join(' ') }}</small>
+              }
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label>Email</label>
+              <input name="email" type="email" [(ngModel)]="model.email" placeholder="contact@example.test" />
+              @if (fieldErrors && fieldErrors['email']) {
+                <small class="help error">{{ fieldErrors['email'].join(' ') }}</small>
+              }
+            </div>
+
+            <div class="field">
+              <label>Phone Number</label>
+              <app-phone-input
+                [countryDialCode]="model.phoneCountryCode"
+                [number]="model.phone || ''"
+                (numberChange)="model.phone = $event"
+                (countryChange)="model.phoneCountryCode = $event">
+              </app-phone-input>
+              @if (fieldErrors && fieldErrors['phone']) {
+                <small class="help error">{{ fieldErrors['phone'].join(' ') }}</small>
+              }
+            </div>
+          </div>
+        </section>
+
+        <div class="main-spacing">
+          <!-- main column spacing; primary actions live in the header -->
+        </div>
+      </main>
+
+      <aside class="side-col">
+        <section class="card profile-card prominent">
+          <div class="avatar" title="Lawyer">
+            <span>{{ initials }}</span>
+          </div>
+          <div class="meta">
+            <div class="joined">Joined —</div>
+            <div class="status" [ngClass]="{ active: model.isActive, inactive: !model.isActive }">{{ model.isActive ? 'Active' : 'Inactive' }}</div>
+            <div class="active-toggle">
+              <div class="toggle-label">
+                <label class="switch">
+                  <input type="checkbox" name="isActive" [(ngModel)]="model.isActive" (change)="onActiveToggle($event.target.checked)" />
+                  <span class="slider"></span>
+                </label>
+                <small class="help toggle-help">Toggle to activate or deactivate this lawyer</small>
+              </div>
+            </div>
+          </div>
+          <div class="name">{{ model.name }}</div>
+          <div class="subtitle">{{ model.email }}</div>
+        </section>
+
+        <section class="card personal prominent credentials-aside">
+          <h3>Credentials</h3>
+
+          <div class="row">
+            <div class="field full">
+              <label>Password</label>
+              <input type="password" name="password" [(ngModel)]="model.password" placeholder="Leave empty to keep current" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field full">
+              <label>Confirm Password</label>
+              <input type="password" name="confirmPassword" [(ngModel)]="model.confirmPassword" placeholder="Repeat password" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field full">
+              @if (model.password || model.confirmPassword) {
+                <small class="help">
+                  @if (!isPasswordValid()) {
+                    <span>Passwords must match and be at least 8 characters (or leave empty).</span>
+                  } @else if (isPasswordValid() && model.password) {
+                    <span>Passwords look good.</span>
+                  }
+                </small>
+              }
+              @if (fieldErrors && fieldErrors['password']) {
+                <small class="help error">{{ fieldErrors['password'].join(' ') }}</small>
+              }
+            </div>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </form>
+</section>

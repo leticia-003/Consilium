@@ -16,7 +16,7 @@ namespace Consilium.Application.Interfaces
 
         Task<Lawyer> Create(User user, Lawyer lawyer);
         Task Update(Lawyer lawyer);
-        Task<Lawyer?> UpdateLawyerAndUser(Guid lawyerId, Lawyer lawyerUpdates, User userUpdates);
+    Task<Lawyer?> UpdateLawyerAndUser(Guid lawyerId, Lawyer lawyerUpdates, User userUpdates, bool? isActive = null);
         Task Delete(Guid id);
     }
 }
