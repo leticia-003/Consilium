@@ -26,7 +26,7 @@ export class LawyersComponent implements OnInit, OnDestroy {
   errorMessage = '';
   selectedFilter: 'all' | 'active' | 'inactive' = 'all';
   searchTerm = '';
-  sortBy: 'name' | 'register' | 'createdAt' | null = null;
+  sortBy: 'name' | 'register' | 'createdAt' | 'nif' | null = null;
   sortDir: 'asc' | 'desc' = 'asc';
   currentPage = 1;
   totalPages = 1;
@@ -77,7 +77,7 @@ export class LawyersComponent implements OnInit, OnDestroy {
     this.searchSubject.next(this.searchTerm);
   }
 
-  ariaSort(column: 'name' | 'register' | 'createdAt') {
+  ariaSort(column: 'name' | 'register' | 'createdAt' | 'nif') {
     if (this.sortBy !== column) return 'none';
     return this.sortDir === 'asc' ? 'ascending' : 'descending';
   }
@@ -142,7 +142,8 @@ export class LawyersComponent implements OnInit, OnDestroy {
       id: l.id,
       name: l.name,
       email: l.email,
-      professionalRegister: l.professionalRegister,
+      professionalRegister: l.professionalRegister ?? l.nif,
+      nif: l.nif ?? l.professionalRegister ?? '',
       phone: l.phone,
       isActive: l.status?.toUpperCase() === 'ACTIVE',
       createdAt: l.createdAt || null
@@ -164,7 +165,7 @@ export class LawyersComponent implements OnInit, OnDestroy {
     if (this.searchSubscription) this.searchSubscription.unsubscribe();
   }
 
-  toggleSort(column: 'name' | 'register' | 'createdAt') {
+  toggleSort(column: 'name' | 'register' | 'createdAt' | 'nif') {
     if (this.sortBy === column) {
       this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
     } else {
@@ -182,6 +183,18 @@ export class LawyersComponent implements OnInit, OnDestroy {
       if (column === 'register') {
         const va = (a.professionalRegister ?? '') + '';
         const vb = (b.professionalRegister ?? '') + '';
+        const na = Number(va.replace(/\D/g, ''));
+        const nb = Number(vb.replace(/\D/g, ''));
+        if (!isNaN(na) && !isNaN(nb) && va.trim() !== '' && vb.trim() !== '') {
+          res = na - nb;
+        } else {
+          res = va.localeCompare(vb);
+        }
+      }
+
+      if (column === 'nif') {
+        const va = (a.nif ?? '') + '';
+        const vb = (b.nif ?? '') + '';
         const na = Number(va.replace(/\D/g, ''));
         const nb = Number(vb.replace(/\D/g, ''));
         if (!isNaN(na) && !isNaN(nb) && va.trim() !== '' && vb.trim() !== '') {
