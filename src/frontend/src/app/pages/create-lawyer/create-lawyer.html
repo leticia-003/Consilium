@@ -26,6 +26,11 @@
               <input name="professionalRegister" [(ngModel)]="model.professionalRegister" placeholder="Registration number" />
               <small class="help error" *ngIf="fieldErrors && fieldErrors['professionalregister']">{{ fieldErrors['professionalregister'].join(' ') }}</small>
             </div>
+            <div class="field">
+              <label>NIF</label>
+              <input name="nif" [(ngModel)]="model.nif" placeholder="999999999" />
+              <small class="help error" *ngIf="fieldErrors && fieldErrors['nif']">{{ fieldErrors['nif'].join(' ') }}</small>
+            </div>
           </div>
 
           <div class="row">

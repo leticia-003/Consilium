@@ -22,6 +22,7 @@ export class CreateLawyerComponent {
     name: '',
     email: '',
     professionalRegister: '',
+    nif: '',
     phone: '',
     phoneCountryCode: 351,
     isActive: true,
@@ -111,6 +112,7 @@ export class CreateLawyerComponent {
       s(this.model.name) &&
       emailOk &&
       s(this.model.professionalRegister) &&
+      s(this.model.nif) &&
       s(this.model.phone) &&
       this.isPasswordValid()
     );
