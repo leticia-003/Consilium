@@ -2,8 +2,7 @@ export interface Lawyer {
   id: string;
   name: string;
   email?: string;
-  nif?: string;
-  professionalRegister?: string; // lawyer professional register / OAB
+  professionalRegister?: string;
   phone?: string;
   isActive?: boolean;
   createdAt?: string;

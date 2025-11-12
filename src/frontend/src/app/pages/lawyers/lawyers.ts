@@ -26,14 +26,12 @@ export class LawyersComponent implements OnInit, OnDestroy {
   errorMessage = '';
   selectedFilter: 'all' | 'active' | 'inactive' = 'all';
   searchTerm = '';
-  sortBy: 'name' | 'nif' | 'createdAt' | null = null;
+  sortBy: 'name' | 'register' | 'createdAt' | null = null;
   sortDir: 'asc' | 'desc' = 'asc';
   currentPage = 1;
   totalPages = 1;
   pageSize = 2;
   totalCount = 0;
-  activeCount: number | null = null;
-  inactiveCount: number | null = null;
   goToPageNumber = 1;
 
   private searchSubject = new Subject<string>();
@@ -45,8 +43,6 @@ export class LawyersComponent implements OnInit, OnDestroy {
     this.searchSubscription = this.searchSubject
       .pipe(debounceTime(500))
       .subscribe((term: string) => this.fetchLawyers(term));
-
-    this.loadStatusCounts();
 
     this.loadLawyers();
   }
@@ -81,7 +77,7 @@ export class LawyersComponent implements OnInit, OnDestroy {
     this.searchSubject.next(this.searchTerm);
   }
 
-  ariaSort(column: 'name' | 'nif' | 'createdAt') {
+  ariaSort(column: 'name' | 'register' | 'createdAt') {
     if (this.sortBy !== column) return 'none';
     return this.sortDir === 'asc' ? 'ascending' : 'descending';
   }
@@ -105,9 +101,8 @@ export class LawyersComponent implements OnInit, OnDestroy {
         const apiData = Array.isArray(data) ? data : data.data;
         this.lawyers = this.transformApiData(apiData);
 
-  this.totalCount = data.meta?.totalCount || this.lawyers.length;
-  this.totalPages = Math.ceil(this.totalCount / this.pageSize);
-        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+    this.totalCount = data.meta?.totalCount || this.lawyers.length;
+    this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
         this.filteredLawyers = [...this.lawyers];
         this.loading = false;
@@ -115,70 +110,6 @@ export class LawyersComponent implements OnInit, OnDestroy {
       },
       error: () => this.loading = false
     });
-  }
-
-  private loadStatusCounts(): void {
-  const setActive = (count: number) => { this.activeCount = count; this.cdr.detectChanges(); };
-  const setInactive = (count: number) => { this.inactiveCount = count; this.cdr.detectChanges(); };
-
-    this.lawyerService.getLawyers({ status: 'active', page: 1, limit: 1 }).subscribe({
-      next: (res: any) => {
-        const cnt = res?.meta?.totalCount ?? (Array.isArray(res) ? res.length : undefined);
-        if (typeof cnt === 'number') {
-          setActive(cnt);
-        } else {
-          this.lawyerService.getLawyers({ status: 'active', page: 1, limit: 1000 }).subscribe({
-            next: (r2: any) => {
-              const computed = (Array.isArray(r2) ? r2.length : r2?.data?.length);
-              if (typeof computed === 'number') setActive(computed);
-            },
-            error: () => {
-            }
-          });
-        }
-      },
-      error: () => {
-      }
-    });
-
-    this.lawyerService.getLawyers({ status: 'inactive', page: 1, limit: 1 }).subscribe({
-      next: (res: any) => {
-        const cnt = res?.meta?.totalCount ?? (Array.isArray(res) ? res.length : undefined);
-        if (typeof cnt === 'number') {
-          setInactive(cnt);
-        } else {
-          this.lawyerService.getLawyers({ status: 'inactive', page: 1, limit: 1000 }).subscribe({
-            next: (r2: any) => {
-              const computed = (Array.isArray(r2) ? r2.length : r2?.data?.length);
-              if (typeof computed === 'number') setInactive(computed);
-            },
-            error: () => {
-            }
-          });
-        }
-      },
-      error: () => {
-      }
-    });
-
-    setTimeout(() => {
-      if (this.activeCount === null) {
-        this.lawyerService.getLawyers({ status: 'active', page: 1, limit: 1 }).subscribe({
-          next: (res: any) => {
-            const cnt = res?.meta?.totalCount ?? (Array.isArray(res) ? res.length : undefined);
-            if (typeof cnt === 'number') setActive(cnt);
-          }
-        });
-      }
-      if (this.inactiveCount === null) {
-        this.lawyerService.getLawyers({ status: 'inactive', page: 1, limit: 1 }).subscribe({
-          next: (res: any) => {
-            const cnt = res?.meta?.totalCount ?? (Array.isArray(res) ? res.length : undefined);
-            if (typeof cnt === 'number') setInactive(cnt);
-          }
-        });
-      }
-    }, 500);
   }
 
   get visiblePages(): (number | string)[] {
@@ -211,8 +142,7 @@ export class LawyersComponent implements OnInit, OnDestroy {
       id: l.id,
       name: l.name,
       email: l.email,
-      nif: l.nif,
-      professionalRegister: l.professionalRegister,
+      professionalRegister: l.professionalRegister ?? l.nif,
       phone: l.phone,
       isActive: l.status?.toUpperCase() === 'ACTIVE',
       createdAt: l.createdAt || null
@@ -234,7 +164,7 @@ export class LawyersComponent implements OnInit, OnDestroy {
     if (this.searchSubscription) this.searchSubscription.unsubscribe();
   }
 
-  toggleSort(column: 'name' | 'nif' | 'createdAt') {
+  toggleSort(column: 'name' | 'register' | 'createdAt') {
     if (this.sortBy === column) {
       this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
     } else {
@@ -245,14 +175,31 @@ export class LawyersComponent implements OnInit, OnDestroy {
     const dir = this.sortDir === 'asc' ? 1 : -1;
     this.filteredLawyers.sort((a: any, b: any) => {
       let res = 0;
-      if (column === 'name') res = a.name.localeCompare(b.name);
-      if (column === 'nif') res = Number(a.nif) - Number(b.nif);
-      if (column === 'createdAt') res = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (column === 'name') {
+        res = (a.name || '').localeCompare(b.name || '');
+      }
+
+      if (column === 'register') {
+        const va = (a.professionalRegister ?? '') + '';
+        const vb = (b.professionalRegister ?? '') + '';
+        const na = Number(va.replace(/\D/g, ''));
+        const nb = Number(vb.replace(/\D/g, ''));
+        if (!isNaN(na) && !isNaN(nb) && va.trim() !== '' && vb.trim() !== '') {
+          res = na - nb;
+        } else {
+          res = va.localeCompare(vb);
+        }
+      }
+
+      if (column === 'createdAt') {
+        res = (new Date(a.createdAt).getTime() || 0) - (new Date(b.createdAt).getTime() || 0);
+      }
+
       return res * dir;
     });
   }
 
-  get totalClients(): number { return this.totalCount; }
-  get activeClients(): number | null { return this.activeCount; }
-  get inactiveClients(): number | null { return this.inactiveCount; }
+  get totalClients(): number { return this.lawyers.length; }
+  get activeClients(): number { return this.lawyers.filter(l => !!l.isActive).length; }
+  get inactiveClients(): number { return this.lawyers.filter(l => !l.isActive).length; }
 }

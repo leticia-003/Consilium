@@ -19,18 +19,12 @@
 
     <button class="filter-pill" [class.active]="selectedFilter === 'active'" (click)="applyFilter('active')">
       <span class="filter-label">Active Lawyers</span>
-      <span class="filter-count">
-        <ng-container *ngIf="activeClients !== null; else loadingActive">{{ activeClients }}</ng-container>
-        <ng-template #loadingActive><i class="fa fa-spinner fa-spin" aria-hidden="true"></i></ng-template>
-      </span>
+      <span class="filter-count">{{ activeClients }}</span>
     </button>
 
     <button class="filter-pill" [class.active]="selectedFilter === 'inactive'" (click)="applyFilter('inactive')">
       <span class="filter-label">Inactive Lawyers</span>
-      <span class="filter-count">
-        <ng-container *ngIf="inactiveClients !== null; else loadingInactive">{{ inactiveClients }}</ng-container>
-        <ng-template #loadingInactive><i class="fa fa-spinner fa-spin" aria-hidden="true"></i></ng-template>
-      </span>
+      <span class="filter-count">{{ inactiveClients }}</span>
     </button>
   </div>
 
@@ -52,9 +46,9 @@
             </button>
           </th>
           <th class="col-email">Email</th>
-          <th class="col-nif">
-            <button class="th-sort" (click)="toggleSort('nif')" [attr.aria-sort]="ariaSort('nif')">
-              <span>Reg.</span>
+          <th class="col-register">
+            <button class="th-sort" (click)="toggleSort('register')" [attr.aria-sort]="ariaSort('register')">
+              <span>Reg. Number</span>
               <span class="chev-wrap" aria-hidden="true">
                 <i class="chev chev-default fas fa-sort"></i>
                 <i class="chev chev-asc fas fa-sort-up"></i>
@@ -82,7 +76,7 @@
             <div class="account-name">{{ l.name }}</div>
           </td>
           <td class="col-email">{{ l.email || '—' }}</td>
-          <td class="col-nif">{{ l.professionalRegister || '—' }}</td>
+          <td class="col-register">{{ l.professionalRegister || '—' }}</td>
           <td class="col-date">{{ l.createdAt ? (l.createdAt | date:'dd MMM, yyyy') : '—' }}</td>
           <td class="col-status">
             <span class="badge" [ngClass]="{ 'badge-active': l.isActive, 'badge-inactive': !l.isActive }">
