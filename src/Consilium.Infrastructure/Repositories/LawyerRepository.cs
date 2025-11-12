@@ -124,7 +124,7 @@ namespace Consilium.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Lawyer?> UpdateLawyerAndUser(Guid lawyerId, Lawyer lawyerUpdates, User userUpdates)
+    public async Task<Lawyer?> UpdateLawyerAndUser(Guid lawyerId, Lawyer lawyerUpdates, User userUpdates, bool? isActive = null)
         {
             // Get the existing lawyer with its user and phones
             var existingLawyer = await _context.Lawyers
@@ -142,8 +142,16 @@ namespace Consilium.Infrastructure.Repositories
             if (!string.IsNullOrWhiteSpace(userUpdates.Email))
                 existingLawyer.User.Email = userUpdates.Email;
 
+            // Update NIF if provided
+            if (!string.IsNullOrWhiteSpace(userUpdates.NIF))
+                existingLawyer.User.NIF = userUpdates.NIF;
+
             if (!string.IsNullOrWhiteSpace(userUpdates.PasswordHash))
                 existingLawyer.User.PasswordHash = userUpdates.PasswordHash;
+
+            // Update IsActive flag if provided
+            if (isActive.HasValue)
+                existingLawyer.User.IsActive = isActive.Value;
 
             // Handle phone updates: if the caller provided Phone objects in userUpdates.Phones,
             // we'll treat the first one as the 'main' phone and upsert it.

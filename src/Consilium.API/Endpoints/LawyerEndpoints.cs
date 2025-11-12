@@ -194,17 +194,25 @@ public static class LawyerEndpoints
             string.IsNullOrWhiteSpace(request.Email) && 
             string.IsNullOrWhiteSpace(request.Password) && 
             string.IsNullOrWhiteSpace(request.ProfessionalRegister) &&
-            string.IsNullOrWhiteSpace(request.PhoneNumber))
+            string.IsNullOrWhiteSpace(request.NIF) &&
+            string.IsNullOrWhiteSpace(request.PhoneNumber) &&
+            !request.IsActive.HasValue)
         {
             return Results.BadRequest(new { message = "At least one field must be provided for update" });
         }
 
+        // If NIF is provided, ensure basic length validation
+        if (!string.IsNullOrWhiteSpace(request.NIF) && request.NIF.Length != 9)
+        {
+            return Results.BadRequest(new { message = "NIF must be a 9-character string" });
+        }
         // Prepare the update data
         var userUpdates = new User
         {
             Name = request.Name ?? string.Empty,
             Email = request.Email ?? string.Empty,
-            PasswordHash = !string.IsNullOrWhiteSpace(request.Password) ? hasher.HashPassword(request.Password) : string.Empty
+            PasswordHash = !string.IsNullOrWhiteSpace(request.Password) ? hasher.HashPassword(request.Password) : string.Empty,
+            NIF = request.NIF ?? string.Empty
         };
 
         // If phone info is present in the request, attach a Phone object to the userUpdates
@@ -225,8 +233,8 @@ public static class LawyerEndpoints
             ProfessionalRegister = request.ProfessionalRegister ?? string.Empty
         };
 
-        // Update in the repository
-        var updatedLawyer = await repo.UpdateLawyerAndUser(id, lawyerUpdates, userUpdates);
+    // Update in the repository (pass through optional IsActive flag)
+    var updatedLawyer = await repo.UpdateLawyerAndUser(id, lawyerUpdates, userUpdates, request.IsActive);
 
         if (updatedLawyer == null)
             return Results.NotFound(new { message = $"Lawyer with ID {id} not found" });
