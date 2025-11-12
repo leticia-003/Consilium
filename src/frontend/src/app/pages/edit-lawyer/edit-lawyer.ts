@@ -24,6 +24,7 @@ export class EditLawyerComponent implements OnInit {
     name: '',
     email: '',
     professionalRegister: '',
+    nif: '',
     phone: '',
     phoneCountryCode: 351,
     isActive: true,
@@ -65,6 +66,7 @@ export class EditLawyerComponent implements OnInit {
         this.model.name = data?.name || '';
         this.model.email = data?.email || '';
         this.model.professionalRegister = data?.professionalRegister || '';
+        this.model.nif = data?.nif || '';
         this.model.phone = data?.phone || '';
         this.model.phoneCountryCode = data?.phoneCountryCode ?? this.model.phoneCountryCode ?? 351;
         this.model.isActive = (data?.status || '').toString().toUpperCase() === 'ACTIVE';
@@ -103,6 +105,7 @@ export class EditLawyerComponent implements OnInit {
       s(this.model.name) &&
       emailOk &&
       s(this.model.professionalRegister) &&
+      s(this.model.nif) &&
       s(this.model.phone) &&
       this.isPasswordValid()
     );
@@ -113,6 +116,7 @@ export class EditLawyerComponent implements OnInit {
       name: (this.model.name || '').toString().trim(),
       email: (this.model.email || '').toString().trim(),
       professionalRegister: (this.model.professionalRegister || '').toString().trim(),
+      nif: (this.model.nif || '').toString().trim(),
       phone: (this.model.phone || '').toString().trim(),
       phoneCountryCode: this.model.phoneCountryCode ?? null,
       isActive: !!this.model.isActive,

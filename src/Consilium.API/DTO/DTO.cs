@@ -77,6 +77,7 @@ public record UpdateLawyerRequest(
     string? Email,
     string? Password,
     string? ProfessionalRegister,
+    string? NIF,
     // Optional phone update
     string? PhoneNumber,
     short? PhoneCountryCode,

@@ -30,6 +30,13 @@
                 <small class="help error">{{ fieldErrors['professionalregister'].join(' ') }}</small>
               }
             </div>
+            <div class="field">
+              <label>NIF</label>
+              <input name="nif" [(ngModel)]="model.nif" placeholder="999999999" />
+              @if (fieldErrors && fieldErrors['nif']) {
+                <small class="help error">{{ fieldErrors['nif'].join(' ') }}</small>
+              }
+            </div>
           </div>
 
           <div class="row">
