@@ -1,0 +1,111 @@
+<section class="page">
+  <div class="page-header">
+    <app-page-title [title]="'Lawyer Details'"></app-page-title>
+    <div class="page-actions">
+        <button class="delete-account" (click)="onDelete()">Delete Account</button>
+      <app-button label="Edit Profile" icon="fa-pen" [link]="['/lawyers', lawyer.id, 'edit']" variant="primary"></app-button>
+    </div>
+  </div>
+
+  @if (showDeleteModal) {
+    <app-confirm-modal
+      [title]="'Delete Account'"
+      [message]="'Once deleted, this user and all related information will be permanently lost. This action cannot be reversed.'"
+      [confirmLabel]="'Delete'"
+      [cancelLabel]="'Cancel'"
+      [danger]="true"
+      (confirm)="confirmDelete()"
+      (cancel)="showDeleteModal = false"
+    ></app-confirm-modal>
+  }
+
+
+  @if (loading) {
+    <div class="loading">Loading lawyer...</div>
+  }
+
+  @if (error) {
+    <div class="error">{{ error }}</div>
+  }
+
+  @if (!loading && lawyer) {
+    <div class="lawyer-details layout-grid">
+    <main class="main-col">
+  <section class="card personal prominent">
+        <h3>Personal Information</h3>
+        <div class="row">
+          <div class="field">
+            <label>Full Name</label>
+            <div class="value">{{ lawyer.name || '—' }}</div>
+          </div>
+
+          <div class="field">
+            <label>Reg. Number</label>
+            <div class="value">{{ lawyer.professionalRegister || '—' }}</div>
+          </div>
+          <div class="field">
+            <label>NIF</label>
+            <div class="value">{{ lawyer.nif || '—' }}</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Email</label>
+            <div class="value">{{ lawyer.email || '—' }}</div>
+          </div>
+
+          <div class="field code-field">
+            <label>Code</label>
+            <div class="value value-inline">
+              @if (lawyer.phoneCountryCode) {
+                <span class="phone-flag">{{ getPhoneFlag(lawyer.phoneCountryCode) }}</span>
+                <span class="phone-code">{{ getPhoneDialPrefix(lawyer.phoneCountryCode) }}</span>
+              } @else {
+                —
+              }
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Phone Number</label>
+            <div class="value">{{ lawyer.phone || '—' }}</div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <aside class="side-col">
+  <section class="card profile-card prominent">
+        <div class="avatar" [attr.title]="lawyer.name">
+          @if (!lawyer.avatar) {
+            <span>{{ initials }}</span>
+          } @else {
+            <img [src]="lawyer.avatar" alt="avatar" />
+          }
+        </div>
+
+        <div class="meta">
+          <div class="joined">Joined —</div>
+          <div class="status" [ngClass]="{ active: lawyer.isActive, inactive: !lawyer.isActive }">{{ lawyer.isActive ? 'Active' : 'Inactive' }}</div>
+        </div>
+
+        <div class="name">{{ lawyer.name }}</div>
+        <div class="subtitle">Lawyer</div>
+      </section>
+
+  <section class="card stat-card prominent">
+        <div class="big">{{ totalProcesses !== null ? totalProcesses : '—' }}</div>
+        <div class="label">Total Processes</div>
+        <div class="small-note">{{ totalProcesses !== null ? (totalProcesses + ' total') : 'Not available' }}</div>
+      </section>
+
+  <section class="card stat-card small prominent">
+        <div class="big">{{ lastActivity ? lastActivity : '—' }}</div>
+        <div class="label">Last Activity</div>
+      </section>
+    </aside>
+  </div>
+  }
+</section>
