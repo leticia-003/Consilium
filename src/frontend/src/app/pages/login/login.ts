@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -17,7 +18,7 @@ export class LoginComponent {
   loginForm: FormGroup;
   errorMessage: string | null = null;
   loading = false;
-  private readonly apiUrl = 'http://localhost:8080/api/auth/login';
+  private readonly apiUrl = `${environment.apiBaseUrl}/auth/login`;
 
   constructor(
     private fb: FormBuilder,

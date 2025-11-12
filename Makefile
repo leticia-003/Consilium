@@ -50,7 +50,7 @@ up-dev:
 
 run-dev: build-dev up-dev
 	@echo "✓ Dev environment running with hot reload & DEBUG logs"
-	@echo "  Backend (with Swagger):  http://localhost:8080"
+	@echo "  Backend (with Swagger):  http://localhost:8080/healthz"
 	@echo "  Backend Swagger Docs:    http://localhost:8080/swagger/index.html"
 	@echo "  Frontend (hot reload):   http://localhost:4200"
 	#	@echo "  Qdrant Vector DB:        http://localhost:6333"

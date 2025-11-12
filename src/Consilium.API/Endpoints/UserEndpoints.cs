@@ -19,10 +19,6 @@ public static class UserEndpoints
         group.MapGet("/{id:guid}", GetUserById)
             .WithName("GetUserById")
             .WithDescription("Retrieve a user by ID");
-
-        group.MapDelete("/{id:guid}", DeleteUser)
-            .WithName("DeleteUser")
-            .WithDescription("Delete a user by ID");
     }
 
     private static async Task<IResult> GetAllUsers(IUserRepository repo)

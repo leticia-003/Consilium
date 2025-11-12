@@ -47,14 +47,12 @@ public record UpdateClientRequest(
     string? Password,
     string? Address,
     string? NIF,
-    bool? IsActive
-    ,
+    bool? IsActive,
     // Optional phone update
     string? PhoneNumber,
     short? PhoneCountryCode,
     bool? PhoneIsMain
 );
-
 
 /// <summary>
 /// Request DTO for creating a new lawyer
@@ -64,7 +62,11 @@ public record CreateLawyerRequest(
     string Password,
     string Name,
     string NIF,
-    string ProfessionalRegister
+    string ProfessionalRegister,
+    // Optional phone info (single/main phone)
+    string? PhoneNumber,
+    short? PhoneCountryCode,
+    bool? PhoneIsMain
 );
 
 /// <summary>
@@ -74,7 +76,11 @@ public record UpdateLawyerRequest(
     string? Name,
     string? Email,
     string? Password,
-    string? ProfessionalRegister
+    string? ProfessionalRegister,
+    // Optional phone update
+    string? PhoneNumber,
+    short? PhoneCountryCode,
+    bool? PhoneIsMain
 );
 
 /// <summary>
@@ -84,7 +90,11 @@ public record CreateAdminRequest(
     string Email,
     string Password,
     string Name,
-    string NIF
+    string NIF,
+    // Optional phone info (single/main phone)
+    string? PhoneNumber,
+    short? PhoneCountryCode,
+    bool? PhoneIsMain
 );
 
 /// <summary>
@@ -93,7 +103,11 @@ public record CreateAdminRequest(
 public record UpdateAdminRequest(
     string? Name,
     string? Email,
-    string? Password
+    string? Password,
+    // Optional phone update
+    string? PhoneNumber,
+    short? PhoneCountryCode,
+    bool? PhoneIsMain
 );
 
 // ============================================
@@ -133,7 +147,9 @@ public record LawyerResponse(
     string Name,
     UserStatus Status,
     string NIF,
-    string ProfessionalRegister
+    string ProfessionalRegister,
+    string? Phone,
+    short? PhoneCountryCode
 );
 
 /// <summary>
@@ -145,7 +161,9 @@ public record AdminResponse(
     string Name,
     UserStatus Status,
     string NIF,
-    DateTime StartedAt
+    DateTime StartedAt,
+    string? Phone,
+    short? PhoneCountryCode
 );
 
 /// <summary>
