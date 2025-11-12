@@ -142,7 +142,7 @@ export class LawyersComponent implements OnInit, OnDestroy {
       id: l.id,
       name: l.name,
       email: l.email,
-      professionalRegister: l.professionalRegister ?? l.nif,
+      professionalRegister: l.professionalRegister,
       phone: l.phone,
       isActive: l.status?.toUpperCase() === 'ACTIVE',
       createdAt: l.createdAt || null
