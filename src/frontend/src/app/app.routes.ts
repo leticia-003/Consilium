@@ -9,6 +9,7 @@ import { CasesComponent } from './pages/cases';
 import { ProfilesComponent } from './pages/profiles';
 import { SettingsComponent } from './pages/settings';
 import { CreateClientComponent } from './pages/create-client/create-client';
+import { CreateLawyerComponent } from './pages/create-lawyer/create-lawyer';
 import { LoginComponent } from './pages/login/login';
 import { NgModule } from '@angular/core';
 import { EditClientComponent } from './pages/edit-client/edit-client';
@@ -28,6 +29,7 @@ export const routes: Routes = [
 	{ path: 'profiles', component: ProfilesComponent, title: 'Profiles' },
 	{ path: 'settings', component: SettingsComponent, title: 'Settings' },
 	{ path: 'create-client', component: CreateClientComponent, title: 'Create Client' },
+	{ path: 'create-lawyer', component: CreateLawyerComponent, title: 'Create Lawyer' },
 	{ path: 'login', component: LoginComponent },
 	{ path: '**', redirectTo: '' }
 ];

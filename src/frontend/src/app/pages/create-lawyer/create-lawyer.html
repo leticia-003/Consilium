@@ -1,0 +1,97 @@
+<section class="page">
+  <div class="page-header">
+    <app-page-title title="Create Lawyer"></app-page-title>
+    <div class="page-actions">
+      <app-button label="Cancel" variant="secondary" (click)="router.navigate(['/lawyers'])"></app-button>
+      <app-button label="Create Lawyer" [disabled]="!isComplete() || submitting" icon="fa-plus" (click)="createLawyer()" variant="primary"></app-button>
+    </div>
+  </div>
+
+  <form (ngSubmit)="createLawyer()" #f="ngForm" novalidate>
+    <div *ngIf="generalError" class="error" style="margin:8px 0">{{ generalError }}</div>
+    <div class="client-details layout-grid">
+      <main class="main-col">
+
+        <section class="card personal prominent">
+          <h3>Personal Information</h3>
+
+          <div class="row">
+            <div class="field">
+              <label>Full Name</label>
+              <input name="name" required [(ngModel)]="model.name" placeholder="e.g. Acme Corporation" />
+            </div>
+
+            <div class="field">
+              <label>Reg. Number</label>
+              <input name="professionalRegister" [(ngModel)]="model.professionalRegister" placeholder="Registration number" />
+              <small class="help error" *ngIf="fieldErrors && fieldErrors['professionalregister']">{{ fieldErrors['professionalregister'].join(' ') }}</small>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label>Email</label>
+              <input name="email" type="email" [(ngModel)]="model.email" placeholder="contact@example.test" />
+              <small class="help error" *ngIf="fieldErrors && fieldErrors['email']">{{ fieldErrors['email'].join(' ') }}</small>
+            </div>
+
+            <div class="field">
+              <label>Phone Number</label>
+              <app-phone-input
+                [countryDialCode]="model.phoneCountryCode"
+                [number]="model.phone || ''"
+                (numberChange)="model.phone = $event"
+                (countryChange)="model.phoneCountryCode = $event">
+              </app-phone-input>
+              <small class="help error" *ngIf="fieldErrors && fieldErrors['phone']">{{ fieldErrors['phone'].join(' ') }}</small>
+            </div>
+          </div>
+        </section>
+
+        <div style="margin-top:16px;">
+          <!-- main column spacing; primary actions live in the aside -->
+        </div>
+      </main>
+
+      <aside class="side-col">
+        <section class="card profile-card prominent">
+          <div class="avatar" title="New lawyer">
+            <span>{{ initials }}</span>
+          </div>
+          <div class="meta"></div>
+          <div class="name">{{ model.name || 'New Lawyer' }}</div>
+          <div class="subtitle">Lawyer</div>
+        </section>
+
+        <section class="card personal prominent credentials-aside">
+          <h3>Credentials</h3>
+
+          <div class="row">
+            <div class="field full">
+              <label>Password</label>
+              <input type="password" name="password" required [(ngModel)]="model.password" placeholder="At least 8 characters" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field full">
+              <label>Confirm Password</label>
+              <input type="password" name="confirmPassword" required [(ngModel)]="model.confirmPassword" placeholder="Repeat password" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field full">
+              <small class="help" *ngIf="model.password || model.confirmPassword">
+                <span *ngIf="!isPasswordValid()">Passwords must match and be at least 8 characters.</span>
+                <span *ngIf="isPasswordValid()">Passwords look good.</span>
+              </small>
+              <small class="help error" *ngIf="fieldErrors && fieldErrors['password']">{{ fieldErrors['password'].join(' ') }}</small>
+            </div>
+          </div>
+          <div *ngIf="generalError" class="error" style="margin-top:8px">{{ generalError }}</div>
+        </section>
+      </aside>
+    </div>
+  </form>
+</section>
