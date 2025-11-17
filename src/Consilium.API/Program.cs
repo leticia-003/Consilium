@@ -13,8 +13,15 @@ using Npgsql;
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+// Use in-memory DB for tests when using the 'Test' environment
+// When environment is 'Test' we do not register an EF provider here so tests
+// can substitute one (for example an InMemory DB) without having Npgsql also
+// registered which causes EF to raise an exception about multiple providers.
+if (!builder.Environment.IsEnvironment("Test"))
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(connectionString));
+}
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -53,9 +60,9 @@ app.UseExceptionHandler((exceptionHandlerApp) =>
         var exception = exceptionHandlerPathFeature?.Error;
 
         // Handle DbUpdateException for unique constraint violations
-        if (exception is Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
+        if (exception is DbUpdateException dbEx)
         {
-            if (dbEx.InnerException is Npgsql.PostgresException pgEx)
+            if (dbEx.InnerException is PostgresException pgEx)
             {
                 // Handle unique constraint violations
                 if (pgEx.SqlState == "23505") // Unique violation
@@ -104,3 +111,6 @@ app.MapProcessEndpoints();
 app.MapLookupEndpoints();
 
 app.Run();
+
+// Expose Program class to allow integration testing with WebApplicationFactory
+public partial class Program { }
