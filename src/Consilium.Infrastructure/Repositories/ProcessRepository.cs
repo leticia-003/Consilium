@@ -1,0 +1,103 @@
+using Consilium.Application.Interfaces;
+using Consilium.Domain.Models;
+using Consilium.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace Consilium.Infrastructure.Repositories
+{
+    public class ProcessRepository : IProcessRepository
+    {
+        private readonly AppDbContext _context;
+
+        public ProcessRepository(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<Process?> GetById(Guid id)
+        {
+            return await _context.Processes
+                .Include(p => p.Client)
+                .Include(p => p.Lawyer)
+                .Include(p => p.Status)
+                .Include(p => p.ProcessTypePhase)
+                .ThenInclude(ptp => ptp!.ProcessType)
+                .Include(p => p.ProcessTypePhase)
+                .ThenInclude(ptp => ptp!.ProcessPhase)
+                .FirstOrDefaultAsync(p => p.Id == id);
+        }
+
+        public async Task<(List<Process> Processes, int TotalCount)> GetAll(
+            string? search,
+            int page,
+            int limit,
+            string? sortBy,
+            string? sortOrder)
+        {
+            var query = _context.Processes
+                .Include(p => p.Client)
+                .Include(p => p.Lawyer)
+                .Include(p => p.Status)
+                .Include(p => p.ProcessTypePhase)
+                    .ThenInclude(ptp => ptp!.ProcessType)
+                .Include(p => p.ProcessTypePhase)
+                    .ThenInclude(ptp => ptp!.ProcessPhase)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                // Null-coalesce strings to be defensive with EF mapping
+                query = query.Where(p => (p.Name ?? string.Empty).Contains(search) || (p.Number ?? string.Empty).Contains(search) || (p.CourtInfo ?? string.Empty).Contains(search));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            if (!string.IsNullOrWhiteSpace(sortBy))
+            {
+                sortBy = sortBy?.ToLower();
+                sortOrder = sortOrder?.ToLower() ?? "asc";
+
+                if (sortBy == "number")
+                    query = sortOrder == "desc" ? query.OrderByDescending(p => p.Number) : query.OrderBy(p => p.Number);
+                else if (sortBy == "created")
+                    query = sortOrder == "desc" ? query.OrderByDescending(p => p.CreatedAt) : query.OrderBy(p => p.CreatedAt);
+                else
+                    query = sortOrder == "desc" ? query.OrderByDescending(p => p.Name) : query.OrderBy(p => p.Name);
+            }
+
+            var processes = await query.Skip((page - 1) * limit).Take(limit).ToListAsync();
+
+            return (processes, totalCount);
+        }
+
+        public async Task<Process> Create(Process process)
+        {
+            // CreatedAt will be set by default in model; ensure ID is set to new Guid (DB also can generate via gen_random_uuid)
+            if (process.Id == Guid.Empty)
+                process.Id = Guid.NewGuid();
+
+            _context.Processes.Add(process);
+            await _context.SaveChangesAsync();
+
+            // Reload with includes
+            var loaded = await GetById(process.Id);
+            return loaded ?? process;
+        }
+
+        public async Task Update(Process process)
+        {
+            _context.Processes.Update(process);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task Delete(Guid id)
+        {
+            var existing = await _context.Processes.FindAsync(id);
+            if (existing == null)
+                throw new KeyNotFoundException($"Process with ID {id} not found");
+
+            _context.Processes.Remove(existing);
+            await _context.SaveChangesAsync();
+        }
+    }
+}

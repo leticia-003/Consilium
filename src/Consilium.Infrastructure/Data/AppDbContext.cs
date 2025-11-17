@@ -14,6 +14,14 @@ namespace Consilium.Infrastructure.Data
         public DbSet<Lawyer> Lawyers { get; set; }
         public DbSet<Admin> Admins { get; set; }
         public DbSet<Phone> Phones { get; set; }
+        public DbSet<Process> Processes { get; set; }
+        public DbSet<ProcessType> ProcessTypes { get; set; }
+        public DbSet<ProcessPhase> ProcessPhases { get; set; }
+        public DbSet<ProcessTypePhase> ProcessTypePhases { get; set; }
+        public DbSet<ProcessStatus> ProcessStatuses { get; set; }
+        public DbSet<ActionLogType> ActionLogTypes { get; set; }
+        public DbSet<UserLog> UserLogs { get; set; }
+        public DbSet<ProcessLog> ProcessLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

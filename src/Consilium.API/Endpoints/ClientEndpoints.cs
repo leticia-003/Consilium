@@ -3,6 +3,7 @@ using Consilium.Domain.Models;
 using Consilium.Domain.Enums;
 using Consilium.API.Dtos;
 using Microsoft.AspNetCore.Mvc;
+using Consilium.Infrastructure.Services;
 
 namespace Consilium.API.Endpoints;
 
@@ -99,7 +100,9 @@ public static class ClientEndpoints
     private static async Task<IResult> CreateClient(
         CreateClientRequest request,
         IClientRepository repo,
-        IPasswordHasher hasher)
+        IPasswordHasher hasher,
+        AuditLogFacade auditLog)
+        
     {
         // Validate input
         if (string.IsNullOrWhiteSpace(request.Email))
@@ -146,6 +149,8 @@ public static class ClientEndpoints
         // Save to database
         var newClient = await repo.Create(user, client);
 
+        // Log the creation - full snapshot
+        await auditLog.AddCreateClientLogAsync(newClient.ID, newClient.ID);
         // Prepare response (include main phone if present)
         var createdMainPhone = newClient.User?.Phones?.FirstOrDefault(p => p.IsMain == true);
         var createdPhoneStr = createdMainPhone != null ? createdMainPhone.Number : string.Empty;
@@ -164,11 +169,12 @@ public static class ClientEndpoints
         return Results.Created($"/api/clients/{newClient.ID}", response);
     }
 
-    private static async Task<IResult> DeleteClient(Guid id, IClientRepository repo)
+    private static async Task<IResult> DeleteClient(Guid id, IClientRepository repo, AuditLogFacade auditLog)
     {
         try
         {
             await repo.Delete(id);
+            await auditLog.AddDeleteClientLogAsync(id, id);
             return Results.NoContent();
         }
         catch (KeyNotFoundException)
@@ -185,7 +191,8 @@ public static class ClientEndpoints
         Guid id,
         UpdateClientRequest request,
         IClientRepository repo,
-        IPasswordHasher hasher)
+        IPasswordHasher hasher,
+        AuditLogFacade auditLog)
     {
         // Validate input - at least one field should be provided
         if (string.IsNullOrWhiteSpace(request.Name) && 
@@ -232,11 +239,45 @@ public static class ClientEndpoints
             Address = request.Address ?? string.Empty
         };
 
+        // Fetch existing state for "before" snapshot and build old snapshot BEFORE update
+        var existingClient = await repo.GetById(id);
+        if (existingClient == null)
+            return Results.NotFound(new { message = $"Client with ID {id} not found" });
+        // Build old snapshot from existing state (pre-update)
+        var oldSnapshot = System.Text.Json.JsonSerializer.SerializeToElement(new
+        {
+            ClientID = existingClient.ID,
+            UserID = existingClient.User?.ID,
+            UserName = existingClient.User?.Name,
+            UserEmail = existingClient.User?.Email,
+            UserNIF = existingClient.User?.NIF,
+            UserPassword = "***REDACTED***",
+            UserIsActive = existingClient.User?.IsActive,
+            ClientAddress = existingClient.Address,
+            Phones = existingClient.User?.Phones?.Select(p => new { p.ID, p.Number, p.CountryCode, p.IsMain })
+        });
+
         // Update in the repository
-    var updatedClient = await repo.UpdateClientAndUser(id, clientUpdates, userUpdates, request.IsActive);
+        var updatedClient = await repo.UpdateClientAndUser(id, clientUpdates, userUpdates, request.IsActive);
 
         if (updatedClient == null)
             return Results.NotFound(new { message = $"Client with ID {id} not found" });
+
+
+        var newSnapshot = System.Text.Json.JsonSerializer.SerializeToElement(new
+        {
+            ClientID = updatedClient.ID,
+            UserID = updatedClient.User?.ID,
+            UserName = updatedClient.User?.Name,
+            UserEmail = updatedClient.User?.Email,
+            UserNIF = updatedClient.User?.NIF,
+            UserPassword = "***REDACTED***",
+            UserIsActive = updatedClient.User?.IsActive,
+            ClientAddress = updatedClient.Address,
+            Phones = updatedClient.User?.Phones?.Select(p => new { p.ID, p.Number, p.CountryCode, p.IsMain })
+        });
+
+        await auditLog.AddUpdateClientLogAsync(id, id, oldSnapshot, newSnapshot);
 
         // Prepare response (include main phone if present)
         var updatedMainPhone = updatedClient.User?.Phones?.FirstOrDefault(p => p.IsMain == true);

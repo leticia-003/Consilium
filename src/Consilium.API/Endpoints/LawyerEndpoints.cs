@@ -98,7 +98,8 @@ public static class LawyerEndpoints
     private static async Task<IResult> CreateLawyer(
         CreateLawyerRequest request,
         ILawyerRepository repo,
-        IPasswordHasher hasher)
+        IPasswordHasher hasher,
+        Consilium.Infrastructure.Services.AuditLogFacade auditLog)
     {
         // Validate input
         if (string.IsNullOrWhiteSpace(request.Email))
@@ -148,6 +149,9 @@ public static class LawyerEndpoints
         // Save to database
         var newLawyer = await repo.Create(user, lawyer);
 
+        // Log creation
+        await auditLog.AddCreateLawyerLogAsync(newLawyer.ID, newLawyer.ID);
+
         // Prepare response (include main phone if present)
         var createdMainPhone = newLawyer.User?.Phones?.FirstOrDefault(p => p.IsMain == true);
         var createdPhoneStr = createdMainPhone != null ? createdMainPhone.Number : string.Empty;
@@ -166,11 +170,12 @@ public static class LawyerEndpoints
         return Results.Created($"/api/lawyers/{newLawyer.ID}", response);
     }
 
-    private static async Task<IResult> DeleteLawyer(Guid id, ILawyerRepository repo)
+    private static async Task<IResult> DeleteLawyer(Guid id, ILawyerRepository repo, Consilium.Infrastructure.Services.AuditLogFacade auditLog)
     {
         try
         {
             await repo.Delete(id);
+            await auditLog.AddDeleteLawyerLogAsync(id, id);
             return Results.NoContent();
         }
         catch (KeyNotFoundException)
@@ -187,7 +192,8 @@ public static class LawyerEndpoints
         Guid id,
         UpdateLawyerRequest request,
         ILawyerRepository repo,
-        IPasswordHasher hasher)
+        IPasswordHasher hasher,
+        Consilium.Infrastructure.Services.AuditLogFacade auditLog)
     {
         // Validate input - at least one field should be provided
         if (string.IsNullOrWhiteSpace(request.Name) && 
@@ -233,11 +239,46 @@ public static class LawyerEndpoints
             ProfessionalRegister = request.ProfessionalRegister ?? string.Empty
         };
 
+    // Capture existing state for before snapshot
+    var existingLawyer = await repo.GetById(id);
+    if (existingLawyer == null)
+        return Results.NotFound(new { message = $"Lawyer with ID {id} not found" });
+    // Build old snapshot BEFORE update
+    var oldSnapshot = System.Text.Json.JsonSerializer.SerializeToElement(new
+    {
+        LawyerID = existingLawyer.ID,
+        UserID = existingLawyer.User?.ID,
+        UserName = existingLawyer.User?.Name,
+        UserEmail = existingLawyer.User?.Email,
+        UserNIF = existingLawyer.User?.NIF,
+        UserPassword = "***REDACTED***",
+        UserIsActive = existingLawyer.User?.IsActive,
+        LawyerProfessionalRegister = existingLawyer.ProfessionalRegister,
+        Phones = existingLawyer.User?.Phones?.Select(p => new { p.ID, p.Number, p.CountryCode, p.IsMain })
+    });
+
     // Update in the repository (pass through optional IsActive flag)
     var updatedLawyer = await repo.UpdateLawyerAndUser(id, lawyerUpdates, userUpdates, request.IsActive);
 
         if (updatedLawyer == null)
             return Results.NotFound(new { message = $"Lawyer with ID {id} not found" });
+
+        // Build full JSON snapshots for before/after and log the update
+
+        var newSnapshot = System.Text.Json.JsonSerializer.SerializeToElement(new
+        {
+            LawyerID = updatedLawyer.ID,
+            UserID = updatedLawyer.User?.ID,
+            UserName = updatedLawyer.User?.Name,
+            UserEmail = updatedLawyer.User?.Email,
+            UserNIF = updatedLawyer.User?.NIF,
+            UserPassword = "***REDACTED***",
+            UserIsActive = updatedLawyer.User?.IsActive,
+            LawyerProfessionalRegister = updatedLawyer.ProfessionalRegister,
+            Phones = updatedLawyer.User?.Phones?.Select(p => new { p.ID, p.Number, p.CountryCode, p.IsMain })
+        });
+
+        await auditLog.AddUpdateLawyerLogAsync(id, id, oldSnapshot, newSnapshot);
 
         // Prepare response (include main phone if present)
         var updatedMainPhone = updatedLawyer.User?.Phones?.FirstOrDefault(p => p.IsMain == true);

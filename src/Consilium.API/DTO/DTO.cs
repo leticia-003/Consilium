@@ -178,3 +178,88 @@ public record LoginResponse(
     string Name,
     UserStatus Status
 );
+
+// =========================
+// Process DTOs
+// =========================
+public record CreateProcessRequest(
+    string Name,
+    string Number,
+    Guid ClientId,
+    Guid LawyerId,
+    string? AdversePartName,
+    string? OpposingCounselName,
+    short Priority,
+    string CourtInfo,
+    int ProcessTypePhaseId,
+    int ProcessStatusId,
+    DateTime? NextHearingDate,
+    string? Description
+);
+
+public record UpdateProcessRequest(
+    string? Name,
+    string? Number,
+    Guid? ClientId,
+    Guid? LawyerId,
+    string? AdversePartName,
+    string? OpposingCounselName,
+    short? Priority,
+    string? CourtInfo,
+    int? ProcessTypePhaseId,
+    int? ProcessStatusId,
+    DateTime? NextHearingDate,
+    string? Description,
+    DateTime? ClosedAt
+);
+
+public record ProcessResponse(
+    Guid ProcessId,
+    string Name,
+    string Number,
+    Guid ClientId,
+    Guid LawyerId,
+    string? AdversePartName,
+    string? OpposingCounselName,
+    DateTime CreatedAt,
+    DateTime? ClosedAt,
+    short Priority,
+    string CourtInfo,
+    int ProcessTypePhaseId,
+    int ProcessStatusId,
+    string? Description,
+    DateTime? NextHearingDate
+);
+
+// ========== Lookup responses ===========
+public record ProcessTypeResponse(
+    int Id,
+    string Name,
+    bool IsActive
+);
+
+public record ProcessPhaseResponse(
+    int Id,
+    string Name,
+    string? Description,
+    bool IsActive
+);
+
+public record ProcessStatusResponse(
+    int Id,
+    string Name,
+    bool IsFinal,
+    bool IsDefault,
+    bool IsActive
+);
+
+public record ProcessTypePhaseResponse(
+    int Id,
+    int ProcessTypeId,
+    string ProcessTypeName,
+    int ProcessPhaseId,
+    string ProcessPhaseName,
+    short Order,
+    bool IsOptional,
+    bool IsActive
+);

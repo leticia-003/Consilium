@@ -31,8 +31,5 @@ namespace Consilium.Domain.Models
         [Column("process_status_is_active")]
         [Required]
         public bool IsActive { get; set; } = true;
-
-        public ICollection<ProcessTypePhase> ProcessTypePhases { get; set; } = new List<ProcessTypePhase>();
-
     }
 }

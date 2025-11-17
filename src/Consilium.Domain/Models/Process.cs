@@ -8,7 +8,7 @@ namespace Consilium.Domain.Models
     {
         [Column("process_id")]
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid Id { get; set; }
 
         [Column("process_name")]
@@ -37,9 +37,6 @@ namespace Consilium.Domain.Models
         [StringLength(255)]
         public string? OpposingCounselName { get; set; }
 
-        [Column("process_created_by")]
-        [Required]
-        public Guid CreatedBy { get; set; }
 
         [Column("process_created_at")]
         [Required]
@@ -84,7 +81,7 @@ namespace Consilium.Domain.Models
 
         // Mapeia CreatedBy (FK para CORE.ADMIN)
         // Usando 'CreatedByAdmin' para evitar conflito com 'CreatedBy' (Guid)
-        public Admin CreatedByAdmin { get; set; } = null!;
+        // CreatedBy field removed - not persisted in the schema
 
     }
 }

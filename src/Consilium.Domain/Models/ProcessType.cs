@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Consilium.Domain.Models
 {
-    [Table("PROCESS_TYPE", Schema = "LEGAL")]
+    [Table("process_type", Schema = "legal")]
     public class ProcessType
     {
         // PROCESS_TYPE_ID SERIAL NOT NULL
