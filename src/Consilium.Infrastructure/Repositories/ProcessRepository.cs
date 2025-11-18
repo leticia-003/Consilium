@@ -16,15 +16,53 @@ namespace Consilium.Infrastructure.Repositories
 
         public async Task<Process?> GetById(Guid id)
         {
-            return await _context.Processes
+            // Query with Select to avoid loading the heavy 'File' byte array
+            // Only load document metadata (Id, FileName, FileSize, etc.)
+            var process = await _context.Processes
                 .Include(p => p.Client)
                 .Include(p => p.Lawyer)
                 .Include(p => p.Status)
                 .Include(p => p.ProcessTypePhase)
-                .ThenInclude(ptp => ptp!.ProcessType)
+                    .ThenInclude(ptp => ptp!.ProcessType)
                 .Include(p => p.ProcessTypePhase)
-                .ThenInclude(ptp => ptp!.ProcessPhase)
-                .FirstOrDefaultAsync(p => p.Id == id);
+                    .ThenInclude(ptp => ptp!.ProcessPhase)
+                .Where(p => p.Id == id)
+                .Select(p => new Process
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Number = p.Number,
+                    ClientId = p.ClientId,
+                    Client = p.Client,
+                    LawyerId = p.LawyerId,
+                    Lawyer = p.Lawyer,
+                    AdversePartName = p.AdversePartName,
+                    OpposingCounselName = p.OpposingCounselName,
+                    CreatedAt = p.CreatedAt,
+                    ClosedAt = p.ClosedAt,
+                    Priority = p.Priority,
+                    CourtInfo = p.CourtInfo,
+                    ProcessTypePhaseId = p.ProcessTypePhaseId,
+                    ProcessTypePhase = p.ProcessTypePhase,
+                    ProcessStatusId = p.ProcessStatusId,
+                    Status = p.Status,
+                    Description = p.Description,
+                    NextHearingDate = p.NextHearingDate,
+                    // Project Documents without the File byte array
+                    Documents = p.Documents.Select(d => new Document
+                    {
+                        Id = d.Id,
+                        FileName = d.FileName,
+                        FileMimeType = d.FileMimeType,
+                        FileSize = d.FileSize,
+                        CreatedAt = d.CreatedAt,
+                        ProcessId = d.ProcessId
+                        // Note: We do NOT select d.File here to avoid loading bytes
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            return process;
         }
 
         public async Task<(List<Process> Processes, int TotalCount)> GetAll(

@@ -41,6 +41,10 @@ builder.Services.AddScoped<AuditLogFacade>();
 // --- Add API Services ---
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// Configure antiforgery for form-based endpoints (multipart). We will enable middleware so
+// endpoints that carry antiforgery metadata (e.g., IgnoreAntiforgeryToken/ValidateAntiForgeryToken)
+// do not cause runtime errors when executed without middleware.
+builder.Services.AddAntiforgery();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -98,6 +102,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+// Ensure antiforgery middleware is registered before endpoint execution. This allows
+// minimal API endpoints to opt-out or validate antiforgery per-route via attributes.
+app.UseRouting();
+app.UseAntiforgery();
 
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok", message = "This is cool" }));
 
@@ -108,6 +116,7 @@ app.MapClientEndpoints();
 app.MapLawyerEndpoints();
 app.MapAdminEndpoints();
 app.MapProcessEndpoints();
+app.MapDocumentEndpoints();
 app.MapLookupEndpoints();
 
 app.Run();

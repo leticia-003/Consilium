@@ -6,9 +6,9 @@ namespace Consilium.Domain.Models
     [Table("document", Schema = "legal")]
     public class Document
     {
-        [Column("document_id")]
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+    [Column("document_id")]
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid Id { get; set; }
 
         [Column("process_id")]
@@ -37,12 +37,12 @@ namespace Consilium.Domain.Models
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        [Column("created_by")]
-        [Required]
-        public Guid CreatedBy { get; set; }
+        // [Column("created_by")]
+        // [Required]
+        // public Guid CreatedBy { get; set; }
 
          public Process? Process { get; set; }
-         public User? CreatedByUser { get; set; }
+        //  public User? CreatedByUser { get; set; }
 
     }
 }

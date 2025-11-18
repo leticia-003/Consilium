@@ -213,6 +213,54 @@ public record UpdateProcessRequest(
     DateTime? ClosedAt
 );
 
+/// <summary>
+/// Multipart form request for creating a process with file uploads
+/// </summary>
+public class CreateProcessWithDocumentsRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string Number { get; set; } = string.Empty;
+    public Guid ClientId { get; set; }
+    public Guid LawyerId { get; set; }
+    public string? AdversePartName { get; set; }
+    public string? OpposingCounselName { get; set; }
+    public short Priority { get; set; }
+    public string CourtInfo { get; set; } = string.Empty;
+    public int ProcessTypePhaseId { get; set; }
+    public int ProcessStatusId { get; set; }
+    public DateTime? NextHearingDate { get; set; }
+    public string? Description { get; set; }
+
+    // Files uploaded via multipart form-data (use IFormFileCollection for proper binding)
+    public IFormFileCollection? Files { get; set; }
+}
+
+/// <summary>
+/// Multipart form request for updating a process with file uploads and optional deletion of existing documents
+/// </summary>
+public class UpdateProcessWithDocumentsRequest
+{
+    public string? Name { get; set; }
+    public string? Number { get; set; }
+    public Guid? ClientId { get; set; }
+    public Guid? LawyerId { get; set; }
+    public string? AdversePartName { get; set; }
+    public string? OpposingCounselName { get; set; }
+    public short? Priority { get; set; }
+    public string? CourtInfo { get; set; }
+    public int? ProcessTypePhaseId { get; set; }
+    public int? ProcessStatusId { get; set; }
+    public DateTime? NextHearingDate { get; set; }
+    public string? Description { get; set; }
+    public DateTime? ClosedAt { get; set; }
+
+    // Files to add (use IFormFileCollection for proper binding)
+    public IFormFileCollection? Files { get; set; }
+
+    // Comma separated document IDs to delete
+    public string? DeletedDocumentIds { get; set; }
+}
+
 public record ProcessResponse(
     Guid ProcessId,
     string Name,
@@ -229,6 +277,34 @@ public record ProcessResponse(
     int ProcessStatusId,
     string? Description,
     DateTime? NextHearingDate
+);
+
+public record DocumentResponse(
+    Guid DocumentId,
+    string FileName,
+    string FileMimeType,
+    long FileSize,
+    DateTime CreatedAt,
+    string DownloadUrl
+);
+
+public record ProcessWithDocumentsResponse(
+    Guid ProcessId,
+    string Name,
+    string Number,
+    Guid ClientId,
+    Guid LawyerId,
+    string? AdversePartName,
+    string? OpposingCounselName,
+    DateTime CreatedAt,
+    DateTime? ClosedAt,
+    short Priority,
+    string CourtInfo,
+    int ProcessTypePhaseId,
+    int ProcessStatusId,
+    string? Description,
+    DateTime? NextHearingDate,
+    List<DocumentResponse> Documents
 );
 
 // ========== Lookup responses ===========

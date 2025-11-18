@@ -81,7 +81,7 @@ namespace Consilium.Domain.Models
 
         // Mapeia CreatedBy (FK para CORE.ADMIN)
         // Usando 'CreatedByAdmin' para evitar conflito com 'CreatedBy' (Guid)
-        // CreatedBy field removed - not persisted in the schema
-
+        // Related documents for this process
+        public List<Document> Documents { get; set; } = new List<Document>();
     }
 }
