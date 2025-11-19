@@ -242,23 +242,27 @@ public class UpdateProcessWithDocumentsRequest
 {
     public string? Name { get; set; }
     public string? Number { get; set; }
-    public Guid? ClientId { get; set; }
-    public Guid? LawyerId { get; set; }
+    // Accept as string from form binding, parse in endpoint if non-empty
+    public string? ClientId { get; set; }
+    public string? LawyerId { get; set; }
     public string? AdversePartName { get; set; }
     public string? OpposingCounselName { get; set; }
-    public short? Priority { get; set; }
+    // Accept as string from form binding, parse in endpoint if non-empty
+    public string? Priority { get; set; }
     public string? CourtInfo { get; set; }
-    public int? ProcessTypePhaseId { get; set; }
-    public int? ProcessStatusId { get; set; }
-    public DateTime? NextHearingDate { get; set; }
+    // Accept as string from form binding, parse in endpoint if non-empty
+    public string? ProcessTypePhaseId { get; set; }
+    public string? ProcessStatusId { get; set; }
+    // Accept as string from form binding, parse in endpoint if non-empty
+    public string? NextHearingDate { get; set; }
     public string? Description { get; set; }
-    public DateTime? ClosedAt { get; set; }
+    public string? ClosedAt { get; set; }
 
     // Files to add (use IFormFileCollection for proper binding)
     public IFormFileCollection? Files { get; set; }
 
-    // Comma separated document IDs to delete
-    public string? DeletedDocumentIds { get; set; }
+    // Document IDs to delete - can be sent as multiple form fields or a list
+    public List<string>? DeletedDocumentIds { get; set; }
 }
 
 public record ProcessResponse(
@@ -290,7 +294,7 @@ public record DocumentResponse(
 
 public record ProcessWithDocumentsResponse(
     Guid ProcessId,
-    string Name,
+    j,
     string Number,
     Guid ClientId,
     Guid LawyerId,

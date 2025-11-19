@@ -470,135 +470,211 @@ public static class ProcessEndpoints
         return Results.Ok(response);
     }
 
-    private static async Task<IResult> UpdateProcessWithDocuments(
-        Guid id,
-        [FromForm] UpdateProcessWithDocumentsRequest request,
-        IProcessRepository repo,
-        AppDbContext db,
-        IClientRepository clientRepo,
-        ILawyerRepository lawyerRepo)
+private static async Task<IResult> UpdateProcessWithDocuments(
+    Guid id,
+    [FromForm] UpdateProcessWithDocumentsRequest request,
+    IProcessRepository repo,
+    AppDbContext db,
+    IClientRepository clientRepo,
+    ILawyerRepository lawyerRepo)
+{
+    // 1. Load the entity
+    var existing = await repo.GetById(id);
+    
+    if (existing == null)
+        return Results.NotFound(new { message = $"Process with ID {id} not found" });
+
+    // Fix DateTime Kind issues
+    if (existing.CreatedAt.Kind != DateTimeKind.Utc)
+        existing.CreatedAt = DateTime.SpecifyKind(existing.CreatedAt, DateTimeKind.Utc);
+    if (existing.ClosedAt.HasValue && existing.ClosedAt.Value.Kind != DateTimeKind.Utc)
+        existing.ClosedAt = DateTime.SpecifyKind(existing.ClosedAt.Value, DateTimeKind.Utc);
+    if (existing.NextHearingDate.HasValue && existing.NextHearingDate.Value.Kind != DateTimeKind.Utc)
+        existing.NextHearingDate = DateTime.SpecifyKind(existing.NextHearingDate.Value, DateTimeKind.Utc);
+
+    // 2. Handle Document Deletion (FIXED for List<string>)
+    if (request.DeletedDocumentIds != null && request.DeletedDocumentIds.Count > 0)
     {
-        var existing = await repo.GetById(id);
-        if (existing == null)
-            return Results.NotFound(new { message = $"Process with ID {id} not found" });
-
-        // Fix DateTime Kind issues for PostgreSQL - ensure CreatedAt is UTC
-        if (existing.CreatedAt.Kind != DateTimeKind.Utc)
-            existing.CreatedAt = DateTime.SpecifyKind(existing.CreatedAt, DateTimeKind.Utc);
-        if (existing.ClosedAt.HasValue && existing.ClosedAt.Value.Kind != DateTimeKind.Utc)
-            existing.ClosedAt = DateTime.SpecifyKind(existing.ClosedAt.Value, DateTimeKind.Utc);
-        if (existing.NextHearingDate.HasValue && existing.NextHearingDate.Value.Kind != DateTimeKind.Utc)
-            existing.NextHearingDate = DateTime.SpecifyKind(existing.NextHearingDate.Value, DateTimeKind.Utc);
-
-        if (!string.IsNullOrWhiteSpace(request.Name))
-            existing.Name = request.Name;
-        if (!string.IsNullOrWhiteSpace(request.Number))
-            existing.Number = request.Number;
-        if (request.ClientId.HasValue)
+        var deleteIds = new List<Guid>();
+        
+        // Iterate over the List directly
+        foreach (var docIdStr in request.DeletedDocumentIds)
         {
-            existing.ClientId = request.ClientId.Value;
-            var clientExists = await clientRepo.GetById(request.ClientId.Value);
-            if (clientExists == null)
-                return Results.BadRequest(new { message = $"Client with ID {request.ClientId.Value} not found" });
-        }
-        if (request.LawyerId.HasValue)
-        {
-            existing.LawyerId = request.LawyerId.Value;
-            var lawyerExists = await lawyerRepo.GetById(request.LawyerId.Value);
-            if (lawyerExists == null)
-                return Results.BadRequest(new { message = $"Lawyer with ID {request.LawyerId.Value} not found" });
-        }
-        if (!string.IsNullOrWhiteSpace(request.AdversePartName))
-            existing.AdversePartName = request.AdversePartName;
-        if (!string.IsNullOrWhiteSpace(request.OpposingCounselName))
-            existing.OpposingCounselName = request.OpposingCounselName;
-        if (request.Priority.HasValue)
-            existing.Priority = request.Priority.Value;
-        if (!string.IsNullOrWhiteSpace(request.CourtInfo))
-            existing.CourtInfo = request.CourtInfo;
-        if (request.ProcessTypePhaseId.HasValue)
-        {
-            existing.ProcessTypePhaseId = request.ProcessTypePhaseId.Value;
-            var typePhaseExists = await db.ProcessTypePhases.AnyAsync(x => x.Id == request.ProcessTypePhaseId.Value);
-            if (!typePhaseExists)
-                return Results.BadRequest(new { message = $"ProcessTypePhase with ID {request.ProcessTypePhaseId.Value} not found" });
-        }
-        if (request.ProcessStatusId.HasValue)
-        {
-            existing.ProcessStatusId = request.ProcessStatusId.Value;
-            var statusExists = await db.ProcessStatuses.AnyAsync(x => x.Id == request.ProcessStatusId.Value);
-            if (!statusExists)
-                return Results.BadRequest(new { message = $"ProcessStatus with ID {request.ProcessStatusId.Value} not found" });
-        }
-        if (request.NextHearingDate.HasValue)
-            existing.NextHearingDate = DateTime.SpecifyKind(request.NextHearingDate.Value, DateTimeKind.Utc);
-        if (!string.IsNullOrWhiteSpace(request.Description))
-            existing.Description = request.Description;
-        if (request.ClosedAt.HasValue)
-            existing.ClosedAt = DateTime.SpecifyKind(request.ClosedAt.Value, DateTimeKind.Utc);
-
-        // Handle document deletion if requested
-        if (!string.IsNullOrWhiteSpace(request.DeletedDocumentIds))
-        {
-            var ids = request.DeletedDocumentIds.Split(',')
-                .Select(s => s.Trim())
-                .Where(s => Guid.TryParse(s, out _))
-                .Select(Guid.Parse)
-                .ToList();
-
-            foreach (var docId in ids)
+            // Handle cases where a single list item might contain commas (e.g. "id1,id2")
+            // just in case the form binding did something weird, though usually not needed for List<string>
+            var parts = docIdStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            
+            foreach (var part in parts)
             {
-                var doc = await db.Documents.FirstOrDefaultAsync(d => d.Id == docId && d.ProcessId == existing.Id);
-                if (doc != null)
-                    db.Documents.Remove(doc);
+                if (Guid.TryParse(part.Trim(), out var parsed))
+                    deleteIds.Add(parsed);
+                else
+                    return Results.BadRequest(new { message = $"Invalid document ID format: {part}" });
             }
         }
 
-        // Handle new uploaded files
-        if (request.Files != null && request.Files.Count > 0)
+        // Verify and Remove
+        foreach (var docId in deleteIds)
         {
-            foreach (var file in request.Files)
+            var doc = await db.Documents.FirstOrDefaultAsync(d => d.Id == docId && d.ProcessId == existing.Id);
+            
+            if (doc != null)
             {
-                using var ms = new MemoryStream();
-                await file.CopyToAsync(ms);
-                var doc = new Document
-                {
-                    Id = Guid.NewGuid(),
-                    ProcessId = existing.Id,
-                    File = ms.ToArray(),
-                    FileName = Path.GetFileName(file.FileName),
-                    FileMimeType = file.ContentType ?? "application/octet-stream",
-                    FileSize = ms.Length,
-                    CreatedAt = DateTime.UtcNow // Explicitly set UTC time for PostgreSQL
-                };
-                db.Documents.Add(doc);
+                db.Documents.Remove(doc);
+            }
+            else
+            {
+                return Results.BadRequest(new { message = $"Document {docId} not found or does not belong to this process" });
             }
         }
-
-        await repo.Update(existing);
-
-        var updated = await repo.GetById(id);
-
-        var response = new ProcessResponse(
-            ProcessId: updated!.Id,
-            Name: updated.Name,
-            Number: updated.Number,
-            ClientId: updated.ClientId,
-            LawyerId: updated.LawyerId,
-            AdversePartName: updated.AdversePartName,
-            OpposingCounselName: updated.OpposingCounselName,
-            CreatedAt: updated.CreatedAt,
-            ClosedAt: updated.ClosedAt,
-            Priority: updated.Priority,
-            CourtInfo: updated.CourtInfo,
-            ProcessTypePhaseId: updated.ProcessTypePhaseId,
-            ProcessStatusId: updated.ProcessStatusId,
-            Description: updated.Description,
-            NextHearingDate: updated.NextHearingDate
-        );
-
-        return Results.Ok(response);
     }
+
+    // 3. Handle Property Updates
+    if (!string.IsNullOrWhiteSpace(request.Name))
+        existing.Name = request.Name;
+    if (!string.IsNullOrWhiteSpace(request.Number))
+        existing.Number = request.Number;
+    
+    if (!string.IsNullOrWhiteSpace(request.ClientId))
+    {
+        if (!Guid.TryParse(request.ClientId, out var clientId))
+            return Results.BadRequest(new { message = $"Invalid ClientId format" });
+        
+        // FIX: Use GetById instead of Exists
+        var client = await clientRepo.GetById(clientId);
+        if (client == null)
+             return Results.BadRequest(new { message = $"Client with ID {clientId} not found" });
+
+        existing.ClientId = clientId;
+    }
+    
+    if (!string.IsNullOrWhiteSpace(request.LawyerId))
+    {
+        if (!Guid.TryParse(request.LawyerId, out var lawyerId))
+            return Results.BadRequest(new { message = $"Invalid LawyerId format" });
+            
+        // FIX: Use GetById instead of Exists
+        var lawyer = await lawyerRepo.GetById(lawyerId);
+        if (lawyer == null)
+             return Results.BadRequest(new { message = $"Lawyer with ID {lawyerId} not found" });
+
+        existing.LawyerId = lawyerId;
+    }
+    
+    if (!string.IsNullOrWhiteSpace(request.AdversePartName))
+        existing.AdversePartName = request.AdversePartName;
+    if (!string.IsNullOrWhiteSpace(request.OpposingCounselName))
+        existing.OpposingCounselName = request.OpposingCounselName;
+    
+    if (!string.IsNullOrWhiteSpace(request.Priority))
+    {
+        if (!short.TryParse(request.Priority, out var priority))
+            return Results.BadRequest(new { message = $"Invalid Priority format" });
+        existing.Priority = priority;
+    }
+    
+    if (!string.IsNullOrWhiteSpace(request.CourtInfo))
+        existing.CourtInfo = request.CourtInfo;
+    
+    if (!string.IsNullOrWhiteSpace(request.ProcessTypePhaseId))
+    {
+        if (!int.TryParse(request.ProcessTypePhaseId, out var typePhaseId))
+            return Results.BadRequest(new { message = $"Invalid ProcessTypePhaseId format" });
+            
+        if (!await db.ProcessTypePhases.AnyAsync(x => x.Id == typePhaseId))
+            return Results.BadRequest(new { message = $"ProcessTypePhase with ID {typePhaseId} not found" });
+
+        existing.ProcessTypePhaseId = typePhaseId;
+    }
+    
+    if (!string.IsNullOrWhiteSpace(request.ProcessStatusId))
+    {
+        if (!int.TryParse(request.ProcessStatusId, out var statusId))
+            return Results.BadRequest(new { message = $"Invalid ProcessStatusId format" });
+            
+        if (!await db.ProcessStatuses.AnyAsync(x => x.Id == statusId))
+            return Results.BadRequest(new { message = $"ProcessStatus with ID {statusId} not found" });
+
+        existing.ProcessStatusId = statusId;
+    }
+    
+    if (!string.IsNullOrWhiteSpace(request.NextHearingDate))
+    {
+        if (!DateTime.TryParse(request.NextHearingDate, out var nextHearing))
+            return Results.BadRequest(new { message = $"Invalid NextHearingDate format" });
+        existing.NextHearingDate = DateTime.SpecifyKind(nextHearing, DateTimeKind.Utc);
+    }
+    
+    if (!string.IsNullOrWhiteSpace(request.Description))
+        existing.Description = request.Description;
+    
+    if (!string.IsNullOrWhiteSpace(request.ClosedAt))
+    {
+        if (!DateTime.TryParse(request.ClosedAt, out var closedAt))
+            return Results.BadRequest(new { message = $"Invalid ClosedAt format" });
+        existing.ClosedAt = DateTime.SpecifyKind(closedAt, DateTimeKind.Utc);
+    }
+
+    // 4. Handle New Files
+    if (request.Files != null && request.Files.Count > 0)
+    {
+        foreach (var file in request.Files)
+        {
+            using var ms = new MemoryStream();
+            await file.CopyToAsync(ms);
+            
+            var doc = new Document
+            {
+                Id = Guid.NewGuid(),
+                ProcessId = existing.Id,
+                File = ms.ToArray(),
+                FileName = Path.GetFileName(file.FileName),
+                FileMimeType = file.ContentType ?? "application/octet-stream",
+                FileSize = ms.Length,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc)
+            };
+            
+            db.Documents.Add(doc);
+        }
+    }
+
+    // 5. SAVE CHANGES
+    await db.SaveChangesAsync();
+
+    // 6. Return updated response
+    var updated = await repo.GetById(id);
+
+    // Handle possible null Documents collection safely
+    var documentsResponse = updated!.Documents?.Select(d => new DocumentResponse(
+        DocumentId: d.Id,
+        FileName: d.FileName,
+        FileMimeType: d.FileMimeType,
+        FileSize: d.FileSize,
+        CreatedAt: d.CreatedAt,
+        DownloadUrl: $"/api/documents/{d.Id}/download"
+    )).ToList() ?? new List<DocumentResponse>();
+
+    var response = new ProcessWithDocumentsResponse(
+        ProcessId: updated.Id,
+        Name: updated.Name,
+        Number: updated.Number,
+        ClientId: updated.ClientId,
+        LawyerId: updated.LawyerId,
+        AdversePartName: updated.AdversePartName,
+        OpposingCounselName: updated.OpposingCounselName,
+        CreatedAt: updated.CreatedAt,
+        ClosedAt: updated.ClosedAt,
+        Priority: updated.Priority,
+        CourtInfo: updated.CourtInfo,
+        ProcessTypePhaseId: updated.ProcessTypePhaseId,
+        ProcessStatusId: updated.ProcessStatusId,
+        Description: updated.Description,
+        NextHearingDate: updated.NextHearingDate,
+        Documents: documentsResponse
+    );
+
+    return Results.Ok(response);
+}
 
     private static async Task<IResult> DeleteProcess(Guid id, IProcessRepository repo)
     {

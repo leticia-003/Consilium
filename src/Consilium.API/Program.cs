@@ -9,6 +9,7 @@ using Consilium.API.Endpoints;
 using Consilium.API.Services;
 using Npgsql;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
