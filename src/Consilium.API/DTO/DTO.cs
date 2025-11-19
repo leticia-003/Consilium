@@ -294,7 +294,7 @@ public record DocumentResponse(
 
 public record ProcessWithDocumentsResponse(
     Guid ProcessId,
-    j,
+    string Name,
     string Number,
     Guid ClientId,
     Guid LawyerId,
