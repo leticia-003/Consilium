@@ -390,6 +390,14 @@ public static class ProcessEndpoints
         if (existing == null)
             return Results.NotFound(new { message = $"Process with ID {id} not found" });
 
+        // Fix DateTime Kind issues for PostgreSQL - ensure CreatedAt is UTC
+        if (existing.CreatedAt.Kind != DateTimeKind.Utc)
+            existing.CreatedAt = DateTime.SpecifyKind(existing.CreatedAt, DateTimeKind.Utc);
+        if (existing.ClosedAt.HasValue && existing.ClosedAt.Value.Kind != DateTimeKind.Utc)
+            existing.ClosedAt = DateTime.SpecifyKind(existing.ClosedAt.Value, DateTimeKind.Utc);
+        if (existing.NextHearingDate.HasValue && existing.NextHearingDate.Value.Kind != DateTimeKind.Utc)
+            existing.NextHearingDate = DateTime.SpecifyKind(existing.NextHearingDate.Value, DateTimeKind.Utc);
+
         if (!string.IsNullOrWhiteSpace(request.Name))
             existing.Name = request.Name;
         if (!string.IsNullOrWhiteSpace(request.Number))
@@ -473,6 +481,14 @@ public static class ProcessEndpoints
         var existing = await repo.GetById(id);
         if (existing == null)
             return Results.NotFound(new { message = $"Process with ID {id} not found" });
+
+        // Fix DateTime Kind issues for PostgreSQL - ensure CreatedAt is UTC
+        if (existing.CreatedAt.Kind != DateTimeKind.Utc)
+            existing.CreatedAt = DateTime.SpecifyKind(existing.CreatedAt, DateTimeKind.Utc);
+        if (existing.ClosedAt.HasValue && existing.ClosedAt.Value.Kind != DateTimeKind.Utc)
+            existing.ClosedAt = DateTime.SpecifyKind(existing.ClosedAt.Value, DateTimeKind.Utc);
+        if (existing.NextHearingDate.HasValue && existing.NextHearingDate.Value.Kind != DateTimeKind.Utc)
+            existing.NextHearingDate = DateTime.SpecifyKind(existing.NextHearingDate.Value, DateTimeKind.Utc);
 
         if (!string.IsNullOrWhiteSpace(request.Name))
             existing.Name = request.Name;

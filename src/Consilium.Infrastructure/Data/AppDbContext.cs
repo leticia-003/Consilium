@@ -1,5 +1,6 @@
 using Consilium.Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Consilium.Infrastructure.Data
 {
@@ -96,6 +97,15 @@ namespace Consilium.Infrastructure.Data
                 .WithMany(p => p.Documents)
                 .HasForeignKey(d => d.ProcessId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Process entity - CreatedAt should never be updated after creation
+            modelBuilder.Entity<Process>()
+                .Property(p => p.CreatedAt)
+                .ValueGeneratedOnAdd();
+            
+            modelBuilder.Entity<Process>()
+                .Property(p => p.CreatedAt)
+                .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
         }
     }
 }
