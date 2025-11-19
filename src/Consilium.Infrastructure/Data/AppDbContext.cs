@@ -1,5 +1,6 @@
 using Consilium.Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Consilium.Infrastructure.Data
 {
@@ -14,6 +15,15 @@ namespace Consilium.Infrastructure.Data
         public DbSet<Lawyer> Lawyers { get; set; }
         public DbSet<Admin> Admins { get; set; }
         public DbSet<Phone> Phones { get; set; }
+        public DbSet<Process> Processes { get; set; }
+        public DbSet<Document> Documents { get; set; }
+        public DbSet<ProcessType> ProcessTypes { get; set; }
+        public DbSet<ProcessPhase> ProcessPhases { get; set; }
+        public DbSet<ProcessTypePhase> ProcessTypePhases { get; set; }
+        public DbSet<ProcessStatus> ProcessStatuses { get; set; }
+        public DbSet<ActionLogType> ActionLogTypes { get; set; }
+        public DbSet<UserLog> UserLogs { get; set; }
+        public DbSet<ProcessLog> ProcessLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -77,6 +87,25 @@ namespace Consilium.Infrastructure.Data
             modelBuilder.Entity<Phone>()
                 .Property(p => p.CountryCode)
                 .HasDefaultValue((short)351);
+
+            // Configure Document entity in LEGAL schema and cascade delete when a Process is deleted
+            modelBuilder.Entity<Document>()
+                .HasKey(d => d.Id);
+
+            modelBuilder.Entity<Document>()
+                .HasOne(d => d.Process)
+                .WithMany(p => p.Documents)
+                .HasForeignKey(d => d.ProcessId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Process entity - CreatedAt should never be updated after creation
+            modelBuilder.Entity<Process>()
+                .Property(p => p.CreatedAt)
+                .ValueGeneratedOnAdd();
+            
+            modelBuilder.Entity<Process>()
+                .Property(p => p.CreatedAt)
+                .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
         }
     }
 }

@@ -11,6 +11,8 @@ namespace Consilium.Domain.Models
         public Guid ID { get; set; } // This is both PK and FK
 
         [Column("lawyer_professional_register")]
+        [Required]
+        [StringLength(20)]
         public string ProfessionalRegister { get; set; } = string.Empty;
 
         // Navigation property to link back to the User

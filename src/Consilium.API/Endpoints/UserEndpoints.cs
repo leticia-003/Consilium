@@ -19,6 +19,10 @@ public static class UserEndpoints
         group.MapGet("/{id:guid}", GetUserById)
             .WithName("GetUserById")
             .WithDescription("Retrieve a user by ID");
+
+        group.MapDelete("/{id:guid}", DeleteUser)
+            .WithName("DeleteUser")
+            .WithDescription("Delete a user and anonymize their audit logs (GDPR right to be forgotten)");
     }
 
     private static async Task<IResult> GetAllUsers(IUserRepository repo)
@@ -78,8 +82,10 @@ public static class UserEndpoints
         return await DeleteUserAsync(id, clientRepo);
     }
 
-    private static async Task<IResult> DeleteUser(Guid id, IClientRepository clientRepo)
+    private static async Task<IResult> DeleteUser(Guid id, IClientRepository clientRepo, Consilium.Infrastructure.Services.AuditLogFacade auditLog)
     {
+        // anonymize logs before deletion per GDPR right to be forgotten
+        await auditLog.AnonymizeUserLogsAsync(id);
         return await DeleteUserAndDependents(id, clientRepo);
     }
 }

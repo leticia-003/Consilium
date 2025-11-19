@@ -11,6 +11,8 @@ namespace Consilium.Domain.Models
         public Guid ID { get; set; } // This is both PK and FK
 
         [Column("client_address")]
+        [Required]
+        [StringLength(500)]
         public string Address { get; set; } = string.Empty;
 
         // Navigation property to link back to the User

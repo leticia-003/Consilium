@@ -11,18 +11,26 @@ namespace Consilium.Domain.Models
         public Guid ID { get; set; }
 
         [Column("user_name")]
+        [Required]
+        [StringLength(254)]
         public string Name { get; set; } = string.Empty;
 
         [Column("user_nif")]
+        [Required]
+        [StringLength(9)]
         public string NIF { get; set; } = string.Empty;
 
         [Column("user_email")]
+        [Required]
+        [StringLength(254)]
         public string Email { get; set; } = string.Empty;
 
         [Column("user_password_hash")]
+        [Required]
         public string PasswordHash { get; set; } = string.Empty;
 
         [Column("user_is_active")]
+        [Required]
         public bool IsActive { get; set; } = true;
 
         // Navigation properties

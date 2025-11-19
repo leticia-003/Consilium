@@ -11,6 +11,7 @@ namespace Consilium.Domain.Models
         public Guid ID { get; set; } // This is both PK and FK
 
         [Column("admin_started_at")]
+        [Required]
         public DateTime StartedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation property to link back to the User

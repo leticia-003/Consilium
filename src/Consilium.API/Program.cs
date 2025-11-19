@@ -9,12 +9,20 @@ using Consilium.API.Endpoints;
 using Consilium.API.Services;
 using Npgsql;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+// Use in-memory DB for tests when using the 'Test' environment
+// When environment is 'Test' we do not register an EF provider here so tests
+// can substitute one (for example an InMemory DB) without having Npgsql also
+// registered which causes EF to raise an exception about multiple providers.
+if (!builder.Environment.IsEnvironment("Test"))
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(connectionString));
+}
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -26,12 +34,18 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<ILawyerRepository, LawyerRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IProcessRepository, ProcessRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<AuditLogFacade>();
 
 // --- Add API Services ---
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// Configure antiforgery for form-based endpoints (multipart). We will enable middleware so
+// endpoints that carry antiforgery metadata (e.g., IgnoreAntiforgeryToken/ValidateAntiForgeryToken)
+// do not cause runtime errors when executed without middleware.
+builder.Services.AddAntiforgery();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -51,9 +65,9 @@ app.UseExceptionHandler((exceptionHandlerApp) =>
         var exception = exceptionHandlerPathFeature?.Error;
 
         // Handle DbUpdateException for unique constraint violations
-        if (exception is Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
+        if (exception is DbUpdateException dbEx)
         {
-            if (dbEx.InnerException is Npgsql.PostgresException pgEx)
+            if (dbEx.InnerException is PostgresException pgEx)
             {
                 // Handle unique constraint violations
                 if (pgEx.SqlState == "23505") // Unique violation
@@ -89,6 +103,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+// Ensure antiforgery middleware is registered before endpoint execution. This allows
+// minimal API endpoints to opt-out or validate antiforgery per-route via attributes.
+app.UseRouting();
+app.UseAntiforgery();
 
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok", message = "This is cool" }));
 
@@ -98,5 +116,11 @@ app.MapUserEndpoints();
 app.MapClientEndpoints();
 app.MapLawyerEndpoints();
 app.MapAdminEndpoints();
+app.MapProcessEndpoints();
+app.MapDocumentEndpoints();
+app.MapLookupEndpoints();
 
 app.Run();
+
+// Expose Program class to allow integration testing with WebApplicationFactory
+public partial class Program { }
