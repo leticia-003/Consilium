@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <!-- Exclude test assemblies, generated files, and built artifacts -->
+          <Exclude>[*.Tests]*</Exclude>
+          <ExcludeByFile>**/*Tests*.cs;**/*.g.cs;**/bin/**;**/obj/**;**/*.csproj</ExcludeByFile>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
