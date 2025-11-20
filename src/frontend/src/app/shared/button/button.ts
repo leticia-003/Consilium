@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, HostBinding } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
@@ -7,7 +7,7 @@ import { RouterModule } from '@angular/router';
   standalone: true,
   templateUrl: './button.html',
   styleUrls: ['./button.css'],
-  imports: [CommonModule, RouterModule]
+  imports: [CommonModule, RouterModule],
 })
 export class ButtonComponent {
   @Input() label = '';
@@ -15,6 +15,11 @@ export class ButtonComponent {
   @Input() variant: 'primary' | 'secondary' = 'primary';
   @Input() link: string | any[] | null = null;
   @Input() disabled: boolean = false;
+
+  @HostBinding('style.pointer-events')
+  get pointerEvents(): string {
+    return this.disabled ? 'none' : 'auto';
+  }
 
   get variantClass() {
     return this.variant === 'primary' ? 'btn-primary' : '';

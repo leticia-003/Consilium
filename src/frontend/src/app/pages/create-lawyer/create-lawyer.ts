@@ -7,7 +7,13 @@ import { ButtonComponent } from '../../shared/button/button';
 import { PhoneInputComponent } from '../../shared/phone-input/phone-input';
 import { LawyerService } from '../../services/lawyer.service';
 import { NotificationService } from '../../shared/notification/notification.service';
-import { sanitizeModel } from '../../shared/input.util';
+import {
+  sanitizeModel,
+  isValidEmail,
+  isValidPhone,
+  isValidNif,
+  isValidRegisterNumber,
+} from '../../shared/input.util';
 import { Lawyer } from '../../models/lawyer';
 
 @Component({
@@ -15,10 +21,12 @@ import { Lawyer } from '../../models/lawyer';
   standalone: true,
   templateUrl: './create-lawyer.html',
   styleUrls: ['./create-lawyer.css'],
-  imports: [CommonModule, FormsModule, PageTitleComponent, ButtonComponent, PhoneInputComponent]
+  imports: [CommonModule, FormsModule, PageTitleComponent, ButtonComponent, PhoneInputComponent],
 })
 export class CreateLawyerComponent {
-  model: Partial<Lawyer & { password?: string; confirmPassword?: string; phoneCountryCode?: number }> = {
+  model: Partial<
+    Lawyer & { password?: string; confirmPassword?: string; phoneCountryCode?: number }
+  > = {
     name: '',
     email: '',
     professionalRegister: '',
@@ -27,7 +35,7 @@ export class CreateLawyerComponent {
     phoneCountryCode: 351,
     isActive: true,
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   };
 
   submitting = false;
@@ -43,13 +51,18 @@ export class CreateLawyerComponent {
   get initials(): string {
     const name = (this.model.name || '').trim();
     if (!name) return '👤';
-    const parts = name.split(/\s+/).filter(p => p.length > 0);
-    const initials = parts.map(p => p.charAt(0)).join('').slice(0, 2).toUpperCase();
+    const parts = name.split(/\s+/).filter((p) => p.length > 0);
+    const initials = parts
+      .map((p) => p.charAt(0))
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
     return initials || '👤';
   }
 
   createLawyer() {
-    if (!this.model.name || this.submitting) return;
+    if (!this.isComplete() || this.submitting) return;
+    if (!this.model.name) return;
     if (!this.isPasswordValid()) {
       this.notifications.showError('Password is required and must match confirmation.');
       return;
@@ -71,7 +84,7 @@ export class CreateLawyerComponent {
     delete payload.confirmPassword;
 
     this.lawyerService.createLawyer(payload).subscribe({
-      next: _ => {
+      next: (_) => {
         this.notifications.showSuccess('Lawyer created successfully');
         setTimeout(() => this.router.navigate(['/lawyers']), 500);
       },
@@ -81,7 +94,9 @@ export class CreateLawyerComponent {
         if (body && typeof body === 'object' && body.errors) {
           for (const k of Object.keys(body.errors)) {
             const key = k.toString().toLowerCase();
-            const vals = Array.isArray(body.errors[k]) ? body.errors[k].map((v: any) => String(v)) : [String(body.errors[k])];
+            const vals = Array.isArray(body.errors[k])
+              ? body.errors[k].map((v: any) => String(v))
+              : [String(body.errors[k])];
             this.fieldErrors[key] = vals;
           }
           this.notifications.showError('Please correct the highlighted fields.');
@@ -93,7 +108,7 @@ export class CreateLawyerComponent {
         }
 
         this.submitting = false;
-      }
+      },
     });
   }
 
@@ -110,11 +125,24 @@ export class CreateLawyerComponent {
 
     return (
       s(this.model.name) &&
-      emailOk &&
-      s(this.model.professionalRegister) &&
-      s(this.model.nif) &&
-      s(this.model.phone) &&
+      isValidEmail(email) &&
+      isValidRegisterNumber(this.model.professionalRegister || '') &&
+      isValidNif((this.model.nif || '').toString()) &&
+      isValidPhone((this.model.phone || '').toString()) &&
       this.isPasswordValid()
     );
+  }
+
+  get isEmailValid() {
+    return isValidEmail(this.model.email || '');
+  }
+  get isPhoneValid() {
+    return isValidPhone(this.model.phone || '');
+  }
+  get isNifValid() {
+    return isValidNif(this.model.nif || '');
+  }
+  get isRegisterNumberValid() {
+    return isValidRegisterNumber(this.model.professionalRegister || '');
   }
 }

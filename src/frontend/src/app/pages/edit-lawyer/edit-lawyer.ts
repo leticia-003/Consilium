@@ -7,7 +7,14 @@ import { PageTitleComponent } from '../../shared/page-title/page-title';
 import { ButtonComponent } from '../../shared/button/button';
 import { LawyerService } from '../../services/lawyer.service';
 import { NotificationService } from '../../shared/notification/notification.service';
-import { sanitizeModel, sanitizeString } from '../../shared/input.util';
+import {
+  sanitizeModel,
+  sanitizeString,
+  isValidEmail,
+  isValidPhone,
+  isValidNif,
+  isValidRegisterNumber,
+} from '../../shared/input.util';
 import { Lawyer } from '../../models/lawyer';
 import { PhoneInputComponent } from '../../shared/phone-input/phone-input';
 
@@ -16,11 +23,13 @@ import { PhoneInputComponent } from '../../shared/phone-input/phone-input';
   standalone: true,
   templateUrl: './edit-lawyer.html',
   styleUrls: ['./edit-lawyer.css', '../create-client/create-client.css'],
-  imports: [CommonModule, FormsModule, PageTitleComponent, ButtonComponent, PhoneInputComponent]
+  imports: [CommonModule, FormsModule, PageTitleComponent, ButtonComponent, PhoneInputComponent],
 })
 export class EditLawyerComponent implements OnInit {
   id: string | null = null;
-  model: Partial<Lawyer & { password?: string; confirmPassword?: string; phoneCountryCode?: number }> = {
+  model: Partial<
+    Lawyer & { password?: string; confirmPassword?: string; phoneCountryCode?: number }
+  > = {
     name: '',
     email: '',
     professionalRegister: '',
@@ -29,7 +38,7 @@ export class EditLawyerComponent implements OnInit {
     phoneCountryCode: 351,
     isActive: true,
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   };
 
   private originalModel: Record<string, any> = {};
@@ -71,29 +80,35 @@ export class EditLawyerComponent implements OnInit {
         this.model.phoneCountryCode = data?.phoneCountryCode ?? this.model.phoneCountryCode ?? 351;
         this.model.isActive = (data?.status || '').toString().toUpperCase() === 'ACTIVE';
 
-        try { this.cd.detectChanges(); } catch (e) {}
+        try {
+          this.cd.detectChanges();
+        } catch (e) {}
 
         this.originalModel = this.snapshotModel();
       },
       error: (err) => {
         console.error('Failed to load lawyer', err);
         this.notifications.showError('Failed to load lawyer.');
-      }
+      },
     });
   }
 
   get initials(): string {
     const name = (this.model.name || '').trim();
     if (!name) return '👤';
-    const parts = name.split(/\s+/).filter(p => p.length > 0);
-    const initials = parts.map(p => p.charAt(0)).join('').slice(0, 2).toUpperCase();
+    const parts = name.split(/\s+/).filter((p) => p.length > 0);
+    const initials = parts
+      .map((p) => p.charAt(0))
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
     return initials || '👤';
   }
 
   isPasswordValid(): boolean {
     const p = this.model.password || '';
     const c = this.model.confirmPassword || '';
-    return p.length === 0 ? true : (p.length >= 8 && p === c);
+    return p.length === 0 ? true : p.length >= 8 && p === c;
   }
 
   isComplete(): boolean {
@@ -103,12 +118,25 @@ export class EditLawyerComponent implements OnInit {
 
     return (
       s(this.model.name) &&
-      emailOk &&
-      s(this.model.professionalRegister) &&
-      s(this.model.nif) &&
-      s(this.model.phone) &&
+      isValidEmail(email) &&
+      isValidRegisterNumber(this.model.professionalRegister || '') &&
+      isValidNif((this.model.nif || '').toString()) &&
+      isValidPhone((this.model.phone || '').toString()) &&
       this.isPasswordValid()
     );
+  }
+
+  get isEmailValid() {
+    return isValidEmail(this.model.email || '');
+  }
+  get isPhoneValid() {
+    return isValidPhone(this.model.phone || '');
+  }
+  get isNifValid() {
+    return isValidNif(this.model.nif || '');
+  }
+  get isRegisterNumberValid() {
+    return isValidRegisterNumber(this.model.professionalRegister || '');
   }
 
   private snapshotModel(): Record<string, any> {
@@ -120,7 +148,7 @@ export class EditLawyerComponent implements OnInit {
       phone: (this.model.phone || '').toString().trim(),
       phoneCountryCode: this.model.phoneCountryCode ?? null,
       isActive: !!this.model.isActive,
-      password: (this.model.password || '').toString()
+      password: (this.model.password || '').toString(),
     };
   }
 
@@ -130,7 +158,7 @@ export class EditLawyerComponent implements OnInit {
   }
 
   save() {
-    if (!this.id || this.submitting) return;
+    if (!this.isComplete() || !this.id || this.submitting) return;
     if (!this.isPasswordValid()) {
       this.notifications.showError('Password is required and must match confirmation.');
       return;
@@ -151,10 +179,10 @@ export class EditLawyerComponent implements OnInit {
       delete payload['phone'];
     }
 
-  payload.isActive = !!this.model.isActive;
+    payload.isActive = !!this.model.isActive;
 
     this.lawyerService.updateLawyer(this.id, payload).subscribe({
-      next: _ => {
+      next: (_) => {
         this.notifications.showSuccess('Lawyer updated successfully');
         setTimeout(() => this.router.navigate(['/lawyers']), 600);
       },
@@ -164,7 +192,9 @@ export class EditLawyerComponent implements OnInit {
         if (body && typeof body === 'object' && body.errors) {
           for (const k of Object.keys(body.errors)) {
             const key = k.toString().toLowerCase();
-            const vals = Array.isArray(body.errors[k]) ? body.errors[k].map((v: any) => String(v)) : [String(body.errors[k])];
+            const vals = Array.isArray(body.errors[k])
+              ? body.errors[k].map((v: any) => String(v))
+              : [String(body.errors[k])];
             this.fieldErrors[key] = vals;
           }
           this.notifications.showError('Please correct the highlighted fields.');
@@ -175,7 +205,7 @@ export class EditLawyerComponent implements OnInit {
           this.notifications.showError('Failed to update lawyer.');
         }
         this.submitting = false;
-      }
+      },
     });
   }
 }

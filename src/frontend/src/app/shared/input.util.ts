@@ -31,3 +31,22 @@ export function sanitizeModel(obj: Record<string, any>): Record<string, any> {
   }
   return out;
 }
+
+export function isValidRegisterNumber(reg: string): boolean {
+  return /^[A-Za-z0-9\-\/]{1,10}$/.test(reg);
+}
+
+export function isValidEmail(email: string): boolean {
+  // Basic email regex
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+export function isValidPhone(phone: string): boolean {
+  // Must be exactly 9 digits
+  return /^\d{9}$/.test(phone);
+}
+
+export function isValidNif(nif: string): boolean {
+  // Must be exactly 9 digits
+  return /^\d{9}$/.test(nif);
+}
