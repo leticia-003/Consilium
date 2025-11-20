@@ -29,7 +29,7 @@
   </div>
 
   <div *ngIf="loading" class="loading">Loading clients...</div>
-  <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+  <!-- <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div> -->
 
   <div *ngIf="!loading && !errorMessage">
     <table class="clients-table" *ngIf="filteredClients.length > 0">
