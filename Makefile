@@ -156,9 +156,13 @@ test: test-backend test-frontend
 # ------------------------
 test-backend-coverage:
 	@echo "=== Running Backend Tests with Coverage (XPlat) ==="
+	@rm -rf src/TestResults/Coverage
 	@cd src && \
-		dotnet test Consilium.Tests/Consilium.Tests.csproj --verbosity minimal --collect:"XPlat Code Coverage" --settings coverlet.runsettings --results-directory TestResults || exit 1
-	@COV_FILE=$$(find src -type f -name 'coverage.cobertura.xml' -print -quit); \
+		dotnet test Consilium.Tests/Consilium.Tests.csproj --verbosity minimal --collect:"XPlat Code Coverage" --settings coverlet.runsettings --results-directory TestResults/Coverage || exit 1
+	@COV_FILE="src/TestResults/Coverage/coverage.cobertura.xml"; \
+	if [ ! -f "$$COV_FILE" ]; then \
+		COV_FILE=$$(find src/TestResults/Coverage -type f -name 'coverage.cobertura.xml' -print -quit); \
+	fi; \
 	if [ -z "$$COV_FILE" ]; then echo "Coverage file not found"; exit 1; fi; \
 	COV=$$(grep -m1 '<coverage ' "$$COV_FILE" | sed -n 's/.*line-rate="\([0-9.]*\)".*/\1/p'); \
 	PCT=$$(awk -v cov="$$COV" 'BEGIN {printf "%0.2f", cov * 100}'); \

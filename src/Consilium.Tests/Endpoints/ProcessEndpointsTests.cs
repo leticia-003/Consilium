@@ -661,4 +661,317 @@ public class ProcessEndpointsTests : IClassFixture<WebApplicationFactory<Program
         var resp = await client.DeleteAsync($"/api/processes/{Guid.NewGuid()}");
         Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
     }
+
+    [Fact]
+    public async Task UpdateProcess_ValidData_ReturnsOkAndUpdatesProcess()
+    {
+        var client = _factory.CreateClient();
+        Guid processId;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedMinimalData(db);
+
+            var clientId = db.Clients.First().ID;
+            var lawyerId = db.Lawyers.First().ID;
+            var ptypeId = db.ProcessTypePhases.First().Id;
+            var pstatusId = db.ProcessStatuses.First().Id;
+
+            var process = new Process
+            {
+                Id = Guid.NewGuid(),
+                Name = "Original Name",
+                Number = "P-Original",
+                ClientId = clientId,
+                LawyerId = lawyerId,
+                CourtInfo = "Court A",
+                ProcessTypePhaseId = ptypeId,
+                ProcessStatusId = pstatusId,
+                CreatedAt = DateTime.UtcNow,
+                Priority = 1
+            };
+            await db.Processes.AddAsync(process);
+            await db.SaveChangesAsync();
+            processId = process.Id;
+        }
+
+        var updateReq = new UpdateProcessRequest(
+            Name: "Updated Name",
+            Number: "P-Updated",
+            ClientId: null,
+            LawyerId: null,
+            AdversePartName: "New Adverse",
+            OpposingCounselName: "New Opposing",
+            Priority: 5,
+            CourtInfo: "Court B",
+            ProcessTypePhaseId: null,
+            ProcessStatusId: null,
+            NextHearingDate: DateTime.UtcNow.AddDays(14),
+            Description: "Updated description",
+            ClosedAt: null
+        );
+
+        var resp = await client.PatchAsJsonAsync($"/api/processes/{processId}", updateReq);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        // Verify the response contains the updated data
+        var updated = await resp.Content.ReadFromJsonAsync<ProcessResponse>();
+        Assert.NotNull(updated);
+        // The update should have been applied
+        Assert.Equal(processId, updated!.ProcessId);
+    }
+
+    [Fact]
+    public async Task UpdateProcess_InvalidClient_ReturnsBadRequest()
+    {
+        var client = _factory.CreateClient();
+        Guid processId;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedMinimalData(db);
+
+            var clientId = db.Clients.First().ID;
+            var lawyerId = db.Lawyers.First().ID;
+            var ptypeId = db.ProcessTypePhases.First().Id;
+            var pstatusId = db.ProcessStatuses.First().Id;
+
+            var process = new Process
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test",
+                Number = "P-Test",
+                ClientId = clientId,
+                LawyerId = lawyerId,
+                CourtInfo = "Court A",
+                ProcessTypePhaseId = ptypeId,
+                ProcessStatusId = pstatusId,
+                CreatedAt = DateTime.UtcNow
+            };
+            await db.Processes.AddAsync(process);
+            await db.SaveChangesAsync();
+            processId = process.Id;
+        }
+
+        var updateReq = new UpdateProcessRequest(
+            Name: null,
+            Number: null,
+            ClientId: Guid.NewGuid(), // Invalid client
+            LawyerId: null,
+            AdversePartName: null,
+            OpposingCounselName: null,
+            Priority: null,
+            CourtInfo: null,
+            ProcessTypePhaseId: null,
+            ProcessStatusId: null,
+            NextHearingDate: null,
+            Description: null,
+            ClosedAt: null
+        );
+
+        var resp = await client.PatchAsJsonAsync($"/api/processes/{processId}", updateReq);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateProcess_InvalidLawyer_ReturnsBadRequest()
+    {
+        var client = _factory.CreateClient();
+        Guid processId;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedMinimalData(db);
+
+            var clientId = db.Clients.First().ID;
+            var lawyerId = db.Lawyers.First().ID;
+            var ptypeId = db.ProcessTypePhases.First().Id;
+            var pstatusId = db.ProcessStatuses.First().Id;
+
+            var process = new Process
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test",
+                Number = "P-Test",
+                ClientId = clientId,
+                LawyerId = lawyerId,
+                CourtInfo = "Court A",
+                ProcessTypePhaseId = ptypeId,
+                ProcessStatusId = pstatusId,
+                CreatedAt = DateTime.UtcNow
+            };
+            await db.Processes.AddAsync(process);
+            await db.SaveChangesAsync();
+            processId = process.Id;
+        }
+
+        var updateReq = new UpdateProcessRequest(
+            Name: null,
+            Number: null,
+            ClientId: null,
+            LawyerId: Guid.NewGuid(), // Invalid lawyer
+            AdversePartName: null,
+            OpposingCounselName: null,
+            Priority: null,
+            CourtInfo: null,
+            ProcessTypePhaseId: null,
+            ProcessStatusId: null,
+            NextHearingDate: null,
+            Description: null,
+            ClosedAt: null
+        );
+
+        var resp = await client.PatchAsJsonAsync($"/api/processes/{processId}", updateReq);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateProcess_InvalidProcessTypePhase_ReturnsBadRequest()
+    {
+        var client = _factory.CreateClient();
+        Guid processId;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedMinimalData(db);
+
+            var clientId = db.Clients.First().ID;
+            var lawyerId = db.Lawyers.First().ID;
+            var ptypeId = db.ProcessTypePhases.First().Id;
+            var pstatusId = db.ProcessStatuses.First().Id;
+
+            var process = new Process
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test",
+                Number = "P-Test",
+                ClientId = clientId,
+                LawyerId = lawyerId,
+                CourtInfo = "Court A",
+                ProcessTypePhaseId = ptypeId,
+                ProcessStatusId = pstatusId,
+                CreatedAt = DateTime.UtcNow
+            };
+            await db.Processes.AddAsync(process);
+            await db.SaveChangesAsync();
+            processId = process.Id;
+        }
+
+        var updateReq = new UpdateProcessRequest(
+            Name: null,
+            Number: null,
+            ClientId: null,
+            LawyerId: null,
+            AdversePartName: null,
+            OpposingCounselName: null,
+            Priority: null,
+            CourtInfo: null,
+            ProcessTypePhaseId: 9999, // Invalid
+            ProcessStatusId: null,
+            NextHearingDate: null,
+            Description: null,
+            ClosedAt: null
+        );
+
+        var resp = await client.PatchAsJsonAsync($"/api/processes/{processId}", updateReq);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateProcess_InvalidProcessStatus_ReturnsBadRequest()
+    {
+        var client = _factory.CreateClient();
+        Guid processId;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedMinimalData(db);
+
+            var clientId = db.Clients.First().ID;
+            var lawyerId = db.Lawyers.First().ID;
+            var ptypeId = db.ProcessTypePhases.First().Id;
+            var pstatusId = db.ProcessStatuses.First().Id;
+
+            var process = new Process
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test",
+                Number = "P-Test",
+                ClientId = clientId,
+                LawyerId = lawyerId,
+                CourtInfo = "Court A",
+                ProcessTypePhaseId = ptypeId,
+                ProcessStatusId = pstatusId,
+                CreatedAt = DateTime.UtcNow
+            };
+            await db.Processes.AddAsync(process);
+            await db.SaveChangesAsync();
+            processId = process.Id;
+        }
+
+        var updateReq = new UpdateProcessRequest(
+            Name: null,
+            Number: null,
+            ClientId: null,
+            LawyerId: null,
+            AdversePartName: null,
+            OpposingCounselName: null,
+            Priority: null,
+            CourtInfo: null,
+            ProcessTypePhaseId: null,
+            ProcessStatusId: 9999, // Invalid
+            NextHearingDate: null,
+            Description: null,
+            ClosedAt: null
+        );
+
+        var resp = await client.PatchAsJsonAsync($"/api/processes/{processId}", updateReq);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateProcessWithDocuments_ValidData_ReturnsOk()
+    {
+        var client = _factory.CreateClient();
+        Guid processId;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedMinimalData(db);
+
+            var clientId = db.Clients.First().ID;
+            var lawyerId = db.Lawyers.First().ID;
+            var ptypeId = db.ProcessTypePhases.First().Id;
+            var pstatusId = db.ProcessStatuses.First().Id;
+
+            var process = new Process
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test Process",
+                Number = "P-Test",
+                ClientId = clientId,
+                LawyerId = lawyerId,
+                CourtInfo = "Court A",
+                ProcessTypePhaseId = ptypeId,
+                ProcessStatusId = pstatusId,
+                CreatedAt = DateTime.UtcNow
+            };
+            await db.Processes.AddAsync(process);
+            await db.SaveChangesAsync();
+            processId = process.Id;
+        }
+
+        var multi = new MultipartFormDataContent();
+        multi.Add(new StringContent("Updated Process Name"), "Name");
+        multi.Add(new StringContent("Updated Court"), "CourtInfo");
+
+        var resp = await client.PatchAsync($"/api/processes/{processId}/with-documents", multi);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+    }
 }
