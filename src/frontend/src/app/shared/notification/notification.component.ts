@@ -10,20 +10,25 @@ type Toast = Notification & { closing?: boolean };
   standalone: true,
   imports: [CommonModule],
   templateUrl: './notification.component.html',
-  styleUrls: ['./notification.component.css']
+  styleUrls: ['./notification.component.css'],
 })
 export class NotificationComponent implements OnDestroy {
   notifications: Toast[] = [];
   private sub: Subscription;
   private ANIM_MS = 260;
 
-  constructor(private svc: NotificationService, private zone: NgZone, private cdr: ChangeDetectorRef) {
-    this.sub = this.svc.notifications.subscribe(n => this.push(n));
+  constructor(
+    private svc: NotificationService,
+    private zone: NgZone,
+    private cdr: ChangeDetectorRef
+  ) {
+    this.sub = this.svc.notifications.subscribe((n) => this.push(n));
   }
 
   push(n: Notification) {
     const t: Toast = { ...n, closing: false };
     this.notifications.push(t);
+    this.cdr.detectChanges();
     const duration = n.duration ?? 4000;
 
     this.zone.run(() => {
@@ -39,12 +44,12 @@ export class NotificationComponent implements OnDestroy {
   }
 
   startClose(id: string) {
-    const found = this.notifications.find(x => x.id === id);
+    const found = this.notifications.find((x) => x.id === id);
     if (found) found.closing = true;
   }
 
   finalRemove(id: string) {
-    this.notifications = this.notifications.filter(x => x.id !== id);
+    this.notifications = this.notifications.filter((x) => x.id !== id);
   }
 
   remove(id: string) {
