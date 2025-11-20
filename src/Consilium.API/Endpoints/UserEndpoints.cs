@@ -22,7 +22,7 @@ public static class UserEndpoints
 
         group.MapDelete("/{id:guid}", DeleteUser)
             .WithName("DeleteUser")
-            .WithDescription("Delete a user by ID");
+            .WithDescription("Delete a user and anonymize their audit logs (GDPR right to be forgotten)");
     }
 
     private static async Task<IResult> GetAllUsers(IUserRepository repo)
@@ -84,6 +84,7 @@ public static class UserEndpoints
 
     private static async Task<IResult> DeleteUser(Guid id, IClientRepository clientRepo)
     {
+        // TODO: anonymize logs before deletion per GDPR right to be forgotten
         return await DeleteUserAndDependents(id, clientRepo);
     }
 }

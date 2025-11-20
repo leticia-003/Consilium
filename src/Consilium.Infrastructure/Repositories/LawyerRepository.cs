@@ -16,9 +16,10 @@ namespace Consilium.Infrastructure.Repositories
 
         public async Task<Lawyer?> GetById(Guid id)
         {
-            // Use Include to also load the related User data
+            // Use Include to also load the related User data and Phones
             return await _context.Lawyers
                 .Include(l => l.User)
+                    .ThenInclude(u => u.Phones)
                 .FirstOrDefaultAsync(l => l.ID == id);
         }
 
@@ -32,6 +33,7 @@ namespace Consilium.Infrastructure.Repositories
         {
             var query = _context.Lawyers
                 .Include(l => l.User)
+                    .ThenInclude(u => u.Phones)
                 .AsQueryable();
 
             // Text search across Name, Email, NIF, and Professional Register
@@ -99,7 +101,13 @@ namespace Consilium.Infrastructure.Repositories
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return lawyer;
+                // Reload the lawyer with related user and phones so caller gets populated data
+                var loaded = await _context.Lawyers
+                    .Include(l => l.User)
+                        .ThenInclude(u => u.Phones)
+                    .FirstOrDefaultAsync(l => l.ID == lawyer.ID);
+
+                return loaded ?? lawyer;
             }
             catch (Exception ex)
             {
@@ -116,11 +124,12 @@ namespace Consilium.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Lawyer?> UpdateLawyerAndUser(Guid lawyerId, Lawyer lawyerUpdates, User userUpdates)
+    public async Task<Lawyer?> UpdateLawyerAndUser(Guid lawyerId, Lawyer lawyerUpdates, User userUpdates, bool? isActive = null)
         {
-            // Get the existing lawyer with its user
+            // Get the existing lawyer with its user and phones
             var existingLawyer = await _context.Lawyers
                 .Include(l => l.User)
+                    .ThenInclude(u => u.Phones)
                 .FirstOrDefaultAsync(l => l.ID == lawyerId);
 
             if (existingLawyer == null)
@@ -133,8 +142,49 @@ namespace Consilium.Infrastructure.Repositories
             if (!string.IsNullOrWhiteSpace(userUpdates.Email))
                 existingLawyer.User.Email = userUpdates.Email;
 
+            // Update NIF if provided
+            if (!string.IsNullOrWhiteSpace(userUpdates.NIF))
+                existingLawyer.User.NIF = userUpdates.NIF;
+
             if (!string.IsNullOrWhiteSpace(userUpdates.PasswordHash))
                 existingLawyer.User.PasswordHash = userUpdates.PasswordHash;
+
+            // Update IsActive flag if provided
+            if (isActive.HasValue)
+                existingLawyer.User.IsActive = isActive.Value;
+
+            // Handle phone updates: if the caller provided Phone objects in userUpdates.Phones,
+            // we'll treat the first one as the 'main' phone and upsert it.
+            if (userUpdates.Phones != null && userUpdates.Phones.Any())
+            {
+                var phoneUpd = userUpdates.Phones.First();
+
+                // Try to find an existing main phone
+                var existingMain = existingLawyer.User.Phones.FirstOrDefault(p => p.IsMain == true);
+                if (existingMain != null)
+                {
+                    // Update existing main phone
+                    if (!string.IsNullOrWhiteSpace(phoneUpd.Number))
+                        existingMain.Number = phoneUpd.Number;
+                    if (phoneUpd.CountryCode != 0)
+                        existingMain.CountryCode = phoneUpd.CountryCode;
+                    existingMain.IsMain = phoneUpd.IsMain;
+                }
+                else
+                {
+                    // Create a new phone record and attach to the user
+                    var newPhone = new Phone
+                    {
+                        ID = Guid.NewGuid(),
+                        UserID = existingLawyer.User.ID,
+                        Number = phoneUpd.Number ?? string.Empty,
+                        CountryCode = phoneUpd.CountryCode != 0 ? phoneUpd.CountryCode : (short)351,
+                        IsMain = phoneUpd.IsMain
+                    };
+                    existingLawyer.User.Phones.Add(newPhone);
+                    _context.Phones.Add(newPhone);
+                }
+            }
 
             // Update Lawyer fields if provided
             if (!string.IsNullOrWhiteSpace(lawyerUpdates.ProfessionalRegister))
@@ -149,15 +199,32 @@ namespace Consilium.Infrastructure.Repositories
 
         public async Task Delete(Guid id)
         {
-            // Get the user and lawyer
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
+            // Get the lawyer first
+            var lawyer = await _context.Lawyers
+                .Include(l => l.User)
+                .ThenInclude(u => u.Phones)
+                .FirstOrDefaultAsync(l => l.ID == id);
+            
+            if (lawyer == null)
                 throw new KeyNotFoundException($"Lawyer with ID {id} not found");
 
-            // TODO: Check if lawyer has active/open cases when PROCESS table is implemented
-            // For now, we just delete the user (which will cascade delete the lawyer due to 1:1 relationship)
+            // Check if lawyer has active/open cases
+            var hasActiveCases = await _context.Processes.AnyAsync(p => p.LawyerId == id);
+            if (hasActiveCases)
+                throw new InvalidOperationException("Lawyer has active/open cases and cannot be deleted");
             
-            _context.Users.Remove(user);
+            // Delete in proper order: Phones -> Lawyer -> User
+            if (lawyer.User?.Phones != null)
+            {
+                foreach (var phone in lawyer.User.Phones)
+                    _context.Phones.Remove(phone);
+            }
+            
+            _context.Lawyers.Remove(lawyer);
+            
+            if (lawyer.User != null)
+                _context.Users.Remove(lawyer.User);
+            
             await _context.SaveChangesAsync();
         }
     }

@@ -2,37 +2,65 @@
   <div class="page-header">
     <app-page-title title="Edit Client"></app-page-title>
     <div class="page-actions">
-      <app-button label="Cancel" variant="secondary" (click)="router.navigate(['/clients'])"></app-button>
-  <app-button label="Save" [disabled]="!isComplete() || submitting || !hasChanges()" icon="fa-save" (click)="save()" variant="primary"></app-button>
+      <app-button
+        label="Cancel"
+        variant="secondary"
+        (click)="router.navigate(['/clients'])"
+      ></app-button>
+      <app-button
+        label="Save"
+        [disabled]="!isComplete() || submitting || !hasChanges()"
+        icon="fa-save"
+        (click)="save()"
+        variant="primary"
+      ></app-button>
     </div>
   </div>
 
   <form (ngSubmit)="save()" #f="ngForm" novalidate>
-    <div *ngIf="generalError" class="error" style="margin:8px 0">{{ generalError }}</div>
+    <!-- <div *ngIf="generalError" class="error" style="margin: 8px 0">{{ generalError }}</div> -->
     <div class="client-details layout-grid">
       <main class="main-col">
-
         <section class="card personal prominent">
           <h3>Personal Information</h3>
 
           <div class="row">
             <div class="field">
               <label>Full Name</label>
-              <input name="name" required [(ngModel)]="model.name" placeholder="e.g. Acme Corporation" />
+              <input
+                name="name"
+                required
+                [(ngModel)]="model.name"
+                placeholder="e.g. Acme Corporation"
+              />
             </div>
 
             <div class="field">
               <label>NIF</label>
-              <input name="nif" [(ngModel)]="model.nif" placeholder="999999999" />
-              <small class="help error" *ngIf="fieldErrors && fieldErrors['nif']">{{ fieldErrors['nif'].join(' ') }}</small>
+              <input name="nif" [(ngModel)]="model.nif" placeholder="999999999" #nif="ngModel" />
+              @if (nif.touched && !isNifValid) {
+              <small class="help error">Must be 9 digits</small>
+              } @if (fieldErrors && fieldErrors['nif']) {
+              <small class="help error">{{ fieldErrors['nif'].join(' ') }}</small>
+              }
             </div>
           </div>
 
           <div class="row">
             <div class="field">
               <label>Email</label>
-              <input name="email" type="email" [(ngModel)]="model.email" placeholder="contact@acme.test" />
-              <small class="help error" *ngIf="fieldErrors && fieldErrors['email']">{{ fieldErrors['email'].join(' ') }}</small>
+              <input
+                name="email"
+                type="email"
+                [(ngModel)]="model.email"
+                placeholder="contact@acme.test"
+                #email="ngModel"
+              />
+              @if (email.touched && !isEmailValid) {
+              <small class="help error">Invalid email format</small>
+              } @if (fieldErrors && fieldErrors['email']) {
+              <small class="help error">{{ fieldErrors['email'].join(' ') }}</small>
+              }
             </div>
 
             <div class="field">
@@ -41,9 +69,14 @@
                 [countryDialCode]="model.phoneCountryCode"
                 [number]="model.phone || ''"
                 (numberChange)="model.phone = $event"
-                (countryChange)="model.phoneCountryCode = $event">
+                (countryChange)="model.phoneCountryCode = $event"
+              >
               </app-phone-input>
-              <small class="help error" *ngIf="fieldErrors && fieldErrors['phone']">{{ fieldErrors['phone'].join(' ') }}</small>
+              @if (model.phone && !isPhoneValid) {
+              <small class="help error">Must be 9 digits</small>
+              } @if (fieldErrors && fieldErrors['phone']) {
+              <small class="help error">{{ fieldErrors['phone'].join(' ') }}</small>
+              }
             </div>
           </div>
         </section>
@@ -53,33 +86,57 @@
           <div class="row">
             <div class="field">
               <label>Street</label>
-              <input name="addressStreet" [(ngModel)]="model.addressStreet" placeholder="Street and number" />
-              <small class="help error" *ngIf="fieldErrors && fieldErrors['addressstreet']">{{ fieldErrors['addressstreet'].join(' ') }}</small>
+              <input
+                name="addressStreet"
+                [(ngModel)]="model.addressStreet"
+                placeholder="Street and number"
+              />
+              <small class="help error" *ngIf="fieldErrors && fieldErrors['addressstreet']">{{
+                fieldErrors['addressstreet'].join(' ')
+              }}</small>
             </div>
 
             <div class="field">
               <label>City / State</label>
-              <input name="addressCityState" [(ngModel)]="model.addressCityState" placeholder="City, State" />
-              <small class="help error" *ngIf="fieldErrors && fieldErrors['addresscitystate']">{{ fieldErrors['addresscitystate'].join(' ') }}</small>
+              <input
+                name="addressCityState"
+                [(ngModel)]="model.addressCityState"
+                placeholder="City, State"
+              />
+              <small class="help error" *ngIf="fieldErrors && fieldErrors['addresscitystate']">{{
+                fieldErrors['addresscitystate'].join(' ')
+              }}</small>
             </div>
           </div>
 
           <div class="row">
             <div class="field">
               <label>Country</label>
-              <input name="addressCountry" [(ngModel)]="model.addressCountry" placeholder="Country" />
-              <small class="help error" *ngIf="fieldErrors && fieldErrors['addresscountry']">{{ fieldErrors['addresscountry'].join(' ') }}</small>
+              <input
+                name="addressCountry"
+                [(ngModel)]="model.addressCountry"
+                placeholder="Country"
+              />
+              <small class="help error" *ngIf="fieldErrors && fieldErrors['addresscountry']">{{
+                fieldErrors['addresscountry'].join(' ')
+              }}</small>
             </div>
 
             <div class="field">
               <label>ZIP Code</label>
-              <input name="addressZip" [(ngModel)]="model.addressZip" placeholder="ZIP / Postal code" />
-              <small class="help error" *ngIf="fieldErrors && fieldErrors['addresszip']">{{ fieldErrors['addresszip'].join(' ') }}</small>
+              <input
+                name="addressZip"
+                [(ngModel)]="model.addressZip"
+                placeholder="ZIP / Postal code"
+              />
+              <small class="help error" *ngIf="fieldErrors && fieldErrors['addresszip']">{{
+                fieldErrors['addresszip'].join(' ')
+              }}</small>
             </div>
           </div>
         </section>
 
-        <div style="margin-top:16px;">
+        <div style="margin-top: 16px">
           <!-- main column spacing; primary actions live in the header -->
         </div>
       </main>
@@ -90,17 +147,24 @@
             <span>{{ initials }}</span>
           </div>
           <div class="meta">
-        <div class="joined">Joined —</div>
-          <div class="status" [ngClass]="{ active: model.isActive, inactive: !model.isActive }">{{ model.isActive ? 'Active' : 'Inactive' }}</div>
-          <div class="active-toggle">
-            <div class="toggle-label">
-              <label class="switch">
-                <input type="checkbox" name="isActive" [(ngModel)]="model.isActive" (change)="onActiveToggle($event.target.checked)" />
-                <span class="slider"></span>
-              </label>
-              <small class="help toggle-help">Toggle to activate or deactivate this client</small>
+            <div class="joined">Joined —</div>
+            <div class="status" [ngClass]="{ active: model.isActive, inactive: !model.isActive }">
+              {{ model.isActive ? 'Active' : 'Inactive' }}
             </div>
-          </div>
+            <div class="active-toggle">
+              <div class="toggle-label">
+                <label class="switch">
+                  <input
+                    type="checkbox"
+                    name="isActive"
+                    [(ngModel)]="model.isActive"
+                    (change)="onActiveToggle($event.target.checked)"
+                  />
+                  <span class="slider"></span>
+                </label>
+                <small class="help toggle-help">Toggle to activate or deactivate this client</small>
+              </div>
+            </div>
           </div>
           <div class="name">{{ model.name }}</div>
           <div class="subtitle">{{ model.email }}</div>
@@ -112,24 +176,38 @@
           <div class="row">
             <div class="field full">
               <label>Password</label>
-              <input type="password" name="password" [(ngModel)]="model.password" placeholder="Leave empty to keep current" />
+              <input
+                type="password"
+                name="password"
+                [(ngModel)]="model.password"
+                placeholder="Leave empty to keep current"
+              />
             </div>
           </div>
 
           <div class="row">
             <div class="field full">
               <label>Confirm Password</label>
-              <input type="password" name="confirmPassword" [(ngModel)]="model.confirmPassword" placeholder="Repeat password" />
+              <input
+                type="password"
+                name="confirmPassword"
+                [(ngModel)]="model.confirmPassword"
+                placeholder="Repeat password"
+              />
             </div>
           </div>
 
           <div class="row">
             <div class="field full">
               <small class="help" *ngIf="model.password || model.confirmPassword">
-                <span *ngIf="!isPasswordValid()">Passwords must match and be at least 8 characters (or leave empty).</span>
+                <span *ngIf="!isPasswordValid()"
+                  >Passwords must match and be at least 8 characters (or leave empty).</span
+                >
                 <span *ngIf="isPasswordValid() && model.password">Passwords look good.</span>
               </small>
-              <small class="help error" *ngIf="fieldErrors && fieldErrors['password']">{{ fieldErrors['password'].join(' ') }}</small>
+              <small class="help error" *ngIf="fieldErrors && fieldErrors['password']">{{
+                fieldErrors['password'].join(' ')
+              }}</small>
             </div>
           </div>
         </section>

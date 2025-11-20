@@ -85,14 +85,20 @@ public static class AdminEndpoints
             .Take(limit)
             .ToList();
 
-        var response = paginatedAdmins.Select(a => new AdminResponse(
-            Id: a.ID,
-            Email: a.User?.Email ?? string.Empty,
-            Name: a.User?.Name ?? string.Empty,
-            Status: a.User?.IsActive == true ? UserStatus.ACTIVE : UserStatus.INACTIVE,
-            NIF: a.User?.NIF ?? string.Empty,
-            StartedAt: a.StartedAt
-        ));
+        var response = paginatedAdmins.Select(a => {
+            var mainPhone = a.User?.Phones?.FirstOrDefault(p => p.IsMain == true);
+            var phoneStr = mainPhone != null ? mainPhone.Number : string.Empty;
+            return new AdminResponse(
+                Id: a.ID,
+                Email: a.User?.Email ?? string.Empty,
+                Name: a.User?.Name ?? string.Empty,
+                Status: a.User?.IsActive == true ? UserStatus.ACTIVE : UserStatus.INACTIVE,
+                NIF: a.User?.NIF ?? string.Empty,
+                StartedAt: a.StartedAt,
+                Phone: phoneStr,
+                PhoneCountryCode: mainPhone != null ? mainPhone.CountryCode : (short?)null
+            );
+        });
 
         return Results.Ok(new {
             data = response,
@@ -111,13 +117,18 @@ public static class AdminEndpoints
         if (admin is null)
             return Results.NotFound(new { message = $"Admin with ID {id} not found" });
 
+        var mainPhone = admin.User?.Phones?.FirstOrDefault(p => p.IsMain == true);
+        var phoneStr = mainPhone != null ? mainPhone.Number : string.Empty;
+
         var response = new AdminResponse(
             Id: admin.ID,
             Email: admin.User?.Email ?? string.Empty,
             Name: admin.User?.Name ?? string.Empty,
             Status: admin.User?.IsActive == true ? UserStatus.ACTIVE : UserStatus.INACTIVE,
             NIF: admin.User?.NIF ?? string.Empty,
-            StartedAt: admin.StartedAt
+            StartedAt: admin.StartedAt,
+            Phone: phoneStr,
+            PhoneCountryCode: mainPhone != null ? mainPhone.CountryCode : (short?)null
         );
 
         return Results.Ok(response);
@@ -151,22 +162,44 @@ public static class AdminEndpoints
             IsActive = true
         };
 
+        // If phone information is provided, attach it to the User so EF will persist it
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            var phone = new Phone
+            {
+                ID = Guid.NewGuid(),
+                Number = request.PhoneNumber,
+                CountryCode = request.PhoneCountryCode ?? 351,
+                IsMain = request.PhoneIsMain ?? true,
+                User = user
+            };
+            user.Phones.Add(phone);
+        }
+
         var admin = new Admin
         {
             StartedAt = DateTime.UtcNow
         };
 
         // Save to database
-        var newAdmin = await repo.Create(user, admin);
+            var newAdmin = await repo.Create(user, admin);
 
-        // Prepare response
+            // Log the creation
+            //.AddCreateAdminLogAsync(newAdmin.ID, newAdmin.ID);
+
+        // Prepare response (include main phone if present)
+        var createdMainPhone = newAdmin.User?.Phones?.FirstOrDefault(p => p.IsMain == true);
+        var createdPhoneStr = createdMainPhone != null ? createdMainPhone.Number : string.Empty;
+
         var response = new AdminResponse(
             Id: newAdmin.ID,
             Email: newAdmin.User?.Email ?? string.Empty,
             Name: newAdmin.User?.Name ?? string.Empty,
             Status: UserStatus.ACTIVE,
             NIF: newAdmin.User?.NIF ?? string.Empty,
-            StartedAt: newAdmin.StartedAt
+            StartedAt: newAdmin.StartedAt,
+            Phone: createdPhoneStr,
+            PhoneCountryCode: createdMainPhone != null ? createdMainPhone.CountryCode : (short?)null
         );
 
         return Results.Created($"/api/admins/{newAdmin.ID}", response);
@@ -176,7 +209,7 @@ public static class AdminEndpoints
     {
         try
         {
-            await repo.Delete(id);
+                await repo.Delete(id);
             return Results.NoContent();
         }
         catch (KeyNotFoundException)
@@ -198,7 +231,8 @@ public static class AdminEndpoints
         // Validate input - at least one field should be provided
         if (string.IsNullOrWhiteSpace(request.Name) && 
             string.IsNullOrWhiteSpace(request.Email) && 
-            string.IsNullOrWhiteSpace(request.Password))
+            string.IsNullOrWhiteSpace(request.Password) &&
+            string.IsNullOrWhiteSpace(request.PhoneNumber))
         {
             return Results.BadRequest(new { message = "At least one field must be provided for update" });
         }
@@ -211,6 +245,19 @@ public static class AdminEndpoints
             PasswordHash = !string.IsNullOrWhiteSpace(request.Password) ? hasher.HashPassword(request.Password) : string.Empty
         };
 
+        // If phone info is present in the request, attach a Phone object to the userUpdates
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            var phoneUpd = new Phone
+            {
+                ID = Guid.NewGuid(),
+                Number = request.PhoneNumber,
+                CountryCode = request.PhoneCountryCode ?? 351,
+                IsMain = request.PhoneIsMain ?? true
+            };
+            userUpdates.Phones.Add(phoneUpd);
+        }
+
         var adminUpdates = new Admin();
 
         // Update in the repository
@@ -219,14 +266,19 @@ public static class AdminEndpoints
         if (updatedAdmin == null)
             return Results.NotFound(new { message = $"Admin with ID {id} not found" });
 
-        // Prepare response
+        // Prepare response (include main phone if present)
+        var updatedMainPhone = updatedAdmin.User?.Phones?.FirstOrDefault(p => p.IsMain == true);
+        var updatedPhoneStr = updatedMainPhone != null ? updatedMainPhone.Number : string.Empty;
+
         var response = new AdminResponse(
             Id: updatedAdmin.ID,
             Email: updatedAdmin.User?.Email ?? string.Empty,
             Name: updatedAdmin.User?.Name ?? string.Empty,
             Status: updatedAdmin.User?.IsActive == true ? UserStatus.ACTIVE : UserStatus.INACTIVE,
             NIF: updatedAdmin.User?.NIF ?? string.Empty,
-            StartedAt: updatedAdmin.StartedAt
+            StartedAt: updatedAdmin.StartedAt,
+            Phone: updatedPhoneStr,
+            PhoneCountryCode: updatedMainPhone != null ? updatedMainPhone.CountryCode : (short?)null
         );
 
         return Results.Ok(response);

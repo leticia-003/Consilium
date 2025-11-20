@@ -18,6 +18,7 @@ namespace Consilium.Infrastructure.Repositories
         {
             return await _context.Admins
                 .Include(a => a.User)
+                    .ThenInclude(u => u.Phones)
                 .FirstOrDefaultAsync(a => a.ID == id);
         }
 
@@ -25,6 +26,7 @@ namespace Consilium.Infrastructure.Repositories
         {
             return await _context.Admins
                 .Include(a => a.User)
+                    .ThenInclude(u => u.Phones)
                 .ToListAsync();
         }
 
@@ -45,7 +47,13 @@ namespace Consilium.Infrastructure.Repositories
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return admin;
+                // Reload with related user and phones
+                var loaded = await _context.Admins
+                    .Include(a => a.User)
+                        .ThenInclude(u => u.Phones)
+                    .FirstOrDefaultAsync(a => a.ID == admin.ID);
+
+                return loaded ?? admin;
             }
             catch (Exception ex)
             {
@@ -57,11 +65,27 @@ namespace Consilium.Infrastructure.Repositories
 
         public async Task Delete(Guid id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
+            // Get the admin first
+            var admin = await _context.Admins
+                .Include(a => a.User)
+                .ThenInclude(u => u.Phones)
+                .FirstOrDefaultAsync(a => a.ID == id);
+            
+            if (admin == null)
                 throw new KeyNotFoundException($"Admin with ID {id} not found");
 
-            _context.Users.Remove(user);
+            // Delete in proper order: Phones -> Admin -> User
+            if (admin.User?.Phones != null)
+            {
+                foreach (var phone in admin.User.Phones)
+                    _context.Phones.Remove(phone);
+            }
+            
+            _context.Admins.Remove(admin);
+            
+            if (admin.User != null)
+                _context.Users.Remove(admin.User);
+            
             await _context.SaveChangesAsync();
         }
 
@@ -69,6 +93,7 @@ namespace Consilium.Infrastructure.Repositories
         {
             var existingAdmin = await _context.Admins
                 .Include(a => a.User)
+                    .ThenInclude(u => u.Phones)
                 .FirstOrDefaultAsync(a => a.ID == adminId);
 
             if (existingAdmin == null)
@@ -84,7 +109,42 @@ namespace Consilium.Infrastructure.Repositories
             if (!string.IsNullOrWhiteSpace(userUpdates.PasswordHash))
                 existingAdmin.User.PasswordHash = userUpdates.PasswordHash;
 
-            _context.Admins.Update(existingAdmin);
+            // Note: We don't update StartedAt in the PATCH endpoint - it's immutable after creation
+
+            // Handle phone updates: if the caller provided Phone objects in userUpdates.Phones,
+            // we'll treat the first one as the 'main' phone and upsert it.
+            if (userUpdates.Phones != null && userUpdates.Phones.Any())
+            {
+                var phoneUpd = userUpdates.Phones.First();
+
+                // Try to find an existing main phone
+                var existingMain = existingAdmin.User.Phones.FirstOrDefault(p => p.IsMain == true);
+                if (existingMain != null)
+                {
+                    // Update existing main phone
+                    if (!string.IsNullOrWhiteSpace(phoneUpd.Number))
+                        existingMain.Number = phoneUpd.Number;
+                    if (phoneUpd.CountryCode != 0)
+                        existingMain.CountryCode = phoneUpd.CountryCode;
+                    existingMain.IsMain = phoneUpd.IsMain;
+                }
+                else
+                {
+                    // Create a new phone record and attach to the user
+                    var newPhone = new Phone
+                    {
+                        ID = Guid.NewGuid(),
+                        UserID = existingAdmin.User.ID,
+                        Number = phoneUpd.Number ?? string.Empty,
+                        CountryCode = phoneUpd.CountryCode != 0 ? phoneUpd.CountryCode : (short)351,
+                        IsMain = phoneUpd.IsMain
+                    };
+                    existingAdmin.User.Phones.Add(newPhone);
+                    _context.Phones.Add(newPhone);
+                }
+            }
+
+            // Only update User and Phone entities, not Admin (to avoid touching StartedAt)
             _context.Users.Update(existingAdmin.User);
             await _context.SaveChangesAsync();
 

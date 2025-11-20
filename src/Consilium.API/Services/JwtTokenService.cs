@@ -8,7 +8,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Consilium.API.Services;
 
-public class JwtTokenService
+public interface IJwtTokenService
+{
+    public Task<string> GenerateToken(User user);
+}
+
+public class JwtTokenService : IJwtTokenService
 {
     private readonly IConfiguration _configuration;
     private readonly AppDbContext _context;

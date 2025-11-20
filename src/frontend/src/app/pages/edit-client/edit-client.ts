@@ -8,7 +8,13 @@ import { ButtonComponent } from '../../shared/button/button';
 import { ClientService } from '../../services/client.service';
 import { NotificationService } from '../../shared/notification/notification.service';
 import { parseAddress, formatAddress } from '../../shared/address.util';
-import { sanitizeModel, sanitizeString } from '../../shared/input.util';
+import {
+  sanitizeModel,
+  sanitizeString,
+  isValidEmail,
+  isValidPhone,
+  isValidNif,
+} from '../../shared/input.util';
 import { Client } from '../../models/client';
 import { PhoneInputComponent } from '../../shared/phone-input/phone-input';
 
@@ -17,7 +23,7 @@ import { PhoneInputComponent } from '../../shared/phone-input/phone-input';
   standalone: true,
   templateUrl: './edit-client.html',
   styleUrls: ['./edit-client.css', '../create-client/create-client.css'],
-  imports: [CommonModule, FormsModule, PageTitleComponent, ButtonComponent, PhoneInputComponent]
+  imports: [CommonModule, FormsModule, PageTitleComponent, ButtonComponent, PhoneInputComponent],
 })
 export class EditClientComponent implements OnInit {
   // toggle applies to model immediately; save persists via Save button
@@ -37,17 +43,17 @@ export class EditClientComponent implements OnInit {
     email: '',
     nif: '',
     phone: '',
-  phoneCountryCode: 351,
+    phoneCountryCode: 351,
     addressStreet: '',
     addressCityState: '',
     addressCountry: '',
     addressZip: '',
     isActive: true,
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   };
 
-    private originalModel: Record<string, any> = {};
+  private originalModel: Record<string, any> = {};
 
   submitting = false;
   fieldErrors: Record<string, string[]> = {};
@@ -79,7 +85,6 @@ export class EditClientComponent implements OnInit {
   loadClient(id: string) {
     this.clientService.getClient(id).subscribe({
       next: (data: any) => {
-
         this.model.name = data?.name || '';
         this.model.email = data?.email || '';
         this.model.nif = data?.nif || '';
@@ -94,7 +99,9 @@ export class EditClientComponent implements OnInit {
         this.model.addressCountry = parsed.country || '';
         this.model.addressZip = parsed.zip || '';
         // ensure view reflects async-loaded model immediately
-        try { this.cd.detectChanges(); } catch (e) {}
+        try {
+          this.cd.detectChanges();
+        } catch (e) {}
 
         // take a snapshot for change detection
         this.originalModel = this.snapshotModel();
@@ -102,22 +109,26 @@ export class EditClientComponent implements OnInit {
       error: (err) => {
         console.error('Failed to load client', err);
         this.notifications.showError('Failed to load client.');
-      }
+      },
     });
   }
 
   get initials(): string {
     const name = (this.model.name || '').trim();
     if (!name) return '👤';
-    const parts = name.split(/\s+/).filter(p => p.length > 0);
-    const initials = parts.map(p => p.charAt(0)).join('').slice(0, 2).toUpperCase();
+    const parts = name.split(/\s+/).filter((p) => p.length > 0);
+    const initials = parts
+      .map((p) => p.charAt(0))
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
     return initials || '👤';
   }
 
   isPasswordValid(): boolean {
     const p = this.model.password || '';
     const c = this.model.confirmPassword || '';
-    return p.length === 0 ? true : (p.length >= 8 && p === c);
+    return p.length === 0 ? true : p.length >= 8 && p === c;
   }
 
   isComplete(): boolean {
@@ -127,15 +138,25 @@ export class EditClientComponent implements OnInit {
 
     return (
       s(this.model.name) &&
-      emailOk &&
-      s(this.model.nif) &&
-      s(this.model.phone) &&
+      isValidEmail(email) &&
+      isValidNif((this.model.nif || '').toString()) &&
+      isValidPhone((this.model.phone || '').toString()) &&
       s(this.model.addressStreet) &&
       s(this.model.addressCityState) &&
       s(this.model.addressCountry) &&
       s(this.model.addressZip) &&
       this.isPasswordValid()
     );
+  }
+
+  get isEmailValid() {
+    return isValidEmail(this.model.email || '');
+  }
+  get isPhoneValid() {
+    return isValidPhone(this.model.phone || '');
+  }
+  get isNifValid() {
+    return isValidNif(this.model.nif || '');
   }
 
   private snapshotModel(): Record<string, any> {
@@ -150,7 +171,7 @@ export class EditClientComponent implements OnInit {
       addressCountry: (this.model.addressCountry || '').toString().trim(),
       addressZip: (this.model.addressZip || '').toString().trim(),
       isActive: !!this.model.isActive,
-      password: (this.model.password || '').toString()
+      password: (this.model.password || '').toString(),
     };
   }
 
@@ -160,7 +181,7 @@ export class EditClientComponent implements OnInit {
   }
 
   save() {
-    if (!this.id || this.submitting) return;
+    if (!this.isComplete() || !this.id || this.submitting) return;
     if (!this.isPasswordValid()) {
       this.notifications.showError('Password is required and must match confirmation.');
       return;
@@ -194,7 +215,7 @@ export class EditClientComponent implements OnInit {
     }
 
     this.clientService.updateClient(this.id, payload).subscribe({
-      next: _ => {
+      next: (_) => {
         this.notifications.showSuccess('Client updated successfully');
         setTimeout(() => this.router.navigate(['/clients']), 600);
       },
@@ -204,7 +225,9 @@ export class EditClientComponent implements OnInit {
         if (body && typeof body === 'object' && body.errors) {
           for (const k of Object.keys(body.errors)) {
             const key = k.toString().toLowerCase();
-            const vals = Array.isArray(body.errors[k]) ? body.errors[k].map((v: any) => String(v)) : [String(body.errors[k])];
+            const vals = Array.isArray(body.errors[k])
+              ? body.errors[k].map((v: any) => String(v))
+              : [String(body.errors[k])];
             this.fieldErrors[key] = vals;
           }
           this.notifications.showError('Please correct the highlighted fields.');
@@ -215,7 +238,7 @@ export class EditClientComponent implements OnInit {
           this.notifications.showError('Failed to update client.');
         }
         this.submitting = false;
-      }
+      },
     });
   }
 }

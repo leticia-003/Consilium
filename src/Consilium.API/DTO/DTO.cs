@@ -47,14 +47,12 @@ public record UpdateClientRequest(
     string? Password,
     string? Address,
     string? NIF,
-    bool? IsActive
-    ,
+    bool? IsActive,
     // Optional phone update
     string? PhoneNumber,
     short? PhoneCountryCode,
     bool? PhoneIsMain
 );
-
 
 /// <summary>
 /// Request DTO for creating a new lawyer
@@ -64,7 +62,11 @@ public record CreateLawyerRequest(
     string Password,
     string Name,
     string NIF,
-    string ProfessionalRegister
+    string ProfessionalRegister,
+    // Optional phone info (single/main phone)
+    string? PhoneNumber,
+    short? PhoneCountryCode,
+    bool? PhoneIsMain
 );
 
 /// <summary>
@@ -74,7 +76,13 @@ public record UpdateLawyerRequest(
     string? Name,
     string? Email,
     string? Password,
-    string? ProfessionalRegister
+    string? ProfessionalRegister,
+    string? NIF,
+    // Optional phone update
+    string? PhoneNumber,
+    short? PhoneCountryCode,
+    bool? PhoneIsMain,
+    bool? IsActive
 );
 
 /// <summary>
@@ -84,7 +92,11 @@ public record CreateAdminRequest(
     string Email,
     string Password,
     string Name,
-    string NIF
+    string NIF,
+    // Optional phone info (single/main phone)
+    string? PhoneNumber,
+    short? PhoneCountryCode,
+    bool? PhoneIsMain
 );
 
 /// <summary>
@@ -93,7 +105,11 @@ public record CreateAdminRequest(
 public record UpdateAdminRequest(
     string? Name,
     string? Email,
-    string? Password
+    string? Password,
+    // Optional phone update
+    string? PhoneNumber,
+    short? PhoneCountryCode,
+    bool? PhoneIsMain
 );
 
 // ============================================
@@ -133,7 +149,9 @@ public record LawyerResponse(
     string Name,
     UserStatus Status,
     string NIF,
-    string ProfessionalRegister
+    string ProfessionalRegister,
+    string? Phone,
+    short? PhoneCountryCode
 );
 
 /// <summary>
@@ -145,7 +163,9 @@ public record AdminResponse(
     string Name,
     UserStatus Status,
     string NIF,
-    DateTime StartedAt
+    DateTime StartedAt,
+    string? Phone,
+    short? PhoneCountryCode
 );
 
 /// <summary>
@@ -157,4 +177,169 @@ public record LoginResponse(
     string Email,
     string Name,
     UserStatus Status
+);
+
+// =========================
+// Process DTOs
+// =========================
+public record CreateProcessRequest(
+    string Name,
+    string Number,
+    Guid ClientId,
+    Guid LawyerId,
+    string? AdversePartName,
+    string? OpposingCounselName,
+    short Priority,
+    string CourtInfo,
+    int ProcessTypePhaseId,
+    int ProcessStatusId,
+    DateTime? NextHearingDate,
+    string? Description
+);
+
+public record UpdateProcessRequest(
+    string? Name,
+    string? Number,
+    Guid? ClientId,
+    Guid? LawyerId,
+    string? AdversePartName,
+    string? OpposingCounselName,
+    short? Priority,
+    string? CourtInfo,
+    int? ProcessTypePhaseId,
+    int? ProcessStatusId,
+    DateTime? NextHearingDate,
+    string? Description,
+    DateTime? ClosedAt
+);
+
+/// <summary>
+/// Multipart form request for creating a process with file uploads
+/// </summary>
+public class CreateProcessWithDocumentsRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string Number { get; set; } = string.Empty;
+    public Guid ClientId { get; set; }
+    public Guid LawyerId { get; set; }
+    public string? AdversePartName { get; set; }
+    public string? OpposingCounselName { get; set; }
+    public short Priority { get; set; }
+    public string CourtInfo { get; set; } = string.Empty;
+    public int ProcessTypePhaseId { get; set; }
+    public int ProcessStatusId { get; set; }
+    public DateTime? NextHearingDate { get; set; }
+    public string? Description { get; set; }
+
+    // Files uploaded via multipart form-data (use IFormFileCollection for proper binding)
+    public IFormFileCollection? Files { get; set; }
+}
+
+/// <summary>
+/// Multipart form request for updating a process with file uploads and optional deletion of existing documents
+/// </summary>
+public class UpdateProcessWithDocumentsRequest
+{
+    public string? Name { get; set; }
+    public string? Number { get; set; }
+    // Accept as string from form binding, parse in endpoint if non-empty
+    public string? ClientId { get; set; }
+    public string? LawyerId { get; set; }
+    public string? AdversePartName { get; set; }
+    public string? OpposingCounselName { get; set; }
+    // Accept as string from form binding, parse in endpoint if non-empty
+    public string? Priority { get; set; }
+    public string? CourtInfo { get; set; }
+    // Accept as string from form binding, parse in endpoint if non-empty
+    public string? ProcessTypePhaseId { get; set; }
+    public string? ProcessStatusId { get; set; }
+    // Accept as string from form binding, parse in endpoint if non-empty
+    public string? NextHearingDate { get; set; }
+    public string? Description { get; set; }
+    public string? ClosedAt { get; set; }
+
+    // Files to add (use IFormFileCollection for proper binding)
+    public IFormFileCollection? Files { get; set; }
+
+    // Document IDs to delete - can be sent as multiple form fields or a list
+    public List<string>? DeletedDocumentIds { get; set; }
+}
+
+public record ProcessResponse(
+    Guid ProcessId,
+    string Name,
+    string Number,
+    Guid ClientId,
+    Guid LawyerId,
+    string? AdversePartName,
+    string? OpposingCounselName,
+    DateTime CreatedAt,
+    DateTime? ClosedAt,
+    short Priority,
+    string CourtInfo,
+    int ProcessTypePhaseId,
+    int ProcessStatusId,
+    string? Description,
+    DateTime? NextHearingDate
+);
+
+public record DocumentResponse(
+    Guid DocumentId,
+    string FileName,
+    string FileMimeType,
+    long FileSize,
+    DateTime CreatedAt,
+    string DownloadUrl
+);
+
+public record ProcessWithDocumentsResponse(
+    Guid ProcessId,
+    string Name,
+    string Number,
+    Guid ClientId,
+    Guid LawyerId,
+    string? AdversePartName,
+    string? OpposingCounselName,
+    DateTime CreatedAt,
+    DateTime? ClosedAt,
+    short Priority,
+    string CourtInfo,
+    int ProcessTypePhaseId,
+    int ProcessStatusId,
+    string? Description,
+    DateTime? NextHearingDate,
+    List<DocumentResponse> Documents
+);
+
+// ========== Lookup responses ===========
+public record ProcessTypeResponse(
+    int Id,
+    string Name,
+    bool IsActive
+);
+
+public record ProcessPhaseResponse(
+    int Id,
+    string Name,
+    string? Description,
+    bool IsActive
+);
+
+public record ProcessStatusResponse(
+    int Id,
+    string Name,
+    bool IsFinal,
+    bool IsDefault,
+    bool IsActive
+);
+
+public record ProcessTypePhaseResponse(
+    int Id,
+    int ProcessTypeId,
+    string ProcessTypeName,
+    int ProcessPhaseId,
+    string ProcessPhaseName,
+    short Order,
+    bool IsOptional,
+    bool IsActive
 );
