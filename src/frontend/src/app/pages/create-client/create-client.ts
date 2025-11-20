@@ -8,7 +8,13 @@ import { PhoneInputComponent } from '../../shared/phone-input/phone-input';
 import { ClientService } from '../../services/client.service';
 import { NotificationService } from '../../shared/notification/notification.service';
 import { formatAddress } from '../../shared/address.util';
-import { sanitizeModel, sanitizeString } from '../../shared/input.util';
+import {
+  sanitizeModel,
+  sanitizeString,
+  isValidEmail,
+  isValidPhone,
+  isValidNif,
+} from '../../shared/input.util';
 import { Client } from '../../models/client';
 
 @Component({
@@ -16,7 +22,7 @@ import { Client } from '../../models/client';
   standalone: true,
   templateUrl: './create-client.html',
   styleUrls: ['./create-client.css'],
-  imports: [CommonModule, FormsModule, PageTitleComponent, ButtonComponent, PhoneInputComponent]
+  imports: [CommonModule, FormsModule, PageTitleComponent, ButtonComponent, PhoneInputComponent],
 })
 export class CreateClientComponent {
   model: Partial<
@@ -34,7 +40,7 @@ export class CreateClientComponent {
     email: '',
     nif: '',
     phone: '',
-  phoneCountryCode: 351,
+    phoneCountryCode: 351,
     // address parts (will be concatenated before sending)
     addressStreet: '',
     addressCityState: '',
@@ -42,7 +48,7 @@ export class CreateClientComponent {
     addressZip: '',
     isActive: true,
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   };
 
   submitting = false;
@@ -59,13 +65,18 @@ export class CreateClientComponent {
   get initials(): string {
     const name = (this.model.name || '').trim();
     if (!name) return '👤';
-    const parts = name.split(/\s+/).filter(p => p.length > 0);
-    const initials = parts.map(p => p.charAt(0)).join('').slice(0, 2).toUpperCase();
+    const parts = name.split(/\s+/).filter((p) => p.length > 0);
+    const initials = parts
+      .map((p) => p.charAt(0))
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
     return initials || '👤';
   }
 
   createClient() {
-    if (!this.model.name || this.submitting) return;
+    if (!this.isComplete() || this.submitting) return;
+    if (!this.model.name) return;
     if (!this.isPasswordValid()) {
       this.notifications.showError('Password is required and must match confirmation.');
       return;
@@ -93,15 +104,15 @@ export class CreateClientComponent {
     }
 
     // remove transient fields
-  delete payload.addressStreet;
+    delete payload.addressStreet;
     delete payload.addressCityState;
     delete payload.addressCountry;
     delete payload.addressZip;
     delete payload.confirmPassword;
-  // remove the transient frontend-only field
-  delete payload['phone'];
+    // remove the transient frontend-only field
+    delete payload['phone'];
     this.clientService.createClient(payload).subscribe({
-      next: _ => {
+      next: (_) => {
         this.notifications.showSuccess('Client created successfully');
         setTimeout(() => this.router.navigate(['/clients']), 500);
       },
@@ -113,7 +124,9 @@ export class CreateClientComponent {
           // Map backend errors to our fieldErrors object (lowercase keys)
           for (const k of Object.keys(body.errors)) {
             const key = k.toString().toLowerCase();
-            const vals = Array.isArray(body.errors[k]) ? body.errors[k].map((v: any) => String(v)) : [String(body.errors[k])];
+            const vals = Array.isArray(body.errors[k])
+              ? body.errors[k].map((v: any) => String(v))
+              : [String(body.errors[k])];
             this.fieldErrors[key] = vals;
           }
           this.notifications.showError('Please correct the highlighted fields.');
@@ -125,7 +138,7 @@ export class CreateClientComponent {
         }
 
         this.submitting = false;
-      }
+      },
     });
   }
 
@@ -149,14 +162,24 @@ export class CreateClientComponent {
 
     return (
       s(this.model.name) &&
-      emailOk &&
-      s(this.model.nif) &&
-      s(this.model.phone) &&
+      isValidEmail(email) &&
+      isValidNif((this.model.nif || '').toString()) &&
+      isValidPhone((this.model.phone || '').toString()) &&
       s(this.model.addressStreet) &&
       s(this.model.addressCityState) &&
       s(this.model.addressCountry) &&
       s(this.model.addressZip) &&
       this.isPasswordValid()
     );
+  }
+
+  get isEmailValid() {
+    return isValidEmail(this.model.email || '');
+  }
+  get isPhoneValid() {
+    return isValidPhone(this.model.phone || '');
+  }
+  get isNifValid() {
+    return isValidNif(this.model.nif || '');
   }
 }

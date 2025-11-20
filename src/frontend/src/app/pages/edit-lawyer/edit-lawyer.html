@@ -2,39 +2,64 @@
   <div class="page-header">
     <app-page-title title="Edit Lawyer"></app-page-title>
     <div class="page-actions">
-      <app-button label="Cancel" variant="secondary" (click)="router.navigate(['/lawyers'])"></app-button>
-      <app-button label="Save" [disabled]="!isComplete() || submitting || !hasChanges()" icon="fa-save" (click)="save()" variant="primary"></app-button>
+      <app-button
+        label="Cancel"
+        variant="secondary"
+        (click)="router.navigate(['/lawyers'])"
+      ></app-button>
+      <app-button
+        label="Save"
+        [disabled]="!isComplete() || submitting || !hasChanges()"
+        icon="fa-save"
+        (click)="save()"
+        variant="primary"
+      ></app-button>
     </div>
   </div>
 
   <form (ngSubmit)="save()" #f="ngForm" novalidate>
     @if (generalError) {
-      <div class="error general-error">{{ generalError }}</div>
+    <div class="error general-error">{{ generalError }}</div>
     }
     <div class="client-details layout-grid">
       <main class="main-col">
-
         <section class="card personal prominent">
           <h3>Personal Information</h3>
 
           <div class="row">
             <div class="field">
               <label>Full Name</label>
-              <input name="name" required [(ngModel)]="model.name" placeholder="e.g. Acme Corporation" />
+              <input
+                name="name"
+                required
+                [(ngModel)]="model.name"
+                placeholder="e.g. Acme Corporation"
+              />
             </div>
 
             <div class="field">
               <label>Reg. Number</label>
-              <input name="professionalRegister" [(ngModel)]="model.professionalRegister" placeholder="Registration number" />
-              @if (fieldErrors && fieldErrors['professionalregister']) {
-                <small class="help error">{{ fieldErrors['professionalregister'].join(' ') }}</small>
+              <input
+                name="professionalRegister"
+                [(ngModel)]="model.professionalRegister"
+                placeholder="Registration number"
+                #reg="ngModel"
+              />
+              @if (reg.touched && !reg.value) {
+              <small class="help error">Required</small>
+              } @if (reg.touched && !isRegisterNumberValid) {
+              <small class="help error">Max 10 chars (letters, numbers, -, /)</small>
+              } @if (fieldErrors && fieldErrors['professionalregister']) {
+              <small class="help error">{{ fieldErrors['professionalregister'].join(' ') }}</small>
               }
             </div>
             <div class="field">
               <label>NIF</label>
-              <input name="nif" [(ngModel)]="model.nif" placeholder="999999999" />
-              @if (fieldErrors && fieldErrors['nif']) {
-                <small class="help error">{{ fieldErrors['nif'].join(' ') }}</small>
+              <input name="nif" [(ngModel)]="model.nif" placeholder="999999999" #nif="ngModel" />
+              @if (nif.touched && !isNifValid) {
+              <small class="help error">Must be 9 digits</small>
+              } @if (fieldErrors && fieldErrors['nif']) {
+              <small class="help error">{{ fieldErrors['nif'].join(' ') }}</small>
               }
             </div>
           </div>
@@ -42,9 +67,17 @@
           <div class="row">
             <div class="field">
               <label>Email</label>
-              <input name="email" type="email" [(ngModel)]="model.email" placeholder="contact@example.test" />
-              @if (fieldErrors && fieldErrors['email']) {
-                <small class="help error">{{ fieldErrors['email'].join(' ') }}</small>
+              <input
+                name="email"
+                type="email"
+                [(ngModel)]="model.email"
+                placeholder="contact@example.test"
+                #email="ngModel"
+              />
+              @if (email.touched && !isEmailValid) {
+              <small class="help error">Invalid email format</small>
+              } @if (fieldErrors && fieldErrors['email']) {
+              <small class="help error">{{ fieldErrors['email'].join(' ') }}</small>
               }
             </div>
 
@@ -54,10 +87,13 @@
                 [countryDialCode]="model.phoneCountryCode"
                 [number]="model.phone || ''"
                 (numberChange)="model.phone = $event"
-                (countryChange)="model.phoneCountryCode = $event">
+                (countryChange)="model.phoneCountryCode = $event"
+              >
               </app-phone-input>
-              @if (fieldErrors && fieldErrors['phone']) {
-                <small class="help error">{{ fieldErrors['phone'].join(' ') }}</small>
+              @if (model.phone && !isPhoneValid) {
+              <small class="help error">Must be 9 digits</small>
+              } @if (fieldErrors && fieldErrors['phone']) {
+              <small class="help error">{{ fieldErrors['phone'].join(' ') }}</small>
               }
             </div>
           </div>
@@ -75,11 +111,18 @@
           </div>
           <div class="meta">
             <div class="joined">Joined —</div>
-            <div class="status" [ngClass]="{ active: model.isActive, inactive: !model.isActive }">{{ model.isActive ? 'Active' : 'Inactive' }}</div>
+            <div class="status" [ngClass]="{ active: model.isActive, inactive: !model.isActive }">
+              {{ model.isActive ? 'Active' : 'Inactive' }}
+            </div>
             <div class="active-toggle">
               <div class="toggle-label">
                 <label class="switch">
-                  <input type="checkbox" name="isActive" [(ngModel)]="model.isActive" (change)="onActiveToggle($event.target.checked)" />
+                  <input
+                    type="checkbox"
+                    name="isActive"
+                    [(ngModel)]="model.isActive"
+                    (change)="onActiveToggle($event.target.checked)"
+                  />
                   <span class="slider"></span>
                 </label>
                 <small class="help toggle-help">Toggle to activate or deactivate this lawyer</small>
@@ -96,30 +139,39 @@
           <div class="row">
             <div class="field full">
               <label>Password</label>
-              <input type="password" name="password" [(ngModel)]="model.password" placeholder="Leave empty to keep current" />
+              <input
+                type="password"
+                name="password"
+                [(ngModel)]="model.password"
+                placeholder="Leave empty to keep current"
+              />
             </div>
           </div>
 
           <div class="row">
             <div class="field full">
               <label>Confirm Password</label>
-              <input type="password" name="confirmPassword" [(ngModel)]="model.confirmPassword" placeholder="Repeat password" />
+              <input
+                type="password"
+                name="confirmPassword"
+                [(ngModel)]="model.confirmPassword"
+                placeholder="Repeat password"
+              />
             </div>
           </div>
 
           <div class="row">
             <div class="field full">
               @if (model.password || model.confirmPassword) {
-                <small class="help">
-                  @if (!isPasswordValid()) {
-                    <span>Passwords must match and be at least 8 characters (or leave empty).</span>
-                  } @else if (isPasswordValid() && model.password) {
-                    <span>Passwords look good.</span>
-                  }
-                </small>
-              }
-              @if (fieldErrors && fieldErrors['password']) {
-                <small class="help error">{{ fieldErrors['password'].join(' ') }}</small>
+              <small class="help">
+                @if (!isPasswordValid()) {
+                <span>Passwords must match and be at least 8 characters (or leave empty).</span>
+                } @else if (isPasswordValid() && model.password) {
+                <span>Passwords look good.</span>
+                }
+              </small>
+              } @if (fieldErrors && fieldErrors['password']) {
+              <small class="help error">{{ fieldErrors['password'].join(' ') }}</small>
               }
             </div>
           </div>

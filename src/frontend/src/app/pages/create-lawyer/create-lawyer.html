@@ -2,42 +2,80 @@
   <div class="page-header">
     <app-page-title title="Create Lawyer"></app-page-title>
     <div class="page-actions">
-      <app-button label="Cancel" variant="secondary" (click)="router.navigate(['/lawyers'])"></app-button>
-      <app-button label="Create Lawyer" [disabled]="!isComplete() || submitting" icon="fa-plus" (click)="createLawyer()" variant="primary"></app-button>
+      <app-button
+        label="Cancel"
+        variant="secondary"
+        (click)="router.navigate(['/lawyers'])"
+      ></app-button>
+      <app-button
+        label="Create Lawyer"
+        [disabled]="!isComplete() || submitting"
+        icon="fa-plus"
+        (click)="createLawyer()"
+        variant="primary"
+      ></app-button>
     </div>
   </div>
 
   <form (ngSubmit)="createLawyer()" #f="ngForm" novalidate>
-    <div *ngIf="generalError" class="error" style="margin:8px 0">{{ generalError }}</div>
+    <div *ngIf="generalError" class="error" style="margin: 8px 0">{{ generalError }}</div>
     <div class="client-details layout-grid">
       <main class="main-col">
-
         <section class="card personal prominent">
           <h3>Personal Information</h3>
 
           <div class="row">
             <div class="field">
               <label>Full Name</label>
-              <input name="name" required [(ngModel)]="model.name" placeholder="e.g. Acme Corporation" />
+              <input
+                name="name"
+                required
+                [(ngModel)]="model.name"
+                placeholder="e.g. Acme Corporation"
+              />
             </div>
 
             <div class="field">
               <label>Reg. Number</label>
-              <input name="professionalRegister" [(ngModel)]="model.professionalRegister" placeholder="Registration number" />
-              <small class="help error" *ngIf="fieldErrors && fieldErrors['professionalregister']">{{ fieldErrors['professionalregister'].join(' ') }}</small>
+              <input
+                name="professionalRegister"
+                [(ngModel)]="model.professionalRegister"
+                placeholder="Registration number"
+                #reg="ngModel"
+              />
+              <small class="help error" *ngIf="reg.touched && !reg.value">Required</small>
+              <small
+                class="help error"
+                *ngIf="fieldErrors && fieldErrors['professionalregister']"
+                >{{ fieldErrors['professionalregister'].join(' ') }}</small
+              >
             </div>
             <div class="field">
               <label>NIF</label>
-              <input name="nif" [(ngModel)]="model.nif" placeholder="999999999" />
-              <small class="help error" *ngIf="fieldErrors && fieldErrors['nif']">{{ fieldErrors['nif'].join(' ') }}</small>
+              <input name="nif" [(ngModel)]="model.nif" placeholder="999999999" #nif="ngModel" />
+              <small class="help error" *ngIf="nif.touched && !isNifValid">Must be 9 digits</small>
+              <small class="help error" *ngIf="fieldErrors && fieldErrors['nif']">{{
+                fieldErrors['nif'].join(' ')
+              }}</small>
             </div>
           </div>
 
           <div class="row">
             <div class="field">
               <label>Email</label>
-              <input name="email" type="email" [(ngModel)]="model.email" placeholder="contact@example.test" />
-              <small class="help error" *ngIf="fieldErrors && fieldErrors['email']">{{ fieldErrors['email'].join(' ') }}</small>
+              <input
+                name="email"
+                type="email"
+                [(ngModel)]="model.email"
+                placeholder="contact@example.test"
+                #email="ngModel"
+              />
+              <small class="help error" *ngIf="email.touched && !isEmailValid"
+                >Invalid email format</small
+              >
+              <small class="help error" *ngIf="fieldErrors && fieldErrors['email']">{{
+                fieldErrors['email'].join(' ')
+              }}</small>
             </div>
 
             <div class="field">
@@ -46,14 +84,20 @@
                 [countryDialCode]="model.phoneCountryCode"
                 [number]="model.phone || ''"
                 (numberChange)="model.phone = $event"
-                (countryChange)="model.phoneCountryCode = $event">
+                (countryChange)="model.phoneCountryCode = $event"
+              >
               </app-phone-input>
-              <small class="help error" *ngIf="fieldErrors && fieldErrors['phone']">{{ fieldErrors['phone'].join(' ') }}</small>
+              <small class="help error" *ngIf="model.phone && !isPhoneValid"
+                >Must be 9 digits</small
+              >
+              <small class="help error" *ngIf="fieldErrors && fieldErrors['phone']">{{
+                fieldErrors['phone'].join(' ')
+              }}</small>
             </div>
           </div>
         </section>
 
-        <div style="margin-top:16px;">
+        <div style="margin-top: 16px">
           <!-- main column spacing; primary actions live in the aside -->
         </div>
       </main>
@@ -74,27 +118,43 @@
           <div class="row">
             <div class="field full">
               <label>Password</label>
-              <input type="password" name="password" required [(ngModel)]="model.password" placeholder="At least 8 characters" />
+              <input
+                type="password"
+                name="password"
+                required
+                [(ngModel)]="model.password"
+                placeholder="At least 8 characters"
+              />
             </div>
           </div>
 
           <div class="row">
             <div class="field full">
               <label>Confirm Password</label>
-              <input type="password" name="confirmPassword" required [(ngModel)]="model.confirmPassword" placeholder="Repeat password" />
+              <input
+                type="password"
+                name="confirmPassword"
+                required
+                [(ngModel)]="model.confirmPassword"
+                placeholder="Repeat password"
+              />
             </div>
           </div>
 
           <div class="row">
             <div class="field full">
               <small class="help" *ngIf="model.password || model.confirmPassword">
-                <span *ngIf="!isPasswordValid()">Passwords must match and be at least 8 characters.</span>
+                <span *ngIf="!isPasswordValid()"
+                  >Passwords must match and be at least 8 characters.</span
+                >
                 <span *ngIf="isPasswordValid()">Passwords look good.</span>
               </small>
-              <small class="help error" *ngIf="fieldErrors && fieldErrors['password']">{{ fieldErrors['password'].join(' ') }}</small>
+              <small class="help error" *ngIf="fieldErrors && fieldErrors['password']">{{
+                fieldErrors['password'].join(' ')
+              }}</small>
             </div>
           </div>
-          <div *ngIf="generalError" class="error" style="margin-top:8px">{{ generalError }}</div>
+          <div *ngIf="generalError" class="error" style="margin-top: 8px">{{ generalError }}</div>
         </section>
       </aside>
     </div>
