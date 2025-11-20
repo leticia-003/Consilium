@@ -310,4 +310,41 @@ public class LawyerRepositoryTests
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => repository.Delete(nonExistingId));
     }
+
+    [Fact]
+    public async Task Delete_Lawyer_WithActiveProcesses_ThrowsInvalidOperationException()
+    {
+        await using var context = GetInMemoryDbContext();
+        var repository = new LawyerRepository(context);
+
+        // Create lawyer and related entities
+        var user = new User { ID = Guid.NewGuid(), Name = "Lawyer", Email = "lawyer@test", NIF = "222222222", PasswordHash = "x", IsActive = true };
+        var lawyer = new Lawyer { ID = user.ID, ProfessionalRegister = "PR-1" };
+        var clientUser = new User { ID = Guid.NewGuid(), Name = "Client", Email = "client@test", NIF = "111111111", PasswordHash = "x", IsActive = true };
+        var client = new Client { ID = clientUser.ID, Address = "somewhere" };
+
+        await context.Users.AddRangeAsync(user, clientUser);
+        await context.Clients.AddAsync(client);
+        await context.Lawyers.AddAsync(lawyer);
+
+        var ptype = new Consilium.Domain.Models.ProcessType { Name = "Civil" };
+        var pphase = new Consilium.Domain.Models.ProcessPhase { Name = "Initial" };
+        var pstatus = new Consilium.Domain.Models.ProcessStatus { Name = "Open", IsDefault = true };
+        await context.ProcessTypes.AddAsync(ptype);
+        await context.ProcessPhases.AddAsync(pphase);
+        await context.ProcessStatuses.AddAsync(pstatus);
+        await context.SaveChangesAsync();
+
+        var typePhase = new Consilium.Domain.Models.ProcessTypePhase { ProcessPhaseId = pphase.Id, ProcessTypeId = ptype.Id, TypePhaseOrder = 1 };
+        await context.ProcessTypePhases.AddAsync(typePhase);
+        await context.SaveChangesAsync();
+
+        // Create active process for lawyer
+        var process = new Process { Name = "P1", Number = "P-1", ClientId = client.ID, LawyerId = lawyer.ID, Priority = 1, CourtInfo = "Court" , ProcessTypePhaseId = typePhase.Id, ProcessStatusId = pstatus.Id };
+        await context.Processes.AddAsync(process);
+        await context.SaveChangesAsync();
+
+        // Trying to delete should throw
+        await Assert.ThrowsAsync<InvalidOperationException>(() => repository.Delete(lawyer.ID));
+    }
 }

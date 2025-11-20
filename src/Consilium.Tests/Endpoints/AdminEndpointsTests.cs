@@ -105,6 +105,75 @@ public class AdminEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task GetAllAdmins_WithSearchStatusSortPagination_ReturnsFilteredAndMeta()
+    {
+        var client = _factory.CreateClient();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            // Seed multiple admins
+            for (int i = 1; i <= 4; i++)
+            {
+                var user = new User { ID = Guid.NewGuid(), Name = $"Admin{i}", Email = $"a{i}@test", NIF = (111111110 + i).ToString(), PasswordHash = "x", IsActive = i % 2 == 0 };
+                var admin = new Admin { ID = user.ID, StartedAt = DateTime.UtcNow };
+                await db.Users.AddAsync(user);
+                await db.Admins.AddAsync(admin);
+            }
+            await db.SaveChangesAsync();
+        }
+
+        var resp = await client.GetAsync($"/api/admins/?search=Admin&status=ACTIVE&page=1&limit=1&sortBy=nif&sortOrder=desc");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var json = System.Text.Json.JsonDocument.Parse(await resp.Content.ReadAsStringAsync()).RootElement;
+        var meta = json.GetProperty("meta");
+        Assert.True(meta.GetProperty("totalCount").GetInt32() >= 1);
+        Assert.Equal(1, meta.GetProperty("limit").GetInt32());
+    }
+
+    [Fact]
+    public async Task CreateAdmin_MissingEmail_ReturnsBadRequest()
+    {
+        var client = _factory.CreateClient();
+        var req = new CreateAdminRequest(Email: "", Password: "pass", Name: "Name", NIF: "111222333", PhoneNumber: null, PhoneCountryCode: null, PhoneIsMain: null);
+        var resp = await client.PostAsJsonAsync("/api/admins/", req);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateAdmin_MissingPassword_ReturnsBadRequest()
+    {
+        var client = _factory.CreateClient();
+        var req = new CreateAdminRequest(Email: "a@test.com", Password: "", Name: "Name", NIF: "111222333", PhoneNumber: null, PhoneCountryCode: null, PhoneIsMain: null);
+        var resp = await client.PostAsJsonAsync("/api/admins/", req);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateAdmin_InvalidNif_ReturnsBadRequest()
+    {
+        var client = _factory.CreateClient();
+        var req = new CreateAdminRequest(Email: "a@test.com", Password: "pass", Name: "Name", NIF: "INVALID", PhoneNumber: null, PhoneCountryCode: null, PhoneIsMain: null);
+        var resp = await client.PostAsJsonAsync("/api/admins/", req);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateAdmin_NoFieldsProvided_ReturnsBadRequest()
+    {
+        var client = _factory.CreateClient();
+        Guid id;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            id = await SeedAdmin(db);
+        }
+
+        var updateReq = new UpdateAdminRequest(Name: null, Email: null, Password: null, PhoneNumber: null, PhoneCountryCode: null, PhoneIsMain: null);
+        var resp = await client.PatchAsJsonAsync($"/api/admins/{id}", updateReq);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
     public async Task DeleteAdmin_DeletesAndReturnsNoContent()
     {
         var client = _factory.CreateClient();

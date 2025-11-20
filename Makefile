@@ -150,3 +150,25 @@ test-frontend:
 
 test: test-backend test-frontend
 	@echo "✅ All tests completed successfully!"
+
+# ------------------------
+# Coverage-enabled tests
+# ------------------------
+test-backend-coverage:
+	@echo "=== Running Backend Tests with Coverage (XPlat) ==="
+	@cd src && \
+		dotnet test Consilium.Tests/Consilium.Tests.csproj --verbosity minimal --collect:"XPlat Code Coverage" --settings coverlet.runsettings --results-directory TestResults || exit 1
+	@COV_FILE=$$(find src -type f -name 'coverage.cobertura.xml' -print -quit); \
+	if [ -z "$$COV_FILE" ]; then echo "Coverage file not found"; exit 1; fi; \
+	COV=$$(grep -m1 '<coverage ' "$$COV_FILE" | sed -n 's/.*line-rate="\([0-9.]*\)".*/\1/p'); \
+	PCT=$$(awk -v cov="$$COV" 'BEGIN {printf "%0.2f", cov * 100}'); \
+	echo "Backend coverage (lines): $$PCT%"; \
+	if [ $$(echo "$$COV >= 0.75" | bc -l) -ne 1 ]; then echo "Backend coverage is below 75%"; exit 1; fi
+
+test-frontend-coverage:
+	@echo "=== Running Frontend Tests with Coverage (Karma) ==="
+	@cd src/frontend && npm ci && npm test -- --watch=false --browsers=ChromeHeadless --code-coverage 2>&1 | tee /tmp/frontend-tests.log || exit 1
+	@PCT=$$(grep -Eo "Lines\s*:\s*[0-9]+\.?[0-9]*%" /tmp/frontend-tests.log | head -n 1 | sed 's/[^0-9.]//g'); \
+	if [ -z "$$PCT" ]; then echo "Failed to extract frontend coverage from test output"; exit 1; fi; \
+	echo "Frontend coverage (lines): $$PCT%"; \
+	if [ $$(echo "$$PCT >= 75" | bc -l) -ne 1 ]; then echo "Frontend coverage is below 75%"; exit 1; fi
