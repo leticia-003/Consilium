@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-using Moq;
-using Consilium.Application.Interfaces;
-using Consilium.Domain.Models;
-using Consilium.Domain.Enums;
-using Consilium.API.Dtos;
-=======
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -17,118 +10,10 @@ using Consilium.Domain.Models;
 using Consilium.API.Dtos;
 using Consilium.Application.Interfaces;
 using Consilium.Infrastructure.Services;
->>>>>>> origin/task/backend/adding-more-unit-tests
 using Consilium.API.Services;
 
 namespace Consilium.Tests.Endpoints;
 
-<<<<<<< HEAD
-/// <summary>
-/// Tests for Auth Endpoints business logic
-/// These tests validate authentication, password hashing, and JWT token generation
-/// </summary>
-public class AuthEndpointsTests
-{
-    private readonly Mock<IUserRepository> _mockUserRepo;
-    private readonly Mock<IPasswordHasher> _mockHasher;
-    private readonly Mock<IJwtTokenService> _mockTokenService;
-
-    public AuthEndpointsTests()
-    {
-        _mockUserRepo = new Mock<IUserRepository>();
-        _mockHasher = new Mock<IPasswordHasher>();
-        // JwtTokenService requires IConfiguration, so we mock it
-        _mockTokenService = new Mock<IJwtTokenService>();
-    }
-
-    #region Login Tests
-
-    [Fact]
-    public async Task Login_ValidCredentials_ReturnsToken()
-    {
-        // Arrange
-        var email = "user@test.com";
-        var password = "password123";
-        var hashedPassword = "hashedPassword123";
-        var token = "jwt.token.here";
-
-        var user = new User
-        {
-            ID = Guid.NewGuid(),
-            Email = email,
-            PasswordHash = hashedPassword,
-            Name = "Test User",
-            NIF = "123456789",
-            IsActive = true
-        };
-
-        var users = new List<User> { user };
-
-        _mockUserRepo.Setup(r => r.GetAll()).ReturnsAsync(users);
-        _mockHasher.Setup(h => h.VerifyPassword(password, hashedPassword)).Returns(true);
-        _mockTokenService.Setup(s => s.GenerateToken(It.IsAny<User>())).ReturnsAsync(token);
-
-        // Act
-        var allUsers = await _mockUserRepo.Object.GetAll();
-        var foundUser = allUsers.FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
-        var isPasswordValid = _mockHasher.Object.VerifyPassword(password, foundUser!.PasswordHash);
-        var generatedToken = await _mockTokenService.Object.GenerateToken(foundUser);
-
-        // Assert
-        Assert.NotNull(foundUser);
-        Assert.True(isPasswordValid);
-        Assert.Equal(token, generatedToken);
-    }
-
-    [Fact]
-    public async Task Login_InvalidEmail_UserNotFound()
-    {
-        // Arrange
-        var email = "nonexistent@test.com";
-        var users = new List<User>();
-
-        _mockUserRepo.Setup(r => r.GetAll()).ReturnsAsync(users);
-
-        // Act
-        var allUsers = await _mockUserRepo.Object.GetAll();
-        var foundUser = allUsers.FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
-
-        // Assert
-        Assert.Null(foundUser);
-    }
-
-    [Fact]
-    public async Task Login_InvalidPassword_ReturnsUnauthorized()
-    {
-        // Arrange
-        var email = "user@test.com";
-        var password = "wrongPassword";
-        var hashedPassword = "hashedPassword123";
-
-        var user = new User
-        {
-            ID = Guid.NewGuid(),
-            Email = email,
-            PasswordHash = hashedPassword,
-            Name = "Test User",
-            NIF = "123456789",
-            IsActive = true
-        };
-
-        var users = new List<User> { user };
-
-        _mockUserRepo.Setup(r => r.GetAll()).ReturnsAsync(users);
-        _mockHasher.Setup(h => h.VerifyPassword(password, hashedPassword)).Returns(false);
-
-        // Act
-        var allUsers = await _mockUserRepo.Object.GetAll();
-        var foundUser = allUsers.FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
-        var isPasswordValid = _mockHasher.Object.VerifyPassword(password, foundUser!.PasswordHash);
-
-        // Assert
-        Assert.NotNull(foundUser);
-        Assert.False(isPasswordValid);
-=======
 public class AuthEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;
@@ -253,13 +138,198 @@ public class AuthEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
         var req = new LoginRequest(Email: "user@test.com", Password: "wrongpwd");
         var resp = await client.PostAsJsonAsync("/api/auth/login", req);
         Assert.Equal((HttpStatusCode)401, resp.StatusCode);
->>>>>>> origin/task/backend/adding-more-unit-tests
     }
 
     [Fact]
     public async Task Login_InactiveUser_ReturnsBadRequest()
     {
-<<<<<<< HEAD
+        using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Test");
+            builder.ConfigureServices(services =>
+            {
+                var descriptors = services.Where(d => d.ServiceType == typeof(DbContextOptions<AppDbContext>) || d.ServiceType == typeof(AppDbContext)).ToList();
+                foreach (var d in descriptors)
+                    services.Remove(d);
+                services.AddDbContext<AppDbContext>(options =>
+                {
+                    options.UseInMemoryDatabase(Guid.NewGuid().ToString());
+                    options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning));
+                });
+                services.AddTransient<IPasswordHasher, PasswordHasher>();
+            });
+        });
+        var client = factory.CreateClient();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedUsers(db, "inactive@test.com", "pwd", isActive: false);
+        }
+        var req = new LoginRequest(Email: "inactive@test.com", Password: "pwd");
+        var resp = await client.PostAsJsonAsync("/api/auth/login", req);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Login_ValidCredentials_ReturnsOkWithToken()
+    {
+        using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Test");
+            builder.ConfigureServices(services =>
+            {
+                var descriptors = services.Where(d => d.ServiceType == typeof(DbContextOptions<AppDbContext>) || d.ServiceType == typeof(AppDbContext)).ToList();
+                foreach (var d in descriptors)
+                    services.Remove(d);
+                services.AddDbContext<AppDbContext>(options =>
+                {
+                    options.UseInMemoryDatabase(Guid.NewGuid().ToString());
+                    options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning));
+                });
+                services.AddTransient<IPasswordHasher, PasswordHasher>();
+            });
+        });
+        var client = factory.CreateClient();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedUsers(db, "valid@test.com", "pwd");
+            // Verify that the password hash was stored and matches
+            var user = db.Users.First(u => u.Email == "valid@test.com");
+            var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+            var ok = hasher.VerifyPassword("pwd", user.PasswordHash);
+            Assert.True(ok, "Seeded password should verify with registered IPasswordHasher");
+        }
+
+        var req = new LoginRequest(Email: "valid@test.com", Password: "pwd");
+        var resp = await client.PostAsJsonAsync("/api/auth/login", req);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var json = await resp.Content.ReadFromJsonAsync<LoginResponse>();
+        Assert.NotNull(json);
+        Assert.False(string.IsNullOrWhiteSpace(json!.Token));
+        Assert.Equal("valid@test.com", json.Email);
+    }
+}
+
+using Moq;
+using Consilium.Application.Interfaces;
+using Consilium.Domain.Models;
+using Consilium.Domain.Enums;
+using Consilium.API.Dtos;
+using Consilium.API.Services;
+
+namespace Consilium.Tests.Endpoints;
+
+/// <summary>
+/// Tests for Auth Endpoints business logic
+/// These tests validate authentication, password hashing, and JWT token generation
+/// </summary>
+public class AuthEndpointsTests
+{
+    private readonly Mock<IUserRepository> _mockUserRepo;
+    private readonly Mock<IPasswordHasher> _mockHasher;
+    private readonly Mock<IJwtTokenService> _mockTokenService;
+
+    public AuthEndpointsTests()
+    {
+        _mockUserRepo = new Mock<IUserRepository>();
+        _mockHasher = new Mock<IPasswordHasher>();
+        // JwtTokenService requires IConfiguration, so we mock it
+        _mockTokenService = new Mock<IJwtTokenService>();
+    }
+
+    #region Login Tests
+
+    [Fact]
+    public async Task Login_ValidCredentials_ReturnsToken()
+    {
+        // Arrange
+        var email = "user@test.com";
+        var password = "password123";
+        var hashedPassword = "hashedPassword123";
+        var token = "jwt.token.here";
+
+        var user = new User
+        {
+            ID = Guid.NewGuid(),
+            Email = email,
+            PasswordHash = hashedPassword,
+            Name = "Test User",
+            NIF = "123456789",
+            IsActive = true
+        };
+
+        var users = new List<User> { user };
+
+        _mockUserRepo.Setup(r => r.GetAll()).ReturnsAsync(users);
+        _mockHasher.Setup(h => h.VerifyPassword(password, hashedPassword)).Returns(true);
+        _mockTokenService.Setup(s => s.GenerateToken(It.IsAny<User>())).ReturnsAsync(token);
+
+        // Act
+        var allUsers = await _mockUserRepo.Object.GetAll();
+        var foundUser = allUsers.FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+        var isPasswordValid = _mockHasher.Object.VerifyPassword(password, foundUser!.PasswordHash);
+        var generatedToken = await _mockTokenService.Object.GenerateToken(foundUser);
+
+        // Assert
+        Assert.NotNull(foundUser);
+        Assert.True(isPasswordValid);
+        Assert.Equal(token, generatedToken);
+    }
+
+    [Fact]
+    public async Task Login_InvalidEmail_UserNotFound()
+    {
+        // Arrange
+        var email = "nonexistent@test.com";
+        var users = new List<User>();
+
+        _mockUserRepo.Setup(r => r.GetAll()).ReturnsAsync(users);
+
+        // Act
+        var allUsers = await _mockUserRepo.Object.GetAll();
+        var foundUser = allUsers.FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+
+        // Assert
+        Assert.Null(foundUser);
+    }
+
+    [Fact]
+    public async Task Login_InvalidPassword_ReturnsUnauthorized()
+    {
+        // Arrange
+        var email = "user@test.com";
+        var password = "wrongPassword";
+        var hashedPassword = "hashedPassword123";
+
+        var user = new User
+        {
+            ID = Guid.NewGuid(),
+            Email = email,
+            PasswordHash = hashedPassword,
+            Name = "Test User",
+            NIF = "123456789",
+            IsActive = true
+        };
+
+        var users = new List<User> { user };
+
+        _mockUserRepo.Setup(r => r.GetAll()).ReturnsAsync(users);
+        _mockHasher.Setup(h => h.VerifyPassword(password, hashedPassword)).Returns(false);
+
+        // Act
+        var allUsers = await _mockUserRepo.Object.GetAll();
+        var foundUser = allUsers.FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+        var isPasswordValid = _mockHasher.Object.VerifyPassword(password, foundUser!.PasswordHash);
+
+        // Assert
+        Assert.NotNull(foundUser);
+        Assert.False(isPasswordValid);
+    }
+
+    [Fact]
+    public async Task Login_InactiveUser_ReturnsBadRequest()
+    {
         // Arrange
         var email = "inactive@test.com";
         var password = "password123";
@@ -501,72 +571,4 @@ public class AuthEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     #endregion
-=======
-        using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Test");
-            builder.ConfigureServices(services =>
-            {
-                var descriptors = services.Where(d => d.ServiceType == typeof(DbContextOptions<AppDbContext>) || d.ServiceType == typeof(AppDbContext)).ToList();
-                foreach (var d in descriptors)
-                    services.Remove(d);
-                services.AddDbContext<AppDbContext>(options =>
-                {
-                    options.UseInMemoryDatabase(Guid.NewGuid().ToString());
-                    options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning));
-                });
-                services.AddTransient<IPasswordHasher, PasswordHasher>();
-            });
-        });
-        var client = factory.CreateClient();
-        using (var scope = factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await SeedUsers(db, "inactive@test.com", "pwd", isActive: false);
-        }
-        var req = new LoginRequest(Email: "inactive@test.com", Password: "pwd");
-        var resp = await client.PostAsJsonAsync("/api/auth/login", req);
-        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
-    }
-
-    [Fact]
-    public async Task Login_ValidCredentials_ReturnsOkWithToken()
-    {
-        using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Test");
-            builder.ConfigureServices(services =>
-            {
-                var descriptors = services.Where(d => d.ServiceType == typeof(DbContextOptions<AppDbContext>) || d.ServiceType == typeof(AppDbContext)).ToList();
-                foreach (var d in descriptors)
-                    services.Remove(d);
-                services.AddDbContext<AppDbContext>(options =>
-                {
-                    options.UseInMemoryDatabase(Guid.NewGuid().ToString());
-                    options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning));
-                });
-                services.AddTransient<IPasswordHasher, PasswordHasher>();
-            });
-        });
-        var client = factory.CreateClient();
-        using (var scope = factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await SeedUsers(db, "valid@test.com", "pwd");
-            // Verify that the password hash was stored and matches
-            var user = db.Users.First(u => u.Email == "valid@test.com");
-            var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-            var ok = hasher.VerifyPassword("pwd", user.PasswordHash);
-            Assert.True(ok, "Seeded password should verify with registered IPasswordHasher");
-        }
-
-        var req = new LoginRequest(Email: "valid@test.com", Password: "pwd");
-        var resp = await client.PostAsJsonAsync("/api/auth/login", req);
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        var json = await resp.Content.ReadFromJsonAsync<LoginResponse>();
-        Assert.NotNull(json);
-        Assert.False(string.IsNullOrWhiteSpace(json!.Token));
-        Assert.Equal("valid@test.com", json.Email);
-    }
->>>>>>> origin/task/backend/adding-more-unit-tests
 }
