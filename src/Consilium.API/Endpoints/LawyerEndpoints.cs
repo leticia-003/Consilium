@@ -98,8 +98,7 @@ public static class LawyerEndpoints
     private static async Task<IResult> CreateLawyer(
         CreateLawyerRequest request,
         ILawyerRepository repo,
-        IPasswordHasher hasher,
-        Consilium.Infrastructure.Services.AuditLogFacade auditLog)
+        IPasswordHasher hasher)
     {
         // Validate input
         if (string.IsNullOrWhiteSpace(request.Email))
@@ -149,9 +148,6 @@ public static class LawyerEndpoints
         // Save to database
         var newLawyer = await repo.Create(user, lawyer);
 
-        // Log creation
-        await auditLog.AddCreateLawyerLogAsync(newLawyer.ID, newLawyer.ID);
-
         // Prepare response (include main phone if present)
         var createdMainPhone = newLawyer.User?.Phones?.FirstOrDefault(p => p.IsMain == true);
         var createdPhoneStr = createdMainPhone != null ? createdMainPhone.Number : string.Empty;
@@ -170,12 +166,11 @@ public static class LawyerEndpoints
         return Results.Created($"/api/lawyers/{newLawyer.ID}", response);
     }
 
-    private static async Task<IResult> DeleteLawyer(Guid id, ILawyerRepository repo, Consilium.Infrastructure.Services.AuditLogFacade auditLog)
+    private static async Task<IResult> DeleteLawyer(Guid id, ILawyerRepository repo)
     {
         try
         {
             await repo.Delete(id);
-            await auditLog.AddDeleteLawyerLogAsync(id, id);
             return Results.NoContent();
         }
         catch (KeyNotFoundException)
@@ -192,8 +187,7 @@ public static class LawyerEndpoints
         Guid id,
         UpdateLawyerRequest request,
         ILawyerRepository repo,
-        IPasswordHasher hasher,
-        Consilium.Infrastructure.Services.AuditLogFacade auditLog)
+        IPasswordHasher hasher)
     {
         // Validate input - at least one field should be provided
         if (string.IsNullOrWhiteSpace(request.Name) && 
@@ -278,7 +272,7 @@ public static class LawyerEndpoints
             Phones = updatedLawyer.User?.Phones?.Select(p => new { p.ID, p.Number, p.CountryCode, p.IsMain })
         });
 
-        await auditLog.AddUpdateLawyerLogAsync(id, id, oldSnapshot, newSnapshot);
+        //await auditLog.AddUpdateLawyerLogAsync(id, id, oldSnapshot, newSnapshot);
 
         // Prepare response (include main phone if present)
         var updatedMainPhone = updatedLawyer.User?.Phones?.FirstOrDefault(p => p.IsMain == true);

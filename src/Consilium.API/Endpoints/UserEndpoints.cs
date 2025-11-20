@@ -82,10 +82,9 @@ public static class UserEndpoints
         return await DeleteUserAsync(id, clientRepo);
     }
 
-    private static async Task<IResult> DeleteUser(Guid id, IClientRepository clientRepo, Consilium.Infrastructure.Services.AuditLogFacade auditLog)
+    private static async Task<IResult> DeleteUser(Guid id, IClientRepository clientRepo)
     {
-        // anonymize logs before deletion per GDPR right to be forgotten
-        await auditLog.AnonymizeUserLogsAsync(id);
+        // TODO: anonymize logs before deletion per GDPR right to be forgotten
         return await DeleteUserAndDependents(id, clientRepo);
     }
 }

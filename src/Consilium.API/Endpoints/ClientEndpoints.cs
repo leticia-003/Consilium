@@ -100,8 +100,7 @@ public static class ClientEndpoints
     private static async Task<IResult> CreateClient(
         CreateClientRequest request,
         IClientRepository repo,
-        IPasswordHasher hasher,
-        AuditLogFacade auditLog)
+        IPasswordHasher hasher)
         
     {
         // Validate input
@@ -149,8 +148,6 @@ public static class ClientEndpoints
         // Save to database
         var newClient = await repo.Create(user, client);
 
-        // Log the creation - full snapshot
-        await auditLog.AddCreateClientLogAsync(newClient.ID, newClient.ID);
         // Prepare response (include main phone if present)
         var createdMainPhone = newClient.User?.Phones?.FirstOrDefault(p => p.IsMain == true);
         var createdPhoneStr = createdMainPhone != null ? createdMainPhone.Number : string.Empty;
@@ -169,12 +166,12 @@ public static class ClientEndpoints
         return Results.Created($"/api/clients/{newClient.ID}", response);
     }
 
-    private static async Task<IResult> DeleteClient(Guid id, IClientRepository repo, AuditLogFacade auditLog)
+    private static async Task<IResult> DeleteClient(Guid id, IClientRepository repo)
     {
         try
         {
             await repo.Delete(id);
-            await auditLog.AddDeleteClientLogAsync(id, id);
+            //await auditLog.AddDeleteClientLogAsync(id, id);
             return Results.NoContent();
         }
         catch (KeyNotFoundException)
@@ -191,8 +188,7 @@ public static class ClientEndpoints
         Guid id,
         UpdateClientRequest request,
         IClientRepository repo,
-        IPasswordHasher hasher,
-        AuditLogFacade auditLog)
+        IPasswordHasher hasher)
     {
         // Validate input - at least one field should be provided
         if (string.IsNullOrWhiteSpace(request.Name) && 
@@ -277,7 +273,7 @@ public static class ClientEndpoints
             Phones = updatedClient.User?.Phones?.Select(p => new { p.ID, p.Number, p.CountryCode, p.IsMain })
         });
 
-        await auditLog.AddUpdateClientLogAsync(id, id, oldSnapshot, newSnapshot);
+        //await auditLog.AddUpdateClientLogAsync(id, id, oldSnapshot, newSnapshot);
 
         // Prepare response (include main phone if present)
         var updatedMainPhone = updatedClient.User?.Phones?.FirstOrDefault(p => p.IsMain == true);

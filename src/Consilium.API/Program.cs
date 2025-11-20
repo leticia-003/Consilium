@@ -37,7 +37,7 @@ builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IProcessRepository, ProcessRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<JwtTokenService>();
-builder.Services.AddScoped<AuditLogFacade>();
+// builder.Services.AddScoped<AuditLogFacade>();
 
 // --- Add API Services ---
 builder.Services.AddEndpointsApiExplorer();

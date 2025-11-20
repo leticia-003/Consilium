@@ -65,11 +65,27 @@ namespace Consilium.Infrastructure.Repositories
 
         public async Task Delete(Guid id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
+            // Get the admin first
+            var admin = await _context.Admins
+                .Include(a => a.User)
+                .ThenInclude(u => u.Phones)
+                .FirstOrDefaultAsync(a => a.ID == id);
+            
+            if (admin == null)
                 throw new KeyNotFoundException($"Admin with ID {id} not found");
 
-            _context.Users.Remove(user);
+            // Delete in proper order: Phones -> Admin -> User
+            if (admin.User?.Phones != null)
+            {
+                foreach (var phone in admin.User.Phones)
+                    _context.Phones.Remove(phone);
+            }
+            
+            _context.Admins.Remove(admin);
+            
+            if (admin.User != null)
+                _context.Users.Remove(admin.User);
+            
             await _context.SaveChangesAsync();
         }
 

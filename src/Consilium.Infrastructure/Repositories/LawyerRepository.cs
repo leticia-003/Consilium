@@ -199,15 +199,32 @@ namespace Consilium.Infrastructure.Repositories
 
         public async Task Delete(Guid id)
         {
-            // Get the user and lawyer
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
+            // Get the lawyer first
+            var lawyer = await _context.Lawyers
+                .Include(l => l.User)
+                .ThenInclude(u => u.Phones)
+                .FirstOrDefaultAsync(l => l.ID == id);
+            
+            if (lawyer == null)
                 throw new KeyNotFoundException($"Lawyer with ID {id} not found");
 
-            // TODO: Check if lawyer has active/open cases when PROCESS table is implemented
-            // For now, we just delete the user (which will cascade delete the lawyer due to 1:1 relationship)
+            // Check if lawyer has active/open cases
+            var hasActiveCases = await _context.Processes.AnyAsync(p => p.LawyerId == id);
+            if (hasActiveCases)
+                throw new InvalidOperationException("Lawyer has active/open cases and cannot be deleted");
             
-            _context.Users.Remove(user);
+            // Delete in proper order: Phones -> Lawyer -> User
+            if (lawyer.User?.Phones != null)
+            {
+                foreach (var phone in lawyer.User.Phones)
+                    _context.Phones.Remove(phone);
+            }
+            
+            _context.Lawyers.Remove(lawyer);
+            
+            if (lawyer.User != null)
+                _context.Users.Remove(lawyer.User);
+            
             await _context.SaveChangesAsync();
         }
     }

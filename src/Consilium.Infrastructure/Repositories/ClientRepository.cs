@@ -201,15 +201,29 @@ namespace Consilium.Infrastructure.Repositories
 
         public async Task Delete(Guid id)
         {
-            // Get the user and client
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
+            // Get the client first
+            var client = await _context.Clients
+                .Include(c => c.User)
+                .ThenInclude(u => u.Phones)
+                .FirstOrDefaultAsync(c => c.ID == id);
+            
+            if (client == null)
                 throw new KeyNotFoundException($"Client with ID {id} not found");
 
             // TODO: Check if client has active/open cases when PROCESS table is implemented
-            // For now, we just delete the user (which will cascade delete the client due to 1:1 relationship)
             
-            _context.Users.Remove(user);
+            // Delete in proper order: Phones -> Client -> User
+            if (client.User?.Phones != null)
+            {
+                foreach (var phone in client.User.Phones)
+                    _context.Phones.Remove(phone);
+            }
+            
+            _context.Clients.Remove(client);
+            
+            if (client.User != null)
+                _context.Users.Remove(client.User);
+            
             await _context.SaveChangesAsync();
         }
     }

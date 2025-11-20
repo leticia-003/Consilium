@@ -137,8 +137,7 @@ public static class AdminEndpoints
     private static async Task<IResult> CreateAdmin(
         CreateAdminRequest request,
         IAdminRepository repo,
-        IPasswordHasher hasher,
-        Consilium.Infrastructure.Services.AuditLogFacade auditLog)
+        IPasswordHasher hasher)
     {
         // Validate input
         if (string.IsNullOrWhiteSpace(request.Email))
@@ -186,7 +185,7 @@ public static class AdminEndpoints
             var newAdmin = await repo.Create(user, admin);
 
             // Log the creation
-            await auditLog.AddCreateAdminLogAsync(newAdmin.ID, newAdmin.ID);
+            //.AddCreateAdminLogAsync(newAdmin.ID, newAdmin.ID);
 
         // Prepare response (include main phone if present)
         var createdMainPhone = newAdmin.User?.Phones?.FirstOrDefault(p => p.IsMain == true);
@@ -206,12 +205,11 @@ public static class AdminEndpoints
         return Results.Created($"/api/admins/{newAdmin.ID}", response);
     }
 
-    private static async Task<IResult> DeleteAdmin(Guid id, IAdminRepository repo, Consilium.Infrastructure.Services.AuditLogFacade auditLog)
+    private static async Task<IResult> DeleteAdmin(Guid id, IAdminRepository repo)
     {
         try
         {
                 await repo.Delete(id);
-                await auditLog.AddDeleteAdminLogAsync(id, id);
             return Results.NoContent();
         }
         catch (KeyNotFoundException)
@@ -228,8 +226,7 @@ public static class AdminEndpoints
         Guid id,
         UpdateAdminRequest request,
         IAdminRepository repo,
-        IPasswordHasher hasher,
-        Consilium.Infrastructure.Services.AuditLogFacade auditLog)
+        IPasswordHasher hasher)
     {
         // Validate input - at least one field should be provided
         if (string.IsNullOrWhiteSpace(request.Name) && 
