@@ -17,36 +17,66 @@ public static class ProcessEndpoints
 
         group.MapGet("/", GetAllProcesses)
             .WithName("GetAllProcesses")
-            .WithDescription("Retrieve all processes");
+            .WithDescription("Retrieve all processes")
+            .RequireAuthorization("AdminOrLawyer");
 
         group.MapGet("/{id:guid}", GetProcessById)
             .WithName("GetProcessById")
-            .WithDescription("Retrieve a process by ID");
+            .WithDescription("Retrieve a process by ID")
+            .RequireAuthorization("AdminOrLawyer");
 
         group.MapGet("/{id:guid}/with-documents", GetProcessByIdWithDocuments)
             .WithName("GetProcessByIdWithDocuments")
-            .WithDescription("Retrieve a process by ID with its associated documents");
+            .WithDescription("Retrieve a process by ID with its associated documents")
+            .RequireAuthorization("Any");
+
+        // Client-specific endpoints
+        group.MapGet("/client/{clientId:guid}", GetProcessesByClient)
+            .WithName("GetProcessesByClient")
+            .WithDescription("Retrieve all processes for a specific client")
+            .RequireAuthorization("Any");
+
+        group.MapGet("/client/{clientId:guid}/with-documents", GetProcessesByClientWithDocuments)
+            .WithName("GetProcessesByClientWithDocuments")
+            .WithDescription("Retrieve all processes and documents for a specific client")
+            .RequireAuthorization("Any");
 
         group.MapPost("/", CreateProcess)
             .WithName("CreateProcess")
-            .WithDescription("Create a new legal process");
+            .WithDescription("Create a new legal process")
+            .RequireAuthorization("AdminOrLawyer");
         // Create a process with associated documents via multipart/form-data
         group.MapPost("/with-documents", CreateProcessWithDocuments)
             .WithName("CreateProcessWithDocuments")
             .WithDescription("Create a new legal process and upload documents (multipart/form-data)")
-            .DisableAntiforgery(); // Disable CSRF for testing file uploads
+            .DisableAntiforgery() // Disable CSRF for testing file uploads
+            .RequireAuthorization("AdminOrLawyer");
 
         group.MapPatch("/{id:guid}", UpdateProcess)
             .WithName("UpdateProcess")
-            .WithDescription("Update process");
+            .WithDescription("Update process")
+            .RequireAuthorization("AdminOrLawyer");
         group.MapPatch("/{id:guid}/with-documents", UpdateProcessWithDocuments)
             .WithName("UpdateProcessWithDocuments")
             .WithDescription("Update process and upload/delete documents (multipart/form-data)")
-            .DisableAntiforgery(); // Disable CSRF for testing file uploads
+            .DisableAntiforgery() // Disable CSRF for testing file uploads
+            .RequireAuthorization("AdminOrLawyer");
 
         group.MapDelete("/{id:guid}", DeleteProcess)
             .WithName("DeleteProcess")
-            .WithDescription("Delete a process");
+            .WithDescription("Delete a process")
+            .RequireAuthorization("AdminOrLawyer");
+
+        // Lawyer-specific endpoints
+        group.MapGet("/lawyer/{lawyerId:guid}", GetProcessesByLawyer)
+            .WithName("GetProcessesByLawyer")
+            .WithDescription("Retrieve all processes for a specific lawyer")
+            .RequireAuthorization("AdminOrLawyer");
+
+        group.MapGet("/lawyer/{lawyerId:guid}/with-documents", GetProcessesByLawyerWithDocuments)
+            .WithName("GetProcessesByLawyerWithDocuments")
+            .WithDescription("Retrieve all processes and documents for a specific lawyer")
+            .RequireAuthorization("AdminOrLawyer");
     }
 
     private static async Task<IResult> GetAllProcesses(
@@ -170,6 +200,144 @@ public static class ProcessEndpoints
         );
 
         return Results.Ok(response);
+    }
+
+    private static async Task<IResult> GetProcessesByClient(Guid clientId,
+        IProcessRepository repo,
+        [FromQuery] string? search,
+        [FromQuery] int page = 1,
+        [FromQuery] int limit = 20,
+        [FromQuery] string? sortBy = "name",
+        [FromQuery] string? sortOrder = "asc")
+    {
+        try
+        {
+            var (processes, totalCount) = await repo.GetByClientId(clientId, search, page, limit, sortBy, sortOrder);
+            var response = processes.Select(p => new ProcessResponse(
+                ProcessId: p.Id,
+                Name: p.Name,
+                Number: p.Number,
+                ClientId: p.ClientId,
+                LawyerId: p.LawyerId,
+                AdversePartName: p.AdversePartName,
+                OpposingCounselName: p.OpposingCounselName,
+                CreatedAt: p.CreatedAt,
+                ClosedAt: p.ClosedAt,
+                Priority: p.Priority,
+                CourtInfo: p.CourtInfo,
+                ProcessTypePhaseId: p.ProcessTypePhaseId,
+                ProcessStatusId: p.ProcessStatusId,
+                Description: p.Description,
+                NextHearingDate: p.NextHearingDate
+            ));
+
+            return Results.Ok(new { data = response, meta = new { totalCount, page, limit } });
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01" || ex.SqlState == "42703")
+        {
+            return Results.Ok(new { data = Array.Empty<object>(), meta = new { totalCount = 0, page, limit } });
+        }
+    }
+
+    private static async Task<IResult> GetProcessesByClientWithDocuments(Guid clientId, IProcessRepository repo)
+    {
+        var processes = await repo.GetByClientIdWithDocuments(clientId);
+        var response = processes.Select(p => new ProcessWithDocumentsResponse(
+            ProcessId: p.Id,
+            Name: p.Name,
+            Number: p.Number,
+            ClientId: p.ClientId,
+            LawyerId: p.LawyerId,
+            AdversePartName: p.AdversePartName,
+            OpposingCounselName: p.OpposingCounselName,
+            CreatedAt: p.CreatedAt,
+            ClosedAt: p.ClosedAt,
+            Priority: p.Priority,
+            CourtInfo: p.CourtInfo,
+            ProcessTypePhaseId: p.ProcessTypePhaseId,
+            ProcessStatusId: p.ProcessStatusId,
+            Description: p.Description,
+            NextHearingDate: p.NextHearingDate,
+            Documents: p.Documents?.Select(d => new DocumentResponse(
+                DocumentId: d.Id,
+                FileName: d.FileName,
+                FileMimeType: d.FileMimeType,
+                FileSize: d.FileSize,
+                CreatedAt: d.CreatedAt,
+                DownloadUrl: $"/api/documents/{d.Id}/download"
+            )).ToList() ?? new List<DocumentResponse>()
+        ));
+
+        return Results.Ok(new { data = response });
+    }
+
+    private static async Task<IResult> GetProcessesByLawyer(Guid lawyerId,
+        IProcessRepository repo,
+        [FromQuery] string? search,
+        [FromQuery] int page = 1,
+        [FromQuery] int limit = 20,
+        [FromQuery] string? sortBy = "name",
+        [FromQuery] string? sortOrder = "asc")
+    {
+        try
+        {
+            var (processes, totalCount) = await repo.GetByLawyerId(lawyerId, search, page, limit, sortBy, sortOrder);
+            var response = processes.Select(p => new ProcessResponse(
+                ProcessId: p.Id,
+                Name: p.Name,
+                Number: p.Number,
+                ClientId: p.ClientId,
+                LawyerId: p.LawyerId,
+                AdversePartName: p.AdversePartName,
+                OpposingCounselName: p.OpposingCounselName,
+                CreatedAt: p.CreatedAt,
+                ClosedAt: p.ClosedAt,
+                Priority: p.Priority,
+                CourtInfo: p.CourtInfo,
+                ProcessTypePhaseId: p.ProcessTypePhaseId,
+                ProcessStatusId: p.ProcessStatusId,
+                Description: p.Description,
+                NextHearingDate: p.NextHearingDate
+            ));
+
+            return Results.Ok(new { data = response, meta = new { totalCount, page, limit } });
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01" || ex.SqlState == "42703")
+        {
+            return Results.Ok(new { data = Array.Empty<object>(), meta = new { totalCount = 0, page, limit } });
+        }
+    }
+
+    private static async Task<IResult> GetProcessesByLawyerWithDocuments(Guid lawyerId, IProcessRepository repo)
+    {
+        var processes = await repo.GetByLawyerIdWithDocuments(lawyerId);
+        var response = processes.Select(p => new ProcessWithDocumentsResponse(
+            ProcessId: p.Id,
+            Name: p.Name,
+            Number: p.Number,
+            ClientId: p.ClientId,
+            LawyerId: p.LawyerId,
+            AdversePartName: p.AdversePartName,
+            OpposingCounselName: p.OpposingCounselName,
+            CreatedAt: p.CreatedAt,
+            ClosedAt: p.ClosedAt,
+            Priority: p.Priority,
+            CourtInfo: p.CourtInfo,
+            ProcessTypePhaseId: p.ProcessTypePhaseId,
+            ProcessStatusId: p.ProcessStatusId,
+            Description: p.Description,
+            NextHearingDate: p.NextHearingDate,
+            Documents: p.Documents?.Select(d => new DocumentResponse(
+                DocumentId: d.Id,
+                FileName: d.FileName,
+                FileMimeType: d.FileMimeType,
+                FileSize: d.FileSize,
+                CreatedAt: d.CreatedAt,
+                DownloadUrl: $"/api/documents/{d.Id}/download"
+            )).ToList() ?? new List<DocumentResponse>()
+        ));
+
+        return Results.Ok(new { data = response });
     }
 
     private static async Task<IResult> CreateProcess(
