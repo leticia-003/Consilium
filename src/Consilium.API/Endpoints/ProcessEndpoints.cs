@@ -96,7 +96,9 @@ public static class ProcessEndpoints
                 Name: p.Name,
                 Number: p.Number,
                 ClientId: p.ClientId,
+                ClientName: p.Client?.User?.Name,
                 LawyerId: p.LawyerId,
+                LawyerName: p.Lawyer?.User?.Name,
                 AdversePartName: p.AdversePartName,
                 OpposingCounselName: p.OpposingCounselName,
                 CreatedAt: p.CreatedAt,
@@ -139,7 +141,9 @@ public static class ProcessEndpoints
             Name: process.Name,
             Number: process.Number,
             ClientId: process.ClientId,
+            ClientName: process.Client?.User?.Name,
             LawyerId: process.LawyerId,
+            LawyerName: process.Lawyer?.User?.Name,
             AdversePartName: process.AdversePartName,
             OpposingCounselName: process.OpposingCounselName,
             CreatedAt: process.CreatedAt,
@@ -185,7 +189,9 @@ public static class ProcessEndpoints
             Name: process.Name,
             Number: process.Number,
             ClientId: process.ClientId,
+            ClientName: process.Client?.User?.Name,
             LawyerId: process.LawyerId,
+            LawyerName: process.Lawyer?.User?.Name,
             AdversePartName: process.AdversePartName,
             OpposingCounselName: process.OpposingCounselName,
             CreatedAt: process.CreatedAt,
@@ -218,7 +224,9 @@ public static class ProcessEndpoints
                 Name: p.Name,
                 Number: p.Number,
                 ClientId: p.ClientId,
+                ClientName: p.Client?.User?.Name,
                 LawyerId: p.LawyerId,
+                LawyerName: p.Lawyer?.User?.Name,
                 AdversePartName: p.AdversePartName,
                 OpposingCounselName: p.OpposingCounselName,
                 CreatedAt: p.CreatedAt,
@@ -247,7 +255,9 @@ public static class ProcessEndpoints
             Name: p.Name,
             Number: p.Number,
             ClientId: p.ClientId,
+            ClientName: p.Client?.User?.Name,
             LawyerId: p.LawyerId,
+            LawyerName: p.Lawyer?.User?.Name,
             AdversePartName: p.AdversePartName,
             OpposingCounselName: p.OpposingCounselName,
             CreatedAt: p.CreatedAt,
@@ -287,7 +297,9 @@ public static class ProcessEndpoints
                 Name: p.Name,
                 Number: p.Number,
                 ClientId: p.ClientId,
+                ClientName: p.Client?.User?.Name,
                 LawyerId: p.LawyerId,
+                LawyerName: p.Lawyer?.User?.Name,
                 AdversePartName: p.AdversePartName,
                 OpposingCounselName: p.OpposingCounselName,
                 CreatedAt: p.CreatedAt,
@@ -316,7 +328,9 @@ public static class ProcessEndpoints
             Name: p.Name,
             Number: p.Number,
             ClientId: p.ClientId,
+            ClientName: p.Client?.User?.Name,
             LawyerId: p.LawyerId,
+            LawyerName: p.Lawyer?.User?.Name,
             AdversePartName: p.AdversePartName,
             OpposingCounselName: p.OpposingCounselName,
             CreatedAt: p.CreatedAt,
@@ -401,7 +415,9 @@ public static class ProcessEndpoints
             Name: created.Name,
             Number: created.Number,
             ClientId: created.ClientId,
+            ClientName: created.Client?.User?.Name,
             LawyerId: created.LawyerId,
+            LawyerName: created.Lawyer?.User?.Name,
             AdversePartName: created.AdversePartName,
             OpposingCounselName: created.OpposingCounselName,
             CreatedAt: created.CreatedAt,
@@ -522,7 +538,9 @@ public static class ProcessEndpoints
                 Name: created.Name,
                 Number: created.Number,
                 ClientId: created.ClientId,
+                ClientName: created.Client?.User?.Name,
                 LawyerId: created.LawyerId,
+                LawyerName: created.Lawyer?.User?.Name,
                 AdversePartName: created.AdversePartName,
                 OpposingCounselName: created.OpposingCounselName,
                 CreatedAt: created.CreatedAt,
@@ -554,7 +572,9 @@ public static class ProcessEndpoints
 
     private static async Task<IResult> UpdateProcess(Guid id, UpdateProcessRequest request, IProcessRepository repo, AppDbContext db, IClientRepository clientRepo, ILawyerRepository lawyerRepo)
     {
-        var existing = await repo.GetById(id);
+        //var existing = await repo.GetById(id);
+
+        var existing = await db.Processes.FindAsync(id);
         if (existing == null)
             return Results.NotFound(new { message = $"Process with ID {id} not found" });
 
@@ -613,6 +633,9 @@ public static class ProcessEndpoints
         if (request.ClosedAt.HasValue)
             existing.ClosedAt = DateTime.SpecifyKind(request.ClosedAt.Value, DateTimeKind.Utc);
 
+        // Mark the entity as modified since repo.GetById returns a detached entity
+        // Mark the entity as modified since repo.GetById returns a detached entity
+        // db.Processes.Update(existing);
         await db.SaveChangesAsync();
         
         var updated = await repo.GetById(id);
@@ -622,7 +645,9 @@ public static class ProcessEndpoints
             Name: updated.Name,
             Number: updated.Number,
             ClientId: updated.ClientId,
+            ClientName: updated.Client?.User?.Name,
             LawyerId: updated.LawyerId,
+            LawyerName: updated.Lawyer?.User?.Name,
             AdversePartName: updated.AdversePartName,
             OpposingCounselName: updated.OpposingCounselName,
             CreatedAt: updated.CreatedAt,
@@ -647,7 +672,9 @@ private static async Task<IResult> UpdateProcessWithDocuments(
     ILawyerRepository lawyerRepo)
 {
     // 1. Load the entity
-    var existing = await repo.GetById(id);
+    //var existing = await repo.GetById(id);
+
+    var existing = await db.Processes.FindAsync(id);
     
     if (existing == null)
         return Results.NotFound(new { message = $"Process with ID {id} not found" });
@@ -806,7 +833,9 @@ private static async Task<IResult> UpdateProcessWithDocuments(
         }
     }
 
-    // 5. SAVE CHANGES
+    // 5. Mark entity as modified and SAVE CHANGES
+    // 5. Mark entity as modified and SAVE CHANGES
+    // db.Processes.Update(existing);
     await db.SaveChangesAsync();
 
     // 6. Return updated response
@@ -827,7 +856,9 @@ private static async Task<IResult> UpdateProcessWithDocuments(
         Name: updated.Name,
         Number: updated.Number,
         ClientId: updated.ClientId,
+        ClientName: updated.Client?.User?.Name,
         LawyerId: updated.LawyerId,
+        LawyerName: updated.Lawyer?.User?.Name,
         AdversePartName: updated.AdversePartName,
         OpposingCounselName: updated.OpposingCounselName,
         CreatedAt: updated.CreatedAt,

@@ -4,9 +4,7 @@ import { ClientsComponent } from './pages/clients';
 import { ClientDetailsComponent } from './pages/client-details/client-details';
 import { LawyerDetailsComponent } from './pages/lawyer-details/lawyer-details';
 import { LawyersComponent } from './pages/lawyers';
-import { ChatbotComponent } from './pages/chatbot';
-import { ProfilesComponent } from './pages/profiles';
-import { SettingsComponent } from './pages/settings';
+
 import { CreateClientComponent } from './pages/create-client/create-client';
 import { CreateLawyerComponent } from './pages/create-lawyer/create-lawyer';
 import { LoginComponent } from './pages/login/login';
@@ -17,6 +15,7 @@ import { roleGuard } from './guards/role.guard';
 import { CreateProcessComponent } from './pages/create-process/create-process';
 import { ProcessDetailsComponent } from './pages/process-details/process-details';
 import { ProcessesComponent } from './pages/processes/processes';
+import { EditProcessComponent } from './pages/edit-process/edit-process';
 
 export const routes: Routes = [
   { path: '', component: LoginComponent, title: 'Login' },
@@ -63,7 +62,7 @@ export const routes: Routes = [
     canActivate: [roleGuard],
     data: { roles: ['Admin', 'Lawyer'] },
   },
-  { path: 'chatbot', component: ChatbotComponent, title: 'ChatBot', canActivate: [roleGuard] },
+
   {
     path: 'processes',
     component: ProcessesComponent,
@@ -85,8 +84,14 @@ export const routes: Routes = [
     canActivate: [roleGuard],
     data: { roles: ['Client', 'Lawyer', 'Admin'] }
   },
-  { path: 'profiles', component: ProfilesComponent, title: 'Profiles', canActivate: [roleGuard] },
-  { path: 'settings', component: SettingsComponent, title: 'Settings', canActivate: [roleGuard] },
+  {
+    path: 'processes/:id/edit',
+    component: EditProcessComponent,
+    title: 'Edit Process',
+    canActivate: [roleGuard],
+    data: { roles: ['Lawyer', 'Admin'] }
+  },
+
   {
     path: 'create-client',
     component: CreateClientComponent,
@@ -109,4 +114,4 @@ export const routes: Routes = [
   imports: [RouterModule.forRoot(routes)],
   exports: [RouterModule],
 })
-export class AppRoutingModule {}
+export class AppRoutingModule { }
