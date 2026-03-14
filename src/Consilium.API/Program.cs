@@ -147,11 +147,14 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
-app.UseAntiforgery();
+
 app.UseCors();
+
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseAntiforgery();
 
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok", message = "This is cool" }));
 
