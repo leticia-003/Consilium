@@ -105,8 +105,6 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
             "http://localhost:4200",
             "http://localhost:8080",
-            "https://consilium-web-staging.onrender.com", 
-            "https://consilium-web-prod-ea6s.onrender.com",
             "https://consilium-frontend.onrender.com"
         )
         .AllowAnyMethod()
